@@ -76,7 +76,7 @@ class _Radio:
   def tx_power(self) -> float:
     """ Wifi transmission power, in dBm. """
     replies = self._transport.send_atcmd(
-      "AT+RFPOWER?",timeout=0.5).split(b"\r\n")
+      "AT+RFPOWER?").split(b"\r\n")
     for reply in replies:
       if reply.startswith(b"+RFPOWER:"):
         return int(str(reply[9:],'utf-8').split(',')[0])*0.25
@@ -86,7 +86,7 @@ class _Radio:
   def tx_power(self,value: int) -> None:
     """ Change tx_power """
     wifi_power = min(80,value*4)
-    self._transport.send_atcmd(f"AT+RFPOWER={wifi_power}",timeout=0.5)
+    self._transport.send_atcmd(f"AT+RFPOWER={wifi_power}")
 
   @property
   def listen_interval(self) -> int:

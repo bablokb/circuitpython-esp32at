@@ -64,6 +64,8 @@ class Transport:
     if Transport.transport:
       return
     self._uart = None
+    self._at_timeout = 1
+    self._at_retries = 1
     self._reset_pin = None
     self._rts_pin = None
     self._debug = None
@@ -73,6 +75,8 @@ class Transport:
   def init(self,
            uart: busio.UART,
            *,
+           at_timeout: Optional[float] = 1,
+           at_retries: Optional[int] = 1,
            rts_pin: Optional[DigitalInOut] = None,
            reset_pin: Optional[DigitalInOut] = None,
            debug: bool = False,
@@ -80,6 +84,8 @@ class Transport:
     """ initialize hardware, and query AT firmware version """
 
     self._uart = uart
+    self._at_timeout = at_timeout
+    self._at_retries = at_retries
     self._reset_pin = reset_pin
     self._rts_pin = rts_pin
     self._debug = debug
@@ -112,7 +118,7 @@ class Transport:
   def _get_version(self) -> None:
     """Request the AT firmware version string and parse out the
     version number"""
-    reply = self.send_atcmd("AT+GMR", timeout=3).strip(b"\r\n")
+    reply = self.send_atcmd("AT+GMR").strip(b"\r\n")
     for line in reply.split(b"\r\n"):
       if line:
         if b"AT version:" in line:
@@ -132,27 +138,9 @@ class Transport:
     """Perform a software reset by AT command. Returns True
     if we successfully performed, false if failed to reset"""
     try:
-      self._uart.reset_input_buffer()
-      reply = self.send_atcmd("AT+RST", timeout=1)
-      if self._debug:
-        print(f"Resetting with AT+RST, reply was {reply}")
-      stamp = time.monotonic()
-      response = b""
-      while (time.monotonic() - stamp) < timeout:
-        if self._uart.in_waiting:
-          response += self._uart.read(1)
-          self._hw_flow(False)
-          if response[-5:] == b"ready":
-            break
-        else:
-          self._hw_flow(True)
-      if self._debug:
-        if response[-5:] == b"ready":
-          print(f"soft_reset(): Got ready: {response}")
-        else:
-          print(f"soft_reset(): imed out waiting for ready: {response}")
-      self._uart.reset_input_buffer()
-      return True
+      reply = self.send_atcmd("AT+RST", timeout=timeout)
+      if reply == b'OK':
+        return True
     except TransportError:
       pass  # fail, see below
     return False
@@ -160,7 +148,7 @@ class Transport:
   def factory_reset(self) -> None:
     """Perform a hard reset, then send factory restore settings request"""
     self.hard_reset()
-    self.send_atcmd("AT+RESTORE", timeout=1)
+    self.send_atcmd("AT+RESTORE", timeout=5)
 
   def hard_reset(self) -> None:
     """Perform a hardware reset by toggling the reset pin, if it was
@@ -175,11 +163,18 @@ class Transport:
 
   # --- send command to the co-processor   -----------------------------------
 
-  def send_atcmd(self, at_cmd: str, timeout: int = 5, retries: int = 1) -> bytes:
+  def send_atcmd(self, at_cmd: str, timeout: float = -1, retries: int = -1) -> bytes:
     """Send an AT command, check that we got an OK response,
     and then cut out the reply lines to return. We can set
     a variable timeout (how long we'll wait for response) and
     how many times to retry before giving up"""
+
+    # use global defaults
+    if timeout < 0:
+      timeout = self._at_timeout
+    if retries < 0:
+      retries = self._at_retries
+
     # pylint: disable=too-many-branches
     for _ in range(retries):
       self._hw_flow(True)  # allow any remaning data to stream in
@@ -210,7 +205,6 @@ class Transport:
             break
         else:
           self._hw_flow(True)
-      # eat beginning \n and \r
       if self._debug:
         print("<---", response)
       # special case, AT+CWJAP= does not return an ok :P
@@ -232,7 +226,8 @@ class Transport:
       ):
         time.sleep(1)
         continue
-      return response[:-4]
+      # eat final \r\n
+      return response[:-2]
     raise TransportError("No OK response to " + at_cmd)
 
   # --- hardware tweaks   ----------------------------------------------------
@@ -245,6 +240,6 @@ class Transport:
   def _echo(self, echo: bool) -> None:
     """Set AT command echo on or off"""
     if echo:
-      self.send_atcmd("ATE1", timeout=1)
+      self.send_atcmd("ATE1")
     else:
-      self.send_atcmd("ATE0", timeout=1)
+      self.send_atcmd("ATE0")
