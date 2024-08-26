@@ -19,6 +19,7 @@
 import gc
 import time
 import busio
+import re
 from digitalio import Direction, DigitalInOut
 
 try:
@@ -118,14 +119,11 @@ class Transport:
   def _get_version(self) -> None:
     """Request the AT firmware version string and parse out the
     version number"""
-    reply = self.send_atcmd("AT+GMR").strip(b"\r\n")
-    for line in reply.split(b"\r\n"):
-      if line:
-        if b"AT version:" in line:
-          self._at_version = str(line, "utf-8")
-          if self._debug:
-            print(f"AT version is: {self._at_version}")
-          return
+    reply = self.send_atcmd("AT+GMR",filter="^AT version:")
+    if reply:
+      self._at_version = str(reply, "utf-8")
+    else:
+      raise TransportError("could not query AT version")
 
   @property
   def at_version(self) -> str:
@@ -163,7 +161,11 @@ class Transport:
 
   # --- send command to the co-processor   -----------------------------------
 
-  def send_atcmd(self, at_cmd: str, timeout: float = -1, retries: int = -1) -> bytes:
+  def send_atcmd(self,
+                 at_cmd: str,
+                 timeout: float = -1,
+                 retries: int = -1,
+                 filter = None) -> bytes:
     """Send an AT command, check that we got an OK response,
     and then cut out the reply lines to return. We can set
     a variable timeout (how long we'll wait for response) and
@@ -175,6 +177,7 @@ class Transport:
     if retries < 0:
       retries = self._at_retries
 
+    success = False
     # pylint: disable=too-many-branches
     for _ in range(retries):
       self._hw_flow(True)  # allow any remaning data to stream in
@@ -186,49 +189,71 @@ class Transport:
       self._uart.write(bytes(at_cmd, "utf-8"))
       self._uart.write(b"\x0d\x0a")
       stamp = time.monotonic()
-      response = b""
+      raw_response = b""
       while (time.monotonic() - stamp) < timeout:
         if self._uart.in_waiting:
-          response += self._uart.read(1)
+          raw_response += self._uart.read(1)
           self._hw_flow(False)
-          if response[-4:] == b"OK\r\n":
+          if raw_response[-4:] == b"OK\r\n":
+            success = True
             break
-          if response[-7:] == b"ERROR\r\n":
+          if raw_response[-7:] == b"ERROR\r\n":
+            success = True
             break
           if "AT+CWJAP=" in at_cmd or "AT+CWJEAP=" in at_cmd:
-            if b"WIFI GOT IP\r\n" in response:
+            if b"WIFI GOT IP\r\n" in raw_response:
+              success = True
               break
           else:
-            if b"WIFI CONNECTED\r\n" in response:
+            if b"WIFI CONNECTED\r\n" in raw_response:
+              success = True
               break
-          if b"ERR CODE:" in response:
+          if b"ERR CODE:" in raw_response:
+            success = True
             break
         else:
           self._hw_flow(True)
-      if self._debug:
-        print("<---", response)
+
+      if success:
+        break
       # special case, AT+CWJAP= does not return an ok :P
-      if "AT+CWJAP=" in at_cmd and b"WIFI GOT IP\r\n" in response:
-        return response
-      # special case, AT+CWJEAP= does not return an ok :P
-      if "AT+CWJEAP=" in at_cmd and b"WIFI GOT IP\r\n" in response:
-        return response
-      if "AT+CWQAP=" in at_cmd and b"WIFI DISCONNECT" in response:
-        return response
+      if "AT+CWQAP=" in at_cmd and b"WIFI DISCONNECT" in raw_response:
+        success = True
+        break
       # special case, ping also does not return an OK
-      if "AT+PING" in at_cmd and b"ERROR\r\n" in response:
-        return response
+      if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
+        success = True
+        break
       # special case, does return OK but in fact it is busy
       if (
           "AT+CIFSR" in at_cmd
-          and b"busy" in response
-          or response[-4:] != b"OK\r\n"
+          and not b"busy" in raw_response
+          and raw_response[-4:] == b"OK\r\n"
       ):
+        success = True
+        break
+      else:
         time.sleep(1)
-        continue
-      # eat final \r\n
-      return response[:-2]
-    raise TransportError("No OK response to " + at_cmd)
+
+    # final processing
+    if self._debug:
+      print("<--- (raw)", raw_response)
+    if not success:
+      raise TransportError(f"AT-command {at_cmd} failed")
+
+    # split results by lines
+    if filter:
+      response = raw_response[:-2].split(b"\r\n")
+      response = [r for r in response if re.match(filter,r)]
+      if len(response) == 0:
+        response = None
+      if len(response) == 1:
+        response = response[0]
+    else:
+      response = raw_response
+    if self._debug:
+      print("<---", response)
+    return response
 
   # --- hardware tweaks   ----------------------------------------------------
 

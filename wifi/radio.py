@@ -75,11 +75,9 @@ class _Radio:
   @property
   def tx_power(self) -> float:
     """ Wifi transmission power, in dBm. """
-    replies = self._transport.send_atcmd(
-      "AT+RFPOWER?").split(b"\r\n")
-    for reply in replies:
-      if reply.startswith(b"+RFPOWER:"):
-        return int(str(reply[9:],'utf-8').split(',')[0])*0.25
+    reply = self._transport.send_atcmd("AT+RFPOWER?",filter="^\+RFPOWER:")
+    if reply:
+      return int(str(reply[9:],'utf-8').split(',')[0])*0.25
     raise RuntimeError("Bad response to RFPOWER?")
 
   @tx_power.setter
