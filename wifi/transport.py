@@ -177,7 +177,7 @@ class Transport:
     if retries < 0:
       retries = self._at_retries
 
-    success = False
+    success = None
     # pylint: disable=too-many-branches
     for _ in range(retries):
       self._hw_flow(True)  # allow any remaning data to stream in
@@ -198,23 +198,19 @@ class Transport:
             success = True
             break
           if raw_response[-7:] == b"ERROR\r\n":
-            success = True
+            success = False
             break
           if "AT+CWJAP=" in at_cmd or "AT+CWJEAP=" in at_cmd:
             if b"WIFI GOT IP\r\n" in raw_response:
               success = True
               break
-          else:
-            if b"WIFI CONNECTED\r\n" in raw_response:
-              success = True
-              break
           if b"ERR CODE:" in raw_response:
-            success = True
+            success = False
             break
         else:
           self._hw_flow(True)
 
-      if success:
+      if success is not None:
         break
       # special case, AT+CWJAP= does not return an ok :P
       if "AT+CWQAP=" in at_cmd and b"WIFI DISCONNECT" in raw_response:
@@ -238,7 +234,7 @@ class Transport:
     # final processing
     if self._debug:
       print("<--- (raw)", raw_response)
-    if not success:
+    if success is None or not success:
       raise TransportError(f"AT-command {at_cmd} failed")
 
     # split results by lines
