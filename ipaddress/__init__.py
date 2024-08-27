@@ -14,24 +14,22 @@ ipaddresses - this module tries to mimic the ipaddresses-module of core
 CircuitPython.
 """
 
-
-def ip_address(obj: int | str) -> IPv4Address:
-  """ Return a corresponding IP address object or raise ValueError if
-  not possible.
-  """
-  return IPv4Address(obj)
+try:
+  from typing import Union
+except ImportError:
+  pass
 
 class IPv4Address:
   """ Encapsulates an IPv4 address. """
-  
-  def __init__(address: int | str | bytes):
+
+  def __init__(self,address: Union[int, str, bytes]):
     """ Create a new IPv4Address object encapsulating the address value.
 
     The value itself can either be bytes or a string formatted address.
     """
-    if type(address) == str:
+    if isinstance(address,str):
       self._bytes = bytes(map(int,address.split('.')))
-    elif type(address) == int:
+    elif isinstance(address,int):
       self._bytes = bytes(
         [address >> (i << 3) & 0xFF for i in range(4)[::-1]])
     else:
@@ -47,13 +45,23 @@ class IPv4Address:
     """ 4 for IPv4, 6 for IPv6 """
     return 4
 
-  def __eq__(other: object) -> bool:
+  def as_string(self) -> str:
+    """ IP as a string in dotted notation """
+    return '.'.join([str(self._bytes[i]) for i in range(4)])
+
+  def __eq__(self,other: object) -> bool:
     """ Two Address objects are equal if their addresses and address
     types are equal.
     """
     return (getattr(other,"version",0) == self.version and
             hash(self) == hash(other))
 
-  def __hash__() -> int:
+  def __hash__(self) -> int:
     """ Returns a hash for the IPv4Address data. """
     return hash(self._bytes)
+
+def ip_address(obj: Union[int, str]) -> IPv4Address:
+  """ Return a corresponding IP address object or raise ValueError if
+  not possible.
+  """
+  return IPv4Address(obj)
