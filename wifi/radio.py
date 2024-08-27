@@ -55,7 +55,6 @@ class _Radio:
     if _Radio.radio:
       return
     self._transport = transport
-    self._enabled = False
     self._hostname = ""
     self._tx_power = 0
     self._mac_address = None
@@ -69,12 +68,20 @@ class _Radio:
     True when the wifi radio is enabled.
     If you set the value to False, any open sockets will be closed.
     """
-    return self._enabled
+    reply = self._transport.send_atcmd(
+      'AT+CWINIT?',filter="^\+CWINIT:")
+    if reply is None:
+      raise RuntimeError("Bad response to CWINIT?")
+    return str(reply[8:],'utf-8') == "1"
 
   @enabled.setter
   def enabled(self, value: bool) -> None:
     """Change the enabled status"""
-    self._enabled = value
+    init = str(int(value))
+    reply = self._transport.send_atcmd(
+      f'AT+CWINIT={init}',filter="^OK")
+    if not reply:
+      raise RuntimeError("Could not change radio state")
 
   @property
   def hostname(self) -> str:
