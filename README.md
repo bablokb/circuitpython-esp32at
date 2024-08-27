@@ -17,8 +17,18 @@ It provides the following modules:
 CircuitPython build that has native wifi support.**
 
 
+Status
+------
+
+Implement features:
+
+  - co-processor initialization
+  - `wifi.tx_power` (getter and setter)
+  - `wifi.connect`
+
+
 Required Hardware
-=================
+-----------------
 
 The code has been tested with an ESP32C3 Qtpy and
 ESP32C3-Super-Mini. You need to install the official AT firmware
@@ -27,11 +37,12 @@ provided by Espressif, see
 should also work with the ESP32C6 and possibly other ESP32 as well.
 
 The MCU running CircuitPython needs an UART-connection with the ESP32
-co-processor.
+co-processor. The Espressif documentation has detailed instructions
+for flashing the firmware and setting up the hardware connection.
 
 
 Software
-========
+--------
 
 The aim is that the modules from this repo will implement the
 communication with the co-processor in a transparent way for the
@@ -57,7 +68,7 @@ necessary:
 
 The `wifi`-module in this repo is a superset of the core wifi-API. The sample
 code above tests for the `at_version` attribute, which is not available in
-the core API.
+the core API so this code-snippet will also work with native wifi.
 
 For normal use, there is no need to use any of the additional methods
 of this module (besides `wifi.init()`). In fact, you should not use
@@ -68,10 +79,14 @@ with special AT-commands.
 
 
 Implementation Notes
-====================
+--------------------
 
 Most of the low-level AT command code was inspired and copied from
 <https://github.com/adafruit/Adafruit_CircuitPython_ESP_ATcontrol>. That
 code was initially developed for the ESP8266. The current code will
-probably not work with these devices anymore.
+probably not work with these old devices anymore.
 
+The AT command set does not support all features of the core wifi
+API. This is not a real drawback, since depending on the platform this
+is also true for native implementations. See the comments in the code
+for details.
