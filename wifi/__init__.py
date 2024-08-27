@@ -42,7 +42,7 @@ def init(uart: busio.UART,
          debug: bool = False,
          ) -> None:
   """ initialize wifi-hardware (i.e. the co-processor """
-  global at_version
+  global at_version # pylint: disable=invalid-name,global-statement
   transport.init(uart,at_timeout=at_timeout, at_retries=at_retries,
                  rts_pin=rts_pin,reset_pin=reset_pin,debug=debug)
   at_version = transport.at_version # pylint: disable=invalid-name

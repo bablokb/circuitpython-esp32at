@@ -24,7 +24,7 @@ from .network import Network
 from .authmode import AuthMode
 from .transport import Transport
 
-# pylint: disable=too-many-public-methods,unused-argument,no-self-use
+# pylint: disable=too-many-public-methods,unused-argument,no-self-use,anomalous-backslash-in-string
 class _Radio:
   """
   Native wifi radio.
@@ -36,13 +36,19 @@ class _Radio:
   radio = None
   """ the singleton instance"""
 
-  _CONNECT_ERORRS = {
+  _CONNECT_ERRORS = {
     "1": "connection timeout",
     "2": "wrong password",
     "3": "cannot find the target AP",
     "4": "connection failed"
     }
   """ error codes returned by CWJAP (connect to AP) """
+
+  _CONNECT_STATE_NOT_STARTED = 0
+  _CONNECT_STATE_NO_IP = 1
+  _CONNECT_STATE_CONNECTED = 2
+  _CONNECT_STATE_IN_PROGESS = 3
+  _CONNECT_STATE_DISCONNECTED = 4
 
   def __init__(self,transport: Transport) -> None:
     """ Constructor. """
@@ -85,7 +91,7 @@ class _Radio:
     """ Wifi transmission power, in dBm. """
     reply = self._transport.send_atcmd("AT+RFPOWER?",filter="^\+RFPOWER:")
     if reply:
-      return int(str(reply[9:],'utf-8').split(',')[0])*0.25
+      return int(str(reply[9:],'utf-8').split(',',maxsplit=1)[0])*0.25
     raise RuntimeError("Bad response to RFPOWER?")
 
   @tx_power.setter
@@ -166,6 +172,7 @@ class _Radio:
     """True if running as an access point. (read-only)"""
     return False
 
+  # pylint: disable=too-many-locals,unused-variable
   def connect(
     self,
     ssid: Union[str, circuitpython_typing.ReadableBuffer],
@@ -206,12 +213,11 @@ class _Radio:
       retries: retry connection in case of failure
       pci_en: 0|1 connect|don't connect in OPEN and WEP mode
       reconn_interval: interval between reconnections in seconds (def: 1)
-      listen_interval: the interval of listening to the AP’s beacon. Unit: AP beacon intervals. Default: 3. Range: [1,100].
+      listen_interval: the interval of listening to the AP’s beacon.
+                       Unit: AP beacon intervals. Default: 3. Range: [1,100].
       scan_mode: 0|1 fast scan|scan all channels for strongest signal
       pmf: protected management frames (for details, read the docs)
     """
-
-    # AT+CWJAP=[<ssid>],[<pwd>][,<bssid>][,<pci_en>][,<reconn_interval>][,<listen_interval>][,<scan_mode>][,<jap_timeout>][,<pmf>]
 
     if bssid is None:
       bssid = ""
@@ -229,23 +235,27 @@ class _Radio:
         timeout=timeout,
         filter="^WIFI GOT IP|^\+CWJAP:")
     except Exception as ex:
-      raise ConnectionError(f"{ex}")
+      raise ConnectionError(f"{ex}") from ex
 
     if not reply:
       raise ConnectionError("connection failed (no error code)")
-    elif b'CWJAP' in reply:
+    if b'CWJAP' in reply:
       code = str(reply[7:],'utf-8')
       if code in _Radio._CONNECT_ERRORS:
         reason = _Radio._CONNECT_ERRORS[code]
       else:
         reason = f"unknown error occured (code: {code})"
       raise ConnectionError("connection failed ({reason})")
-    return
 
   @property
   def connected(self) -> bool:
     """ True if connected to an access point (read-only). """
-    return False
+    reply = self._transport.send_atcmd(
+        "AT+CWSTATE?",filter="^\+CWSTATE:")
+    if reply:
+      state = int(str(reply[9:],'utf-8').split(',',maxsplit=1)[0])
+      return state == _Radio._CONNECT_STATE_CONNECTED
+    raise RuntimeError("Bad response to CWSTATE?")
 
   @property
   def ipv4_gateway(self) -> Union[ipaddress.IPv4Address, None]:

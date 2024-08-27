@@ -16,14 +16,14 @@
 
 """ class Transport. """
 
-import gc
 import time
-import busio
 import re
+
+import busio
 from digitalio import Direction, DigitalInOut
 
 try:
-  from typing import Optional, Dict, Union, List
+  from typing import Optional
 except ImportError:
   pass
 
@@ -48,14 +48,11 @@ class Transport:
   TYPE_SSL = "SSL"
   TLS_MODE = "SSL"
   STATUS_APCONNECTED = 2  # CIPSTATUS method
-  STATUS_WIFI_APCONNECTED = 2  # CWSTATE method
   STATUS_SOCKETOPEN = 3  # CIPSTATUS method
   STATUS_SOCKET_OPEN = 3  # CIPSTATE method
   STATUS_SOCKETCLOSED = 4  # CIPSTATUS method
   STATUS_SOCKET_CLOSED = 4  # CIPSTATE method
   STATUS_NOTCONNECTED = 5  # CIPSTATUS method
-  STATUS_WIFI_NOTCONNECTED = 1  # CWSTATE method
-  STATUS_WIFI_DISCONNECTED = 4  # CWSTATE method
 
   transport = None
   """ the singleton instance """
@@ -161,7 +158,8 @@ class Transport:
 
   # --- send command to the co-processor   -----------------------------------
 
-  def send_atcmd(self,
+  # pylint: disable=redefined-builtin,too-many-statements
+  def send_atcmd(self, # pylint: disable=too-many-branches
                  at_cmd: str,
                  timeout: float = -1,
                  retries: int = -1,
@@ -178,7 +176,6 @@ class Transport:
       retries = self._at_retries
 
     success = None
-    # pylint: disable=too-many-branches
     for _ in range(retries):
       self._hw_flow(True)  # allow any remaning data to stream in
       time.sleep(0.1)  # wait for uart data
@@ -223,13 +220,12 @@ class Transport:
       # special case, does return OK but in fact it is busy
       if (
           "AT+CIFSR" in at_cmd
-          and not b"busy" in raw_response
+          and b"busy" not in raw_response
           and raw_response[-4:] == b"OK\r\n"
       ):
         success = True
         break
-      else:
-        time.sleep(1)
+      time.sleep(1)
 
     # final processing
     if self._debug:
