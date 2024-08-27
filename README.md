@@ -24,7 +24,8 @@ Implement features:
 
   - co-processor initialization
   - `wifi.tx_power` (getter and setter)
-  - `wifi.connect`
+  - `wifi.connect()` and `wifi.connected`
+  - module `ipaddress` (not tested yet)
 
 
 Required Hardware
