@@ -91,7 +91,7 @@ class _Radio:
     """ Wifi transmission power, in dBm. """
     reply = self._transport.send_atcmd("AT+RFPOWER?",filter="^\+RFPOWER:")
     if reply:
-      return int(str(reply[9:],'utf-8').split(',',maxsplit=1)[0])*0.25
+      return int(str(reply[9:],'utf-8').split(',',1)[0])*0.25
     raise RuntimeError("Bad response to RFPOWER?")
 
   @tx_power.setter
@@ -253,7 +253,7 @@ class _Radio:
     reply = self._transport.send_atcmd(
         "AT+CWSTATE?",filter="^\+CWSTATE:")
     if reply:
-      state = int(str(reply[9:],'utf-8').split(',',maxsplit=1)[0])
+      state = int(str(reply[9:],'utf-8').split(',',1)[0])
       return state == _Radio._CONNECT_STATE_CONNECTED
     raise RuntimeError("Bad response to CWSTATE?")
 
@@ -409,15 +409,25 @@ class _Radio:
 
   def ping(
     self,
-    ip: ipaddress.IPv4Address, # pylint: disable=invalid-name
+    ip: Union[ipaddress.IPv4Address, str], # pylint: disable=invalid-name
     *,
     timeout: Union[float, None] = 0.5) -> Union[float, None]:
     """ Ping an IP to test connectivity. Returns echo time in
     seconds. Returns None when it times out.
+
+    Superset of parameters, specific to the ESP32 AT interface: the
+    methods not only accepts an IP-address, but also a hostname.
 
     Limitations: On Espressif, calling ping() multiple times rapidly
     exhausts available resources after several calls. Rather than
     failing at that point, ping() will wait two seconds for enough
     resources to be freed up before proceeding.
     """
-    return None
+
+    if not isinstance(ip,str):
+      ip = ip.as_string()
+    reply = self._transport.send_atcmd(
+      f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)
+    if reply:
+      return float(str(reply[6:],'utf-8'))
+    raise RuntimeError("Bad response to PING")
