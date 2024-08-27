@@ -4,7 +4,9 @@ circuitpython-esp32at
 **This is work in progress and not usable yet!**
 
 This is an implementation of a CircuitPython core-API compatible
-wifi-interface to ESP32C3/ESP32C6 co-processors using AT Commands.
+wifi-interface to ESP32C3/ESP32C6 co-processors using AT Commands. It
+is meant as a drop-in for CircuitPython builds without native wifi
+support.
 
 It provides the following modules:
 
@@ -20,12 +22,13 @@ CircuitPython build that has native wifi support.**
 Status
 ------
 
-Implement features:
+Implemented features:
 
   - co-processor initialization
-  - `wifi.tx_power` (getter and setter)
-  - `wifi.connect()` and `wifi.connected`
-  - module `ipaddress` (not tested yet)
+  - `wifi.radio.tx_power` (getter and setter)
+  - `wifi.radio.connect()` and `wifi.radio.connected`
+  - `wifi.radio.ping()`
+  - module `ipaddress`
 
 
 Required Hardware
@@ -40,6 +43,10 @@ should also work with the ESP32C6 and possibly other ESP32 as well.
 The MCU running CircuitPython needs an UART-connection with the ESP32
 co-processor. The Espressif documentation has detailed instructions
 for flashing the firmware and setting up the hardware connection.
+
+Note that both the ESP32C3 Qtpy as well as the ESP32C3-Super-Mini have
+badly designed on-board antennas. If they don't connect to your AP, try
+reducing the TX power.
 
 
 Software
