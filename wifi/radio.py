@@ -36,6 +36,14 @@ class _Radio:
   radio = None
   """ the singleton instance"""
 
+  _CONNECT_ERORRS = {
+    "1": "connection timeout",
+    "2": "wrong password",
+    "3": "cannot find the target AP",
+    "4": "connection failed"
+    }
+  """ error codes returned by CWJAP (connect to AP) """
+
   def __init__(self,transport: Transport) -> None:
     """ Constructor. """
     if _Radio.radio:
@@ -165,7 +173,13 @@ class _Radio:
     *,
     channel: int = 0,
     bssid: Union[str, circuitpython_typing.ReadableBuffer, None] = None,
-    timeout: Union[float, None] = None) -> None:
+    timeout: Union[float, None] = 15,
+    retries: int = 1,
+    pci_en: int = 0,
+    reconn_interval: int = 1,
+    listen_interval: int = 3,
+    scan_mode: int = 1,
+    pmf: int = 1) -> None:
 
     """
     Connects to the given ssid and waits for an ip
@@ -180,15 +194,52 @@ class _Radio:
     point (AP) with the given ssid and greatest signal strength
     (rssi).
 
-    If channel is non-zero, the scan will begin with the given channel
-    and connect to the first AP with the given ssid. This can speed up
-    the connection time significantly because a full scan doesn’t
-    occur.
+    The channel parameter is ignored.
+    (Note: this is different to core API standard behavior).
 
     If bssid is given and not None, the scan will start at the first
     channel or the one given and connect to the AP with the given
     bssid and ssid.
+
+    Superset of parameters, specific to the ESP32 AT interface:
+
+      retries: retry connection in case of failure
+      pci_en: 0|1 connect|don't connect in OPEN and WEP mode
+      reconn_interval: interval between reconnections in seconds (def: 1)
+      listen_interval: the interval of listening to the AP’s beacon. Unit: AP beacon intervals. Default: 3. Range: [1,100].
+      scan_mode: 0|1 fast scan|scan all channels for strongest signal
+      pmf: protected management frames (for details, read the docs)
     """
+
+    # AT+CWJAP=[<ssid>],[<pwd>][,<bssid>][,<pci_en>][,<reconn_interval>][,<listen_interval>][,<scan_mode>][,<jap_timeout>][,<pmf>]
+
+    if bssid is None:
+      bssid = ""
+    if timeout < 3:
+      timeout = 3
+    elif timeout > 600:
+      timeout = 600
+
+    cmd = f'AT+CWJAP="{ssid}","{password}",{bssid},{pci_en},{reconn_interval},'
+    cmd += f'{listen_interval},{scan_mode},{timeout},{pmf}'
+    try:
+      reply = self._transport.send_atcmd(
+        cmd,
+        retries=retries,
+        timeout=timeout,
+        filter="^WIFI GOT IP|^\+CWJAP:")
+    except Exception as ex:
+      raise ConnectionError(f"{ex}")
+
+    if not reply:
+      raise ConnectionError("connection failed (no error code)")
+    elif b'CWJAP' in reply:
+      code = str(reply[7:],'utf-8')
+      if code in _Radio._CONNECT_ERRORS:
+        reason = _Radio._CONNECT_ERRORS[code]
+      else:
+        reason = f"unknown error occured (code: {code})"
+      raise ConnectionError("connection failed ({reason})")
     return
 
   @property
