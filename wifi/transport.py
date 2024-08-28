@@ -204,7 +204,7 @@ class Transport:
         break
       # special case, ping also does not return an OK
       if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
-        success = True
+        success = False
         break
       # special case, does return OK but in fact it is busy
       if (
@@ -219,8 +219,10 @@ class Transport:
     # final processing
     if self._debug:
       print("<--- (raw)", raw_response)
-    if success is None or not success:
+    if success is None:
       raise TransportError(f"AT-command {at_cmd} failed")
+    elif not success:
+      return raw_response
 
     # split results by lines
     if filter:
