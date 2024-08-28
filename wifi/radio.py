@@ -55,8 +55,8 @@ class _Radio:
     if _Radio.radio:
       return
     self._transport = transport
+    self._scan_active = False
     self._hostname = ""
-    self._tx_power = 0
     self._mac_address = None
     self._mac_address_ap = None
     self._listen_interval = 100
@@ -125,11 +125,37 @@ class _Radio:
     """Scans for available wifi networks over the given channel range.
     Make sure the channels are allowed in your country.
     """
-    return []
+    if self._scan_active:
+      raise RuntimeError("scan already in progress")
+    self._scan_active = True
+    for channel in range(start_channel,stop_channel+1):
+      if not self._scan_active:
+        raise StopIteration
+      try:
+        replies = self._transport.send_atcmd(
+          f"AT+CWLAP=,,{channel}",filter="^\+CWLAP:",timeout=15)
+        if not replies:
+          continue
+        if isinstance(replies,bytes):
+          replies = [replies]
+        for line in replies:
+          info = line[8:].split(b',')
+          network = Network()
+          network.ssid = str(info[1],'utf-8')
+          network.bssid = info[3]
+          network.rssi = int(info[2])
+          network.channel = int(info[4])
+          network.country = ""
+          network.authmode = int(info[0])  # TODO: add mapping
+          yield network
+      except:
+        raise
 
   def stop_scanning_networks(self) -> None:
-    """Stop scanning for Wifi networks and free any resources used to do it."""
-    return
+    """Stop scanning for Wifi networks and free any resources used to
+    do it.
+    """
+    self._scan_active = False
 
   def start_station(self) -> None:
     """Starts a Station."""
