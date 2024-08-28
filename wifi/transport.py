@@ -65,7 +65,6 @@ class Transport:
     self._at_timeout = 1
     self._at_retries = 1
     self._reset_pin = None
-    self._rts_pin = None
     self._debug = None
     self._at_version = None
     Transport.transport = self
@@ -75,7 +74,6 @@ class Transport:
            *,
            at_timeout: Optional[float] = 1,
            at_retries: Optional[int] = 1,
-           rts_pin: Optional[DigitalInOut] = None,
            reset_pin: Optional[DigitalInOut] = None,
            debug: bool = False,
            ):
@@ -85,15 +83,11 @@ class Transport:
     self._at_timeout = at_timeout
     self._at_retries = at_retries
     self._reset_pin = reset_pin
-    self._rts_pin = rts_pin
     self._debug = debug
 
     if self._reset_pin:
       self._reset_pin.direction = Direction.OUTPUT
       self._reset_pin.value = True
-    if self._rts_pin:
-      self._rts_pin.direction = Direction.OUTPUT
-      self._hw_flow(True)
 
     # try to connect with the ESP32xx co-processor
     for _ in range(3):
@@ -177,10 +171,8 @@ class Transport:
 
     success = None
     for _ in range(retries):
-      self._hw_flow(True)  # allow any remaning data to stream in
       time.sleep(0.1)  # wait for uart data
       self._uart.reset_input_buffer()  # flush it
-      self._hw_flow(False)  # and shut off flow control again
       if self._debug:
         print("--->", at_cmd)
       self._uart.write(bytes(at_cmd, "utf-8"))
@@ -190,7 +182,6 @@ class Transport:
       while (time.monotonic() - stamp) < timeout:
         if self._uart.in_waiting:
           raw_response += self._uart.read(1)
-          self._hw_flow(False)
           if raw_response[-4:] == b"OK\r\n":
             success = True
             break
@@ -204,8 +195,6 @@ class Transport:
           if b"ERR CODE:" in raw_response:
             success = False
             break
-        else:
-          self._hw_flow(True)
 
       if success is not None:
         break
@@ -248,11 +237,6 @@ class Transport:
     return response
 
   # --- hardware tweaks   ----------------------------------------------------
-
-  def _hw_flow(self, flag: bool) -> None:
-    """Turn on HW flow control (if available) on to allow data, or off to stop"""
-    if self._rts_pin:
-      self._rts_pin.value = not flag
 
   def _echo(self, echo: bool) -> None:
     """Set AT command echo on or off"""
