@@ -239,7 +239,7 @@ class Transport:
       response = [r for r in response if re.match(filter,r)]
       if len(response) == 0:
         response = None
-      if len(response) == 1:
+      elif len(response) == 1:
         response = response[0]
     else:
       response = raw_response
