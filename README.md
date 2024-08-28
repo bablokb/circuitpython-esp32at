@@ -25,6 +25,7 @@ Status
 Implemented features:
 
   - co-processor initialization
+  - network scanning (`wifi.radio.start_scanning_networks()`)
   - `wifi.radio.enabled` (getter and setter)
   - `wifi.radio.tx_power` (getter and setter)
   - `wifi.radio.connect()` and `wifi.radio.connected`
