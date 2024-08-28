@@ -25,6 +25,7 @@ Status
 Implemented features:
 
   - co-processor initialization
+  - `wifi.radio.enabled` (getter and setter)
   - `wifi.radio.tx_power` (getter and setter)
   - `wifi.radio.connect()` and `wifi.radio.connected`
   - `wifi.radio.ping()`
