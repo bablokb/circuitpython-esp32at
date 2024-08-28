@@ -2,6 +2,8 @@
 # Class ScannedNetworks. This class tries to mimic the class wifi.ScannedNetworks
 # of core CircuitPython.
 #
+# This class is not used by this implementation.
+#
 # Don't use this class directly.
 #
 # Author: Bernhard Bablok
