@@ -56,8 +56,6 @@ class _Radio:
       return
     self._transport = transport
     self._scan_active = False
-    self._hostname = ""
-    self._mac_address = None
     self._mac_address_ap = None
     self._listen_interval = 100
     _Radio.radio = self
@@ -86,12 +84,20 @@ class _Radio:
   @property
   def hostname(self) -> str:
     """ return the hostname from the wifi interface """
-    return self._hostname
+    reply = self._transport.send_atcmd(
+      'AT+CWHOSTNAME?',filter="^\+CWHOSTNAME:")
+    if reply is None:
+      raise RuntimeError("could not query hostname")
+    return str(reply[12:],'utf-8')
 
   @property
   def mac_address(self) -> circuitpython_typing.ReadableBuffer:
     """ MAC address for the station."""
-    return self._mac_address
+    reply = self._transport.send_atcmd(
+      'AT+CIPSTAMAC?',filter="^\+CIPSTAMAC:")
+    if reply is None:
+      raise RuntimeError("could not query MAC-address")
+    return reply[11:]
 
   @property
   def tx_power(self) -> float:
