@@ -28,6 +28,8 @@ Implemented features:
   - network scanning (`wifi.radio.start_scanning_networks()`)
   - `wifi.radio.enabled` (getter and setter)
   - `wifi.radio.tx_power` (getter and setter)
+  - `wifi.radio.ipv4_*`-properties
+  - `wifi.radio.mac_address`-property
   - `wifi.radio.connect()` and `wifi.radio.connected`
   - `wifi.radio.ping()`
   - module `ipaddress`
