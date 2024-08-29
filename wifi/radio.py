@@ -146,7 +146,7 @@ class _Radio:
           network.rssi = int(info[2])
           network.channel = int(info[4])
           network.country = ""
-          network.authmode = int(info[0])  # TODO: add mapping
+          network.authmode = AuthMode.MODE_MAP[int(info[0])]
           yield network
       except:
         raise
@@ -159,10 +159,18 @@ class _Radio:
 
   def start_station(self) -> None:
     """Starts a Station."""
+    reply = self._transport.send_atcmd(
+      f'AT+CWMODE=1',filter="^OK",timeout=5)
+    if not reply:
+      raise RuntimeError("Could not switch to station-mode")
     return
 
   def stop_station(self) -> None:
-    """Stopts the Station."""
+    """Stopts the Station. This will also disable WIFI."""
+    reply = self._transport.send_atcmd(
+      f'AT+CWMODE=0',filter="^OK",timeout=5)
+    if not reply:
+      raise RuntimeError("Could not stop station-mode")
     return
 
   def start_ap(
@@ -198,6 +206,10 @@ class _Radio:
 
   def stop_ap(self) -> None:
     """Stops the access point."""
+    reply = self._transport.send_atcmd(
+      f'AT+CWMODE=0',filter="^OK",timeout=5)
+    if not reply:
+      raise RuntimeError("Could not stop AP-mode")
     return
 
   @property
