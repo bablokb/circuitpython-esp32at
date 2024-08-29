@@ -56,6 +56,10 @@ class _Radio:
       return
     self._transport = transport
     self._scan_active = False
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
+
     self._mac_address_ap = None
     self._listen_interval = 100
     _Radio.radio = self
@@ -80,6 +84,10 @@ class _Radio:
       f'AT+CWINIT={init}',filter="^OK")
     if not reply:
       raise RuntimeError("Could not change radio state")
+    if not value:
+      self._ipv4_address = None
+      self._ipv4_gateway = None
+      self._ipv4_netmask = None
 
   @property
   def hostname(self) -> str:
@@ -97,7 +105,7 @@ class _Radio:
       'AT+CIPSTAMAC?',filter="^\+CIPSTAMAC:")
     if reply is None:
       raise RuntimeError("could not query MAC-address")
-    return reply[11:]
+    return reply[12:-1]
 
   @property
   def tx_power(self) -> float:
@@ -177,6 +185,11 @@ class _Radio:
       f'AT+CWMODE=0',filter="^OK",timeout=5)
     if not reply:
       raise RuntimeError("Could not stop station-mode")
+
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
     return
 
   def start_ap(
@@ -208,6 +221,10 @@ class _Radio:
     If max_connections is given, the access point will allow up to
     that number of stations to connect.
     """
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
     return
 
   def stop_ap(self) -> None:
@@ -216,6 +233,10 @@ class _Radio:
       f'AT+CWMODE=0',filter="^OK",timeout=5)
     if not reply:
       raise RuntimeError("Could not stop AP-mode")
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
     return
 
   @property
@@ -288,6 +309,11 @@ class _Radio:
     except Exception as ex:
       raise ConnectionError(f"{ex}") from ex
 
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
+
     if not reply:
       raise ConnectionError("connection failed (no error code)")
     if b'CWJAP' in reply:
@@ -312,7 +338,10 @@ class _Radio:
   def ipv4_gateway(self) -> Union[ipaddress.IPv4Address, None]:
     """ IP v4 Address of the station gateway when connected to an
     access point. None otherwise. (read-only) """
-    return None
+    if self._ipv4_gateway:
+      return self._ipv4_gateway
+    self.ipv4_address
+    return self._ipv4_gateway
 
   @property
   def ipv4_gateway_ap(self) -> Union[ipaddress.IPv4Address, None]:
@@ -324,7 +353,10 @@ class _Radio:
   def ipv4_subnet(self) -> Union[ipaddress.IPv4Address, None]:
     """ IP v4 Address of the station subnet when connected to an
     access point. None otherwise. (read-only) """
-    return None
+    if self._ipv4_netmask:
+      return self._ipv4_netmask
+    self.ipv4_address
+    return self._ipv4_netmask
 
   @property
   def ipv4_subnet_ap(self) -> Union[ipaddress.IPv4Address, None]:
@@ -337,7 +369,24 @@ class _Radio:
     """ IP v4 Address of the station when connected to an access
     point. None otherwise. (read-only)
     """
-    return None
+    # check for buffered info
+    if self._ipv4_address:
+      return self._ipv4_address
+    replies = self._transport.send_atcmd(f"AT+CIPSTA?",filter="^\+CIPSTA:")
+    if not replies:
+      return None
+    for line in replies:
+      key, value = line[8:].split(b':',1)
+      value = str(value,'utf-8').strip('"')
+      if value == "0.0.0.0":
+        continue
+      if key == b"ip":
+        self._ipv4_address = ipaddress.ip_address(value)
+      elif key == b"gateway":
+        self._ipv4_gateway = ipaddress.ip_address(value)
+      elif key == b"netmask":
+        self._ipv4_netmask = ipaddress.ip_address(value)
+    return self._ipv4_address
 
   @ipv4_address.setter
   def ipv4_address(
@@ -480,5 +529,8 @@ class _Radio:
     reply = self._transport.send_atcmd(
       f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)
     if reply:
-      return float(str(reply[6:],'utf-8'))
+      try:
+        return float(str(reply[6:],'utf-8'))
+      except Exception as ex:
+        raise RuntimeError(f"illegal format: {str(reply[6:],'utf-8')}") from ex
     raise RuntimeError("Bad response to PING")
