@@ -61,7 +61,6 @@ class _Radio:
     self._ipv4_netmask = None
 
     self._mac_address_ap = None
-    self._listen_interval = 100
     _Radio.radio = self
 
   @property
@@ -126,7 +125,10 @@ class _Radio:
     """Wifi power save listen interval, in DTIM periods,
     or 100ms intervals if TWT is supported.
     """
-    return self._listen_interval
+    reply = self._transport.send_atcmd("AT+CWJAP?",filter="^\+CWJAP:")
+    if reply:
+      return int(str(reply[7:],'utf-8').split(',')[6])
+    raise RuntimeError("Could not query listen-interval. Not connected?")
 
   @property
   def mac_address_ap(self) -> circuitpython_typing.ReadableBuffer:
