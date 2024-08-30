@@ -26,12 +26,16 @@ Implemented features:
 
   - co-processor initialization
   - network scanning (`wifi.radio.start_scanning_networks()`)
-  - `wifi.radio.enabled` (getter and setter)
-  - `wifi.radio.tx_power` (getter and setter)
-  - `wifi.radio.ipv4_*`-properties
-  - `wifi.radio.mac_address`-property
-  - `wifi.radio.connect()` and `wifi.radio.connected`
-  - `wifi.radio.ping()`
+  - connecting (`wifi.radio.connect()` and `wifi.radio.connected`)
+  - pinging (`wifi.radio.ping()`)
+  - station properties
+    - `wifi.radio.enabled` (getter and setter)
+    - `wifi.radio.tx_power` (getter and setter)
+    - `wifi.radio.ipv4_*`-properties
+    - `wifi.radio.dns`-property
+    - `wifi.radio.addresses`-property
+    - `wifi.radio.mac_address`-property
+    - `wifi.radio.listen_interval`-property
   - module `ipaddress`
 
 
