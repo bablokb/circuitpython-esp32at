@@ -411,7 +411,7 @@ class _Radio:
     """ Address(es) of the station when connected to an access
     point. Empty sequence when not connected. (read-only)
     """
-    return []
+    return [self.ipv4_address] if self.ipv4_address else []
 
   @property
   def ipv4_address_ap(self) -> Union[ipaddress.IPv4Address, None]:
