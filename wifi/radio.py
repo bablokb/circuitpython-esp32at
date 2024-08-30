@@ -539,6 +539,8 @@ class _Radio:
     reply = self._transport.send_atcmd(
       f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)
     if reply:
+      if b'TIMEOUT' in reply:
+        return None
       try:
         return float(str(reply[6:],'utf-8'))
       except Exception as ex:
