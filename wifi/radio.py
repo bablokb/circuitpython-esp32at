@@ -442,6 +442,10 @@ class _Radio:
   @property
   def ipv4_dns(self) -> ipaddress.IPv4Address:
     """ IP v4 Address of the DNS server to be used. """
+    reply = self._transport.send_atcmd("AT+CIPDNS?",filter="^\+CIPDNS:")
+    if reply:
+      dns = str(reply[8:],'utf-8').split(',')[1].strip('"')
+      return ipaddress.ip_address(dns)
     return None
 
   @ipv4_dns.setter
@@ -452,6 +456,10 @@ class _Radio:
   @property
   def dns(self) -> Sequence[str]:
     """ Addresses of the DNS server to be used. """
+    reply = self._transport.send_atcmd("AT+CIPDNS?",filter="^\+CIPDNS:")
+    if reply:
+      dns = str(reply[8:],'utf-8').split(',')[1:]
+      return [d.strip('"') for d in dns]
     return []
 
   @dns.setter
