@@ -499,23 +499,35 @@ class _Radio:
     False then the corresponding DHCP client is stopped if it was
     active.
     """
-    return None
+    reply = self._transport.send_atcmd(
+      f'AT+CWDHCP=1,1',filter="^OK")
+    if not reply:
+      raise RuntimeError("Could not start DHCP")
 
   def stop_dhcp(self) -> None:
     """ Stops the station DHCP client. Needed to assign a static IP
     address.
     """
-    return None
+    reply = self._transport.send_atcmd(
+      f'AT+CWDHCP=0,1',filter="^OK")
+    if not reply:
+      raise RuntimeError("Could not stop DHCP")
 
   def start_dhcp_ap(self) -> None:
     """ Starts the access point DHCP server. """
-    return None
+    reply = self._transport.send_atcmd(
+      f'AT+CWDHCP=1,2',filter="^OK")
+    if not reply:
+      raise RuntimeError("Could not start DHCP (AP)")
 
   def stop_dhcp_ap(self) -> None:
     """ Stops the access point DHCP server. Needed to assign a static
     IP address.
     """
-    return None
+    reply = self._transport.send_atcmd(
+      f'AT+CWDHCP=0,2',filter="^OK")
+    if not reply:
+      raise RuntimeError("Could not stop DHCP (AP)")
 
   def ping(
     self,
