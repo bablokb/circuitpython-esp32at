@@ -97,6 +97,14 @@ class _Radio:
       raise RuntimeError("could not query hostname")
     return str(reply[12:],'utf-8')
 
+  @hostname.setter
+  def hostname(self, name: str) -> None:
+    """ configure the hostname """
+    reply = self._transport.send_atcmd(
+      f'AT+CWHOSTNAME="{name}"',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set hostname (station-mode not active?)")
+
   @property
   def mac_address(self) -> circuitpython_typing.ReadableBuffer:
     """ MAC address for the station."""
