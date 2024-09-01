@@ -134,9 +134,8 @@ class Transport:
       pass  # fail, see below
     return False
 
-  def factory_reset(self) -> None:
-    """Perform a hard reset, then send factory restore settings request"""
-    self.hard_reset()
+  def restore_factory_settings(self) -> None:
+    """Send factory restore settings request"""
     self.send_atcmd("AT+RESTORE", timeout=5)
 
   def hard_reset(self) -> None:
