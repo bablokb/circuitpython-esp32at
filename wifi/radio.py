@@ -59,7 +59,7 @@ class _Radio:
     self._ipv4_address = None
     self._ipv4_gateway = None
     self._ipv4_netmask = None
-
+    self._ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
     self._mac_address_ap = None
     _Radio.radio = self
 
@@ -398,8 +398,7 @@ class _Radio:
         self._ipv4_netmask = ipaddress.ip_address(value)
     return self._ipv4_address
 
-  @ipv4_address.setter
-  def ipv4_address(
+  def set_ipv4_address(
     self,*,
     ipv4: ipaddress.IPv4Address,
     netmask: ipaddress.IPv4Address,
@@ -414,7 +413,15 @@ class _Radio:
     In the raspberrypi port (RP2040 CYW43), the access point needs to
     be started before the IP v4 address can be set.
     """
-    return
+    ipv4 = ipv4.as_string()
+    netmask = netmask.as_string()
+    gateway = gateway.as_string()
+    reply = self._transport.send_atcmd(
+      f'AT+CIPSTA="{ipv4}","{gateway}","{netmask}"',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set static IP-configuration")
+    if ipv4_dns:
+      self.ipv4_dns = ipv4_dns
 
   @property
   def addresses(self) -> Sequence[str]:
@@ -459,7 +466,7 @@ class _Radio:
   @ipv4_dns.setter
   def ipv4_dns(self,value: ipaddress.IPv4Address) -> None:
     """ IP v4 Address of the DNS server to be used. """
-    return None
+    self.dns = [value.as_string(), self._ipv4_dns_defaults[0]]
 
   @property
   def dns(self) -> Sequence[str]:
@@ -473,7 +480,14 @@ class _Radio:
   @dns.setter
   def dns(self,addresses: Sequence[str]) -> None:
     """ Addresses of the DNS server to be used. """
-    return None
+    args = '1'   # enable manual DNS
+    for addr in addresses:
+      args += f',"{addr}"'
+    if len(addresses) < 2:
+      args += f',"{self._ipv4_dns_defaults[0]}"'
+    reply = self._transport.send_atcmd(f"AT+CIPDNS={args}",filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set static IPv4-DNS")
 
   @property
   def ap_info(self) -> Union[Network, None]:
