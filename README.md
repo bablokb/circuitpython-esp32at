@@ -28,14 +28,7 @@ Implemented features:
   - network scanning (`wifi.radio.start_scanning_networks()`)
   - connecting (`wifi.radio.connect()` and `wifi.radio.connected`)
   - pinging (`wifi.radio.ping()`)
-  - station properties
-    - `wifi.radio.enabled` (getter and setter)
-    - `wifi.radio.tx_power` (getter and setter)
-    - `wifi.radio.ipv4_*`-properties
-    - `wifi.radio.dns`-property
-    - `wifi.radio.addresses`-property
-    - `wifi.radio.mac_address`-property
-    - `wifi.radio.listen_interval`-property
+  - all `wifi.radio` station-methods and properties
   - module `ipaddress`
 
 
