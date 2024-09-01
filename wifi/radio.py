@@ -382,7 +382,8 @@ class _Radio:
     # check for buffered info
     if self._ipv4_address:
       return self._ipv4_address
-    replies = self._transport.send_atcmd(f"AT+CIPSTA?",filter="^\+CIPSTA:")
+    replies = self._transport.send_atcmd(
+      f"AT+CIPSTA?",filter="^\+CIPSTA:",timeout=5)
     if not replies:
       return None
     for line in replies:
@@ -420,6 +421,12 @@ class _Radio:
       f'AT+CIPSTA="{ipv4}","{gateway}","{netmask}"',filter="^OK")
     if reply is None:
       raise RuntimeError("could not set static IP-configuration")
+
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
+
     if ipv4_dns:
       self.ipv4_dns = ipv4_dns
 
@@ -525,6 +532,10 @@ class _Radio:
       f'AT+CWDHCP=1,1',filter="^OK")
     if not reply:
       raise RuntimeError("Could not start DHCP")
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
 
   def stop_dhcp(self) -> None:
     """ Stops the station DHCP client. Needed to assign a static IP
@@ -534,6 +545,10 @@ class _Radio:
       f'AT+CWDHCP=0,1',filter="^OK")
     if not reply:
       raise RuntimeError("Could not stop DHCP")
+    # clear buffered values
+    self._ipv4_address = None
+    self._ipv4_gateway = None
+    self._ipv4_netmask = None
 
   def start_dhcp_ap(self) -> None:
     """ Starts the access point DHCP server. """
