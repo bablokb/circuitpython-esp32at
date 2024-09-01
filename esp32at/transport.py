@@ -168,7 +168,7 @@ class Transport:
     if retries < 0:
       retries = self._at_retries
 
-    success = None
+    finished = False
     for _ in range(retries):
       time.sleep(0.1)  # wait for uart data
       self._uart.reset_input_buffer()  # flush it
@@ -182,28 +182,28 @@ class Transport:
         if self._uart.in_waiting:
           raw_response += self._uart.read(1)
           if raw_response[-4:] == b"OK\r\n":
-            success = True
+            finished = True
             break
           if raw_response[-7:] == b"ERROR\r\n":
-            success = False
+            finished = True
             break
           if "AT+CWJAP=" in at_cmd or "AT+CWJEAP=" in at_cmd:
             if b"WIFI GOT IP\r\n" in raw_response:
-              success = True
+              finished = True
               break
           if b"ERR CODE:" in raw_response:
-            success = False
+            finished = True
             break
 
-      if success is not None:
+      if finished:
         break
       # special case, AT+CWJAP= does not return an ok :P
       if "AT+CWQAP=" in at_cmd and b"WIFI DISCONNECT" in raw_response:
-        success = True
+        finished = True
         break
-      # special case, ping also does not return an OK
+      # special case, ping also does not return an OK on timeout
       if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
-        success = False
+        finished = True
         break
       # special case, does return OK but in fact it is busy
       if (
@@ -211,17 +211,15 @@ class Transport:
           and b"busy" not in raw_response
           and raw_response[-4:] == b"OK\r\n"
       ):
-        success = True
+        finished = True
         break
       time.sleep(1)
 
     # final processing
     if self._debug:
       print("<--- (raw)", raw_response)
-    if success is None:
+    if not finished:
       raise TransportError(f"AT-command {at_cmd} failed")
-    elif not success:
-      return raw_response
 
     # split results by lines
     if filter:
