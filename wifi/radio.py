@@ -570,13 +570,16 @@ class _Radio:
 
     if not isinstance(ip,str):
       ip = ip.as_string()
-    reply = self._transport.send_atcmd(
-      f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)
-    if reply:
-      if b'TIMEOUT' in reply:
-        return None
-      try:
-        return float(str(reply[6:],'utf-8'))
-      except Exception as ex:
-        raise RuntimeError(f"illegal format: {str(reply[6:],'utf-8')}") from ex
-    raise RuntimeError("Bad response to PING")
+    try:
+      reply = self._transport.send_atcmd(
+        f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)
+      if reply:
+        if b'TIMEOUT' in reply:
+          return None
+        try:
+          return float(str(reply[6:],'utf-8'))
+        except Exception as ex:
+          raise RuntimeError(f"illegal format: {str(reply[6:],'utf-8')}") from ex
+      return None
+    except:
+      return None
