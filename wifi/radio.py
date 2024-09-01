@@ -22,7 +22,7 @@ except ImportError:
 import ipaddress
 from .network import Network
 from .authmode import AuthMode
-from .transport import Transport
+from esp32at.transport import Transport
 
 # pylint: disable=too-many-public-methods,unused-argument,no-self-use,anomalous-backslash-in-string
 class _Radio:

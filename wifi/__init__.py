@@ -22,7 +22,7 @@ from .authmode import AuthMode
 from .network import Network
 from .packet import Packet
 from .monitor import Monitor
-from .transport import Transport
+from esp32at.transport import Transport
 
 try:
   from typing import Optional
