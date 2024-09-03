@@ -94,15 +94,8 @@ Experts can use `wifi.transport` to directly access the co-processor
 with special AT-commands.
 
 
-Implementation Notes
---------------------
+Additional Information
+----------------------
 
-Most of the low-level AT command code was inspired and copied from
-<https://github.com/adafruit/Adafruit_CircuitPython_ESP_ATcontrol>. That
-code was initially developed for the ESP8266. The current code will
-probably not work with these old devices anymore.
-
-The AT command set does not support all features of the core wifi
-API. This is not a real drawback, since depending on the platform this
-is also true for native implementations. See the comments in the code
-for details.
+See [Implementation Notes](./impl_notes.md) for technical information
+regarding the interface code.
