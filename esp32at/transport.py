@@ -74,6 +74,7 @@ class Transport:
            *,
            at_timeout: Optional[float] = 1,
            at_retries: Optional[int] = 1,
+           reset: Optional[bool] = False,
            reset_pin: Optional[DigitalInOut] = None,
            factory_restore: Optional[bool] = False,
            persist_settings: Optional[bool] = False,
@@ -91,6 +92,11 @@ class Transport:
     if self._reset_pin:
       self._reset_pin.direction = Direction.OUTPUT
       self._reset_pin.value = True
+
+    # check if a reset is requested
+    if reset:
+      self.hard_reset()
+      self.soft_reset()
 
     # try to connect with the ESP32xx co-processor
     for _ in range(3):
@@ -131,11 +137,10 @@ class Transport:
     if we successfully performed, false if failed to reset"""
     try:
       reply = self.send_atcmd("AT+RST", timeout=timeout)
-      if reply == b'OK':
-        return True
+      self._uart.reset_input_buffer()
+      return reply == b'OK'
     except TransportError:
-      pass  # fail, see below
-    return False
+      return False
 
   def restore_factory_settings(self) -> None:
     """Send factory restore settings request"""
