@@ -75,6 +75,9 @@ class Transport:
            at_timeout: Optional[float] = 1,
            at_retries: Optional[int] = 1,
            reset_pin: Optional[DigitalInOut] = None,
+           factory_restore: Optional[bool] = False,
+           persist_settings: Optional[bool] = False,
+           autoconnect: Optional[bool] = False,
            debug: bool = False,
            ):
     """ initialize hardware, and query AT firmware version """
