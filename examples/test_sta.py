@@ -240,6 +240,7 @@ if hasattr(wifi,"at_version"):
   if not wifi.at_version:
     raise RuntimeError("could not setup co-processor")
   print(wifi.at_version)
+  wifi.radio.start_station()
 
 set_tx_power()
 scan()

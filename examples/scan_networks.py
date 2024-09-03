@@ -27,7 +27,10 @@ except ImportError:
 if hasattr(wifi,"at_version"):
   uart = busio.UART(PIN_TX, PIN_RX, baudrate=115200, receiver_buffer_size=2048)
   wifi.init(uart,debug=DEBUG,at_timeout=0.5)
+  if not wifi.at_version:
+    raise RuntimeError("could not setup co-processor")
   print(wifi.at_version)
+  wifi.radio.start_station()
 
 # --- set TX power if requested   --------------------------------------------
 

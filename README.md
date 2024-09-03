@@ -78,7 +78,9 @@ necessary:
       uart = busio.UART(PIN_TX, 
                         PIN_RX, baudrate=115200, receiver_buffer_size=2048)
       wifi.init(uart,debug=DEBUG)
-      print(f"AT version: {wifi.at_version}")
+      if wifi.at_version:
+        print(f"AT version: {wifi.at_version}")
+        wifi.radio.start_station()
 
     # use the normal core API
 
