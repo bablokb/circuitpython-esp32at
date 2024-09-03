@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Class _Radio. This class tries to mimic the class wifi.Radio
+# Class Radio. This class tries to mimic the class wifi.Radio
 # of core CircuitPython.
 #
 # Don't use this class directly, use wifi.radio instead.
@@ -11,7 +11,7 @@
 #
 # -------------------------------------------------------------------------
 
-""" class _Radio. """
+""" class Radio. """
 
 try:
   from typing import Union, Sequence, Iterable
@@ -25,7 +25,7 @@ from .authmode import AuthMode
 from esp32at.transport import Transport
 
 # pylint: disable=too-many-public-methods,unused-argument,no-self-use,anomalous-backslash-in-string
-class _Radio:
+class Radio:
   """
   Native wifi radio.
 
@@ -52,7 +52,7 @@ class _Radio:
 
   def __init__(self,transport: Transport) -> None:
     """ Constructor. """
-    if _Radio.radio:
+    if Radio.radio:
       return
     self._transport = transport
     self._scan_active = False
@@ -61,7 +61,7 @@ class _Radio:
     self._ipv4_netmask = None
     self._ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
     self._mac_address_ap = None
-    _Radio.radio = self
+    Radio.radio = self
 
   @property
   def enabled(self) -> bool:
@@ -328,8 +328,8 @@ class _Radio:
       raise ConnectionError("connection failed (no error code)")
     if b'CWJAP' in reply:
       code = str(reply[7:],'utf-8')
-      if code in _Radio._CONNECT_ERRORS:
-        reason = _Radio._CONNECT_ERRORS[code]
+      if code in Radio._CONNECT_ERRORS:
+        reason = Radio._CONNECT_ERRORS[code]
       else:
         reason = f"unknown error occured (code: {code})"
       raise ConnectionError("connection failed ({reason})")
@@ -341,7 +341,7 @@ class _Radio:
         "AT+CWSTATE?",filter="^\+CWSTATE:")
     if reply:
       state = int(str(reply[9:],'utf-8').split(',',1)[0])
-      return state == _Radio._CONNECT_STATE_CONNECTED
+      return state == Radio._CONNECT_STATE_CONNECTED
     raise RuntimeError("Bad response to CWSTATE?")
 
   @property

@@ -17,7 +17,7 @@ CircuitPython.
 import busio
 from digitalio import Direction, DigitalInOut
 
-from .radio import _Radio
+from .radio import Radio
 from .authmode import AuthMode
 from .network import Network
 from .packet import Packet
@@ -30,7 +30,7 @@ except ImportError:
   pass
 
 transport = Transport()
-radio = _Radio(transport)
+radio = Radio(transport)
 at_version = None # pylint: disable=invalid-name
 
 def init(uart: busio.UART,
