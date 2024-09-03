@@ -1,7 +1,7 @@
 circuitpython-esp32at
 =====================
 
-**This is work in progress and not usable yet!**
+**This is work in progress and only partially usable yet!**
 
 This is an implementation of a CircuitPython core-API compatible
 wifi-interface to ESP32C3/ESP32C6 co-processors using AT Commands. It
@@ -13,7 +13,7 @@ It provides the following modules:
   - `wifi`
   - `ipaddress`
   - `socketpool`
-  - `ssl (??)`
+  - `ssl`
 
 **Do not install the modules from this repository if you are using a
 CircuitPython build that has native wifi support.**
@@ -30,6 +30,13 @@ Implemented features:
   - pinging (`wifi.radio.ping()`)
   - all `wifi.radio` station-methods and properties
   - module `ipaddress`
+
+Roadmap:
+
+  - implement `ssl` and `socketpool`: full TCP/IP client functions
+    available
+  - implement TCP/IP server functions
+  - implement `wifi.radio` AP-methods
 
 
 Required Hardware
