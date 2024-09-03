@@ -50,6 +50,12 @@ class Radio:
   _CONNECT_STATE_IN_PROGESS = 3
   _CONNECT_STATE_DISCONNECTED = 4
 
+  def __new__(cls,transport: Transport):
+    if Radio.radio:
+      return Radio.radio
+    else:
+      return super(Radio,cls).__new__(cls)
+
   def __init__(self,transport: Transport) -> None:
     """ Constructor. """
     if Radio.radio:

@@ -57,6 +57,12 @@ class Transport:
   transport = None
   """ the singleton instance """
 
+  def __new__(cls):
+    if Transport.transport:
+      return Transport.transport
+    else:
+      return super(Transport,cls).__new__(cls)
+
   def __init__(self):
     """ Do nothing constructor. Use init() for hardware-setup """
     if Transport.transport:
