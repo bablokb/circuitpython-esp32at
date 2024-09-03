@@ -35,13 +35,13 @@ at_version = None # pylint: disable=invalid-name
 
 def init(uart: busio.UART,
          *,
-         at_timeout: Optional[float] = 1,
-         at_retries: Optional[int] = 1,
-         reset_pin: Optional[DigitalInOut] = None,
-         debug: bool = False,
+         ipv4_dns_defaults: Optional[Sequence[str]] = [],
+         **kwargs,
          ) -> None:
   """ initialize wifi-hardware (i.e. the co-processor """
-  global at_version # pylint: disable=invalid-name,global-statement
-  transport.init(uart,at_timeout=at_timeout, at_retries=at_retries,
-                 reset_pin=reset_pin,debug=debug)
+  global at_version, radio # pylint: disable=invalid-name,global-statement
+
+  if len(ipv4_dns_defaults):
+    radio.ipv4_dns_defaults = ipv4_dns_defaults
+  transport.init(uart,**kwargs)
   at_version = transport.at_version # pylint: disable=invalid-name

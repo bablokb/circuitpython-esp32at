@@ -59,9 +59,9 @@ class Radio:
     self._ipv4_address = None
     self._ipv4_gateway = None
     self._ipv4_netmask = None
-    self._ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
     self._mac_address_ap = None
     Radio.radio = self
+    self.ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
 
   @property
   def enabled(self) -> bool:
@@ -473,7 +473,7 @@ class Radio:
   @ipv4_dns.setter
   def ipv4_dns(self,value: ipaddress.IPv4Address) -> None:
     """ IP v4 Address of the DNS server to be used. """
-    self.dns = [value.as_string(), self._ipv4_dns_defaults[0]]
+    self.dns = [value.as_string(), self.ipv4_dns_defaults[0]]
 
   @property
   def dns(self) -> Sequence[str]:
@@ -491,7 +491,7 @@ class Radio:
     for addr in addresses:
       args += f',"{addr}"'
     if len(addresses) < 2:
-      args += f',"{self._ipv4_dns_defaults[0]}"'
+      args += f',"{self.ipv4_dns_defaults[0]}"'
     reply = self._transport.send_atcmd(f"AT+CIPDNS={args}",filter="^OK")
     if reply is None:
       raise RuntimeError("could not set static IPv4-DNS")
