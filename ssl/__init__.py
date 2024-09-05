@@ -22,4 +22,4 @@ from .sslsocket  import SSLSocket
 
 def create_default_context() -> SSLContext:
   """ Return the default SSLContext. """
-  return None
+  return SSLContext()

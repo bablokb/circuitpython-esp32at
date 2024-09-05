@@ -2,6 +2,8 @@
 # Class SSLSocket. This class tries to mimic the class ssl.SSLSocket
 # of core CircuitPython.
 #
+# This is currently just a wrapper for SocketPool.Socket
+#
 # Author: Bernhard Bablok
 # License: MIT
 #
@@ -12,7 +14,7 @@
 """ class SSLSocket. """
 
 try:
-  import circuitpython_typing
+  from circuitpython_typing.socket import CircuitPythonSocketType
   from typing import Union, Tuple
 except ImportError:
   pass
@@ -28,18 +30,34 @@ class SSLSocket:
   objects.
   """
 
-  def __hash__(self) -> int:
-    """ Returns a hash for the Socket. """
+  # pylint: disable=too-many-instance-attributes
+  def __init__(self, socket: CircuitPythonSocketType,
+               server_side: bool = False,
+               server_hostname: Union[str, None] = None) -> None:
+    self._socket = socket
+    self._server_side = server_side
+    self._server_hostname = server_hostname
+
+    # delegate methods to wrapped socket
+    self.__exit__ = socket.__exit__
+    self.connect = socket.connect
+    self.settimeout = socket.settimeout
+    self.send = socket.send
+    self.recv = socket.recv
+    self.close = socket.close
+    self.recv_into = socket.recv_into
+
+    # For sockets that come from software socketpools (like the
+    # esp32api), they track the interface and socket pool. We need to
+    # make sure the clones do as well
+    # TODO: delete if not needed
+    self._interface = getattr(socket, "_interface", None)
+    self._socket_pool = getattr(socket, "_socket_pool", None)
 
   # pylint: disable=undefined-variable
   def __enter__(self) -> SSLSocket:
     """ No-op used by Context Managers. """
-
-  def __exit__(self, exc_type, exc_value, traceback) -> None:
-    """
-    Automatically closes the Socket when exiting a context. See
-    Lifetime and ContextManagers for more info.
-    """
+    return self
 
   # pylint: disable=undefined-variable
   def accept(self) -> Tuple[SSLSocket, Tuple[str, int]]:
@@ -57,62 +75,12 @@ class SSLSocket:
       address (tuple) – tuple of (remote_address, remote_port)
     """
 
-  def close(self) -> None:
-    """ Closes this Socket """
-
-  def connect(self, address: Tuple[str, int]) -> None:
-    """ Connect a socket to a remote address
-
-     Parameters:
-
-       address (tuple) – tuple of (remote_address, remote_port)
-     """
-
   def listen(self,backlog: int) -> None:
     """ Set socket to listen for incoming connections
 
     Parameters:
 
       backlog (~int) – length of backlog queue for waiting connetions
-    """
-
-  def recv_into(
-    self,
-    buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
-    """
-    Reads some bytes from the connected remote address, writing into
-    the provided buffer. If bufsize <= len(buffer) is given, a maximum
-    of bufsize bytes will be read into the buffer. If no valid value
-    is given for bufsize, the default is the length of the given
-    buffer.
-
-    Suits sockets of type SOCK_STREAM.
-    Returns an int of number of bytes read.
-
-    Parameters:
-
-      buffer (bytearray) – buffer to receive into
-      bufsize (int) – optionally, a maximum number of bytes to read.
-    """
-
-  # pylint: disable=redefined-builtin
-  def send(self, bytes: circuitpython_typing.ReadableBuffer) -> int:
-    """
-    Send some bytes to the connected remote address. Suits sockets of
-    type SOCK_STREAM
-
-    Parameters:
-
-      bytes (~bytes) – some bytes to send
-    """
-
-  def settimeout(self, value: int) -> None:
-    """ Set the timeout value for this socket.
-
-    Parameters:
-
-      value (~int) – timeout in seconds. 0 means non-blocking. None
-      means block indefinitely.
     """
 
   def setblocking(self,flag: bool) -> Union[int, None]:

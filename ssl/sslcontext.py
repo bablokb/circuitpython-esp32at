@@ -2,6 +2,8 @@
 # Class SSLContext. This class tries to mimic the class ssl.SSLContext
 # of core CircuitPython.
 #
+# Most of this is not implemented, the class mostly contains stubs.
+#
 # Author: Bernhard Bablok
 # License: MIT
 #
@@ -11,14 +13,15 @@
 
 """ class SSLContext. """
 
-import socketpool
 from .sslsocket import SSLSocket
 
 try:
   from typing import Union
+  from circuitpython_typing.socket import CircuitPythonSocketType
 except ImportError:
   pass
 
+# pylint: disable=no-self-use
 class SSLContext:
   """ Settings related to SSL that can be applied to a socket by
   wrapping it. This is useful to provide SSL certificates to specific
@@ -67,13 +70,14 @@ class SSLContext:
     """ Whether to match the peer certificate’s hostname. """
     return False
 
+  # pylint: disable=unused-argument
   @check_hostname.setter
   def check_hostname(self, value:bool) -> None:
     return None
 
   def wrap_socket(
     self,
-    sock: socketpool.Socket,
+    sock: CircuitPythonSocketType,
     *,
     server_side: bool = False,
     server_hostname: Union[str, None] = None) -> SSLSocket:
@@ -81,3 +85,4 @@ class SSLContext:
     Wraps the socket into a socket-compatible class that handles SSL
     negotiation. The socket must be of type SOCK_STREAM.
     """
+    return SSLSocket(sock,server_side,server_hostname)
