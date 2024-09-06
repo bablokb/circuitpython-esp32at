@@ -23,6 +23,7 @@ import busio
 from digitalio import Direction, DigitalInOut
 
 try:
+  import circuitpython_typing
   from typing import Optional
 except ImportError:
   pass
@@ -60,8 +61,7 @@ class Transport:
   def __new__(cls):
     if Transport.transport:
       return Transport.transport
-    else:
-      return super(Transport,cls).__new__(cls)
+    return super(Transport,cls).__new__(cls)
 
   def __init__(self):
     """ Do nothing constructor. Use init() for hardware-setup """
@@ -73,6 +73,7 @@ class Transport:
     self._reset_pin = None
     self._debug = None
     self._at_version = None
+    self.reconn_interval = 1
     Transport.transport = self
 
   def init(self,
@@ -81,7 +82,7 @@ class Transport:
            at_timeout: Optional[float] = 1,
            at_retries: Optional[int] = 1,
            reset: Optional[bool] = False,
-           reset_pin: Optional[DigitalInOut] = None,
+           reset_pin: Optional[circuitpython_typing.Pin] = None,
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
            multi_connection: Optional[bool] = False,
@@ -92,13 +93,12 @@ class Transport:
     self._uart = uart
     self._at_timeout = at_timeout
     self._at_retries = at_retries
-    self._reset_pin = reset_pin
     self._debug = debug
     self.reconn_interval = reconn_interval
 
-    if self._reset_pin:
-      self._reset_pin.direction = Direction.OUTPUT
-      self._reset_pin.value = True
+    if reset_pin:
+      self._reset_pin = DigitalInOut(reset_pin)
+      self._reset_pin.switch_to_output(True)
 
     # check if a reset is requested
     if reset:
@@ -132,7 +132,7 @@ class Transport:
         self.send_atcmd("AT+SYSSTORE=0")
       self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
       self.send_atcmd(f"AT+CIPMUX={int(multi_connection)}")
-    except:
+    except: # pylint: disable=bare-except
       pass
     return True
 
@@ -172,7 +172,6 @@ class Transport:
     """Perform a hardware reset by toggling the reset pin, if it was
     defined in the initialization of this object"""
     if self._reset_pin:
-      self._reset_pin.direction = Direction.OUTPUT
       self._reset_pin.value = False
       time.sleep(0.1)
       self._reset_pin.value = True
