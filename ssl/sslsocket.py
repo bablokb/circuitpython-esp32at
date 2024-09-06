@@ -38,56 +38,23 @@ class SSLSocket:
     self._server_side = server_side
     self._server_hostname = server_hostname
 
-    # delegate methods to wrapped socket
-    self.__exit__ = socket.__exit__
-    self.connect = socket.connect
-    self.settimeout = socket.settimeout
-    self.send = socket.send
-    self.recv = socket.recv
-    self.close = socket.close
-    self.recv_into = socket.recv_into
+    # TODO: tell socket that we want SSL
+    self._socket.use_ssl = True
 
-    # For sockets that come from software socketpools (like the
-    # esp32api), they track the interface and socket pool. We need to
-    # make sure the clones do as well
-    # TODO: delete if not needed
-    self._interface = getattr(socket, "_interface", None)
-    self._socket_pool = getattr(socket, "_socket_pool", None)
+    # delegate methods to wrapped socket
+    self.__exit__     = socket.__exit__
+    self.connect      = socket.connect
+    self.settimeout   = socket.settimeout
+    self.accept       = socket.accept
+    self.bind         = socket.bind
+    self.listen       = socket.listen
+    self.send         = socket.send
+    self.set_blocking = socket.set_blocking
+    self.recv         = socket.recv
+    self.close        = socket.close
+    self.recv_into    = socket.recv_into
 
   # pylint: disable=undefined-variable
   def __enter__(self) -> SSLSocket:
     """ No-op used by Context Managers. """
     return self
-
-  # pylint: disable=undefined-variable
-  def accept(self) -> Tuple[SSLSocket, Tuple[str, int]]:
-    """
-    Accept a connection on a listening socket of type SOCK_STREAM,
-    creating a new socket of type SOCK_STREAM. Returns a tuple of
-    (new_socket, remote_address)
-    """
-
-  def bind(self, address: Tuple[str, int]) -> None:
-    """ Bind a socket to an address
-
-    Parameters:
-
-      address (tuple) – tuple of (remote_address, remote_port)
-    """
-
-  def listen(self,backlog: int) -> None:
-    """ Set socket to listen for incoming connections
-
-    Parameters:
-
-      backlog (~int) – length of backlog queue for waiting connetions
-    """
-
-  def setblocking(self,flag: bool) -> Union[int, None]:
-    """ Set the blocking behaviour of this socket.
-
-    Parameters:
-
-      flag (~bool) – False means non-blocking, True means block
-      indefinitely.
-    """
