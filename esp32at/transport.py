@@ -82,11 +82,11 @@ class Transport:
            at_retries: Optional[int] = 1,
            reset: Optional[bool] = False,
            reset_pin: Optional[DigitalInOut] = None,
-           factory_restore: Optional[bool] = False,
-           persist_settings: Optional[bool] = False,
-           autoconnect: Optional[bool] = False,
+           persist_settings: Optional[bool] = True,
+           reconn_interval: Optional[int] = 1,
+           multi_connection: Optional[bool] = False,
            debug: bool = False,
-           ):
+           ) -> bool:
     """ initialize hardware, and query AT firmware version """
 
     self._uart = uart
@@ -94,6 +94,7 @@ class Transport:
     self._at_retries = at_retries
     self._reset_pin = reset_pin
     self._debug = debug
+    self.reconn_interval = reconn_interval
 
     if self._reset_pin:
       self._reset_pin.direction = Direction.OUTPUT
@@ -105,6 +106,7 @@ class Transport:
       self.soft_reset()
 
     # try to connect with the ESP32xx co-processor
+    connected = False
     for _ in range(3):
       try:
         try:
@@ -114,11 +116,25 @@ class Transport:
           self.hard_reset()
           self.soft_reset()
           continue
-
+        # connected!
+        connected = True
         self._echo(False)
-        return
+        break
       except TransportError:
         pass  # retry
+
+    if not connected:
+      return False
+
+    # configure the co-processor (best effort)
+    try:
+      if not persist_settings: # always on after reset
+        self.send_atcmd("AT+SYSSTORE=0")
+      self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
+      self.send_atcmd(f"AT+CIPMUX={int(multi_connection)}")
+    except:
+      pass
+    return True
 
   # --- query AT firmware version   ------------------------------------------
 
