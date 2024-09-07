@@ -1,6 +1,9 @@
 # -------------------------------------------------------------------------
 # Scan available networks: testprogram for circuitpython-esp32at.
 #
+# You need to create a secrets.py file (have a look at sec_template.py),
+# but only if you need to set TX power.
+#
 # Author: Bernhard Bablok
 # License: MIT
 #

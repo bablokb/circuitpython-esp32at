@@ -1,12 +1,7 @@
 # -------------------------------------------------------------------------
 # udp_logger: testprogram for circuitpython-esp32at.
 #
-# You need to create a secrets.py with at least ssid and password:
-#
-#   secrets = {
-#     'ssid' : 'my_ssid',
-#     'password' : 'my_password'
-#   }
+# You need to create a secrets.py file (have a look at sec_template.py).
 #
 # Author: Bernhard Bablok
 # License: MIT
