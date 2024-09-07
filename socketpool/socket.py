@@ -14,6 +14,7 @@
 """ class Socket. """
 
 from .socketpool import SocketPool
+from .implementation import _Implementation
 
 class Socket:
   """ Class Socket """
@@ -27,13 +28,27 @@ class Socket:
     proto: int = 0,
     fileno: Optional[int] = None,
     ):
+    """ Constructor.
+
+    Since the AT commandset only provides connections, not sockets, we
+    have no explicit AT-call at this stage.
+    """
+
     if family != SocketPool.AF_INET:
       raise ValueError("Only AF_INET family supported")
+    self._impl = _Implementation()
     self._socket_pool = socket_pool
     self._radio = self._socket_pool._radio
     self._sock_type = type
     self._use_ssl = False
+    self._link_id = None
     self.settimeout(0)
+    if self._sock_type == SocketPool.SOCK_DGRAM:
+      self._conn_type = "UDP"
+    elif self._use_ssl:
+      self._conn_type = "SSL"
+    else:
+      self._conn_type = "TCP"
 
   @property
   def use_ssl(self) -> bool:
@@ -77,12 +92,14 @@ class Socket:
 
       address (tuple) – tuple of (remote_address, remote_port)
     """
+    self._link_id = self._impl.start_connection(
+      address[0],address[1],self._conn_type)
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
     SocketPool.
     """
-    #TODO: check for closed socket in ESP32Cx??
+    self._impl.close_connection(self._link_id)
 
   def listen(self,backlog: int) -> None:
     """ Set socket to listen for incoming connections
@@ -156,6 +173,14 @@ class Socket:
       bytes (bytes) – some bytes to send
       address (tuple) – tuple of (remote_address, remote_port)
     """
+    if self._conn_type != "UDP":
+      raise RuntimeError("wrong socket-type (not UDP)")
+
+    if self._link_id == None:
+      # contrary to the documentation, we do need a connection
+      self.connect(address)
+    self._impl.send(bytes,self._link_id)
+    return len(bytes)
 
   def setblocking(self,flag: bool) -> Union[int, None]:
     """ Set the blocking behaviour of this socket.
@@ -170,7 +195,7 @@ class Socket:
     """ Sets socket options """
 
 
-  def settimeout(value: int) -> None:
+  def settimeout(self,value: int) -> None:
     """ Set the timeout value for this socket.
 
     Parameters:
