@@ -9,6 +9,8 @@
 # -------------------------------------------------------------------------
 
 """ class Implementation. """
+
+import time
 try:
   from typing import Tuple
   import circuitpython_typing
@@ -77,30 +79,34 @@ class _Implementation:
 
   def send(self,
            buffer: circuitpython_typing.ReadableBuffer,
-           address: Tuple[str, int] = None,
-           link_id: int = None) -> None:
+           link_id: int) -> None:
     """ Send up to 8192 bytes """
 
+    if link_id is None:
+      raise RuntimeError("illegal state: no connection established yet")
+
     if len(buffer) > 8192:
-      self.send_long(buffer,address,link_id)
+      self.send_long(buffer,link_id)
       return
 
-    if link_id is None or link_id == -1:
+    if link_id == -1:
       cmd = f"AT+CIPSEND={len(buffer)}"
     else:
       cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
-    if address:
-      cmd += f',"{address[0]}",{address[1]}' # add host and port
 
+    # TODO: check for connect
     self._t.send_atcmd(cmd)
-    self._t.wait_for(">",timeout=5)
+    self._t.wait_for(".*>",timeout=5)
     self._t.write(buffer)
-    self._t.wait_for("SEND OK|ERROR",timeout=5)
+    self._t.wait_for(".*SEND OK|.*ERROR",timeout=5)
 
   # pylint: disable=no-self-use
   def send_long(self,
            buffer: circuitpython_typing.ReadableBuffer,
-           address: Tuple[str, int] = None,
-           link_id: int = None) -> int:
+           link_id: int) -> int:
     """ Send long buffer """
+
+    if link_id is None:
+      raise RuntimeError("illegal state: no connection established yet")
+
     raise RuntimeError("not implemented yet: buffer is larger than 8192")
