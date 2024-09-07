@@ -29,7 +29,11 @@ Implemented features:
   - connecting (`wifi.radio.connect()` and `wifi.radio.connected`)
   - pinging (`wifi.radio.ping()`)
   - all `wifi.radio` station-methods and properties
-  - module `ipaddress`
+  - modules `ipaddress`, `ssl`
+  - `socket.connect()`, `socket.close()`, `socket.sendto()`
+  - UDP client working
+
+See also examples and test-programs in the `examples`-folder.
 
 Roadmap:
 
@@ -42,17 +46,22 @@ Roadmap:
 Required Hardware
 -----------------
 
-The code has been tested with an ESP32C3 Qtpy and
-ESP32C3-Super-Mini. You need to install the official AT firmware
-provided by Espressif, see
-<https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/index.html>. It
-should also work with the ESP32C6 and possibly other ESP32 as well.
+Tested with the following boards:
 
-The MCU running CircuitPython needs an UART-connection with the ESP32
+  - Pico and Adafruit Qt-Py ESP32C3
+  - Pico and ESP32C3-Super-Mini
+  - Challenger+RP2350 Wifi6/BLE5 (from <https://ilabs.se>)
+
+The Challenger has an integrated ESP32C6 and the AT firmware is
+already installed. For the other boards, you need to download and
+flash the official AT firmware provided by Espressif, see
+<https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/index.html>.
+
+The MCU running CircuitPython needs an UART-connection with the ESP32Cx
 co-processor. The Espressif documentation has detailed instructions
 for flashing the firmware and setting up the hardware connection.
 
-Note that both the ESP32C3 Qtpy as well as the ESP32C3-Super-Mini have
+Note that both the Qt-Py ESP32C3 as well as the ESP32C3-Super-Mini have
 badly designed on-board antennas. If they don't connect to your AP, try
 reducing the TX power.
 
