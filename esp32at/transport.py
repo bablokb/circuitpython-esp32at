@@ -185,7 +185,7 @@ class Transport:
                  at_cmd: str,
                  timeout: float = -1,
                  retries: int = -1,
-                 filter = None) -> bytes:
+                 filter: str = None) -> bytes:
     """Send an AT command, check that we got an OK response,
     and then cut out the reply lines to return. We can set
     a variable timeout (how long we'll wait for response) and
@@ -199,7 +199,6 @@ class Transport:
 
     finished = False
     for _ in range(retries):
-      time.sleep(0.1)  # wait for uart data
       self._uart.reset_input_buffer()  # flush it
       if self._debug:
         print("--->", at_cmd)
@@ -263,6 +262,34 @@ class Transport:
     if self._debug:
       print("<---", response)
     return response
+
+  # --- wait for specific texts (prompt, result)   ---------------------------
+
+  def wait_for(self,rex: str,timeout: float = -1) -> bytes:
+    """ wait for specific text, specified as regex """
+
+    # use global defaults
+    if timeout < 0:
+      timeout = self._at_timeout
+
+    txt = b""
+    stamp = time.monotonic()
+    while (time.monotonic() - stamp) < timeout:
+      if self._uart.in_waiting:
+        txt += self._uart.read(self._uart.in_waiting)
+        if re.match(rex,txt):
+          return txt
+    if self._debug:
+      print(f"{txt=}")
+    raise RuntimeError(f"timeout waiting for {rex}")
+
+  # --- write bytes to the interface   ---------------------------------------
+
+  def write(self,
+            buffer: circuitpython_typing.ReadableBuffer) -> None:
+    """ write bytes to the UART-interface """
+    self._uart.reset_input_buffer()
+    self._uart.write(buffer)
 
   # --- hardware tweaks   ----------------------------------------------------
 
