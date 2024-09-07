@@ -22,7 +22,6 @@ except ImportError:
   pass
 
 import wifi
-from .socket import Socket
 
 class SocketPool:
   """ SocketPool class for ESP32Cx AT commandset """
@@ -85,6 +84,7 @@ class SocketPool:
 
     The fileno argument available in socket.socket() in CPython is not supported.
     """
+    from .socket import Socket
     return Socket(self,family,type,proto)
 
   # pylint: disable=too-many-arguments
