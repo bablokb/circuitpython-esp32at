@@ -145,3 +145,14 @@ class _Implementation:
       raise RuntimeError("illegal state: no connection established yet")
 
     raise RuntimeError("not implemented yet: buffer is larger than 8192")
+
+  def get_host_by_name(self,
+                       hostname: str) -> str:
+    """ return IP (as string) from hostname """
+
+    try:
+      reply = self._t.send_atcmd(
+        f'AT+CIPDOMAIN="{hostname}"',filter="\+CIPDOMAIN:",timeout=5)
+      return str(reply[12:-1],'utf-8')
+    except:
+      reply = None
