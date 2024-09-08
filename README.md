@@ -30,6 +30,7 @@ Implemented features:
   - pinging (`wifi.radio.ping()`)
   - all `wifi.radio` station-methods and properties
   - modules `ipaddress`, `ssl`
+  - `socketpool.SocketPool` (including DNS-lookup)
   - `socket.connect()`, `socket.close()`, `socket.sendto()`
   - UDP client working
 
@@ -41,6 +42,7 @@ Roadmap:
     available
   - implement TCP/IP server functions
   - implement `wifi.radio` AP-methods
+  - optimize performance
 
 
 Required Hardware
