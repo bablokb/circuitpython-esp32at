@@ -22,6 +22,7 @@ except ImportError:
   pass
 
 import wifi
+from .implementation import _Implementation
 
 class SocketPool:
   """ SocketPool class for ESP32Cx AT commandset """
@@ -92,7 +93,7 @@ class SocketPool:
                   host: str,
                   port: int,
                   family: int = 0,
-                  type: int = 0,
+                  socktype: int = 0,
                   proto: int = 0,
                   flags: int = 0) -> Tuple[int, int, int, str, Tuple[str, int]]:
     """
@@ -102,3 +103,11 @@ class SocketPool:
     address information to call socket.socket() and socket.connect()
     with, as a tuple.
     """
+
+    if not isinstance(port, int):
+      raise ValueError("Port must be an integer")
+    if not family:
+      family = SocketPool.AF_INET
+
+    ipaddr = _Implementation().get_host_by_name(host)
+    return [(family, socktype, proto, "", (ipaddr, port))]
