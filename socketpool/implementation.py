@@ -11,6 +11,7 @@
 """ class Implementation. """
 
 import time
+from collections import namedtuple
 try:
   from typing import Tuple
   import circuitpython_typing
@@ -44,10 +45,44 @@ class _Implementation:
       raise RuntimeError("could not query connection-mode")
     return str(reply[8:],'utf-8') == "1"
 
+  def get_connections(self):
+    """ query connections """
+
+    replies = self._t.send_atcmd('AT+CIPSTATE?',filter="^\+CIPSTATE:")
+    if replies is None:
+      return []
+    if isinstance(replies,bytes):
+      replies = [replies]
+
+    connections = []
+    ConnInfo = namedtuple('ConnInfo',
+                          'link_id conn_type ip rport lport is_server')
+    for line in replies:
+      info = str(line[10:],'utf-8').split(',')
+      info[0] = int(info[0])
+      info[1] = info[1].strip('"')
+      info[2] = info[2].strip('"')
+      info[3] = int(info[3])
+      info[4] = int(info[4])
+      info[5] = int(info[5]) == 1
+      connections.append(ConnInfo(*info))
+    return connections
+
   def start_connection(self,host:str,port:int,conn_type: str) -> int:
     """ Start connection of the given type. Returns the link-id,
     or -1 if in single-connection mode.
     """
+
+    # check for an existing connection
+    connections = self.get_connections()
+    if connections:
+      if self.multi_connections:
+        # check if host:port are already connected
+        # which is complicated, so we leave this for later
+        pass
+      else:
+        # for simplicity, just close the existing connection
+        self.close_connection(-1)
 
     if self.multi_connections:
       cmd = "CIPSTARTEX"
