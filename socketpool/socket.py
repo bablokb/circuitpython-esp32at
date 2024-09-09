@@ -128,7 +128,7 @@ class Socket:
 
   def recv_into(
     self,
-    buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
+    buffer: circuitpython_typing.WriteableBuffer, bufsize: int = 0) -> int:
     """
     Reads some bytes from the connected remote address, writing into
     the provided buffer. If bufsize <= len(buffer) is given, a maximum
@@ -155,7 +155,10 @@ class Socket:
     Parameters:
       bytes (bytes) – some bytes to send
     """
-    raise NotImplementedError("socket.send(): not implemented yet!")
+    if self._link_id == None:
+      raise RuntimeError("socket is not connected")
+    self._impl.send(bytes,self._link_id)
+    return len(bytes)
 
   def sendall(self, bytes: circuitpython_typing.ReadableBuffer) -> None:
     """ Send some bytes to the connected remote address. Suits sockets
