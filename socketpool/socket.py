@@ -210,8 +210,10 @@ class Socket:
 
       value (int) – timeout in seconds. 0 means non-blocking. None
       means block indefinitely.
+
+    Note: the ESP32 AT commandset can only set the send timeout.
     """
-    raise NotImplementedError("socket.settimeout(): not implemented yet!")
+    self._impl.set_timeout(value,self._link_id)
 
   @property
   def type(self) -> int:

@@ -156,3 +156,15 @@ class _Implementation:
       return str(reply[12:-1],'utf-8')
     except:
       reply = None
+
+  def set_timeout(self,value: int, link_id: int) -> None:
+    """ set the send-timeout option """
+
+    if link_id is None or link_id == -1:
+      cmd = f"AT+CIPTCPOPT=,,{value}"
+    else:
+      cmd = f"AT+CIPTCPOPT={link_id},,,{value}"
+    try:
+      self._t.send_atcmd(cmd)
+    except:
+      pass
