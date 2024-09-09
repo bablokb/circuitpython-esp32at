@@ -168,3 +168,20 @@ class _Implementation:
       self._t.send_atcmd(cmd)
     except:
       pass
+
+  def get_recv_size(self, link_id:int) -> int:
+    """ return size of data available for reading """
+
+    if link_id == -1:
+      rex = ".*\+IPD,[0-9]+:"
+    else:
+      rex = f".*\+IPD,{link_id},[0-9]+:"
+    size_info = self._t.wait_for(rex,timeout=5,greedy=False)
+    return int(str(size_info[:-1],'utf-8').split(',')[-1])
+
+  def read(self,
+           buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
+    """ read bufsize bytes from interface """
+
+    # just delegate this to the transport layer
+    return self._t.readinto(buffer,bufsize)
