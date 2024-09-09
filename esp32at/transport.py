@@ -265,7 +265,7 @@ class Transport:
 
   # --- wait for specific texts (prompt, result)   ---------------------------
 
-  def wait_for(self,rex: str,timeout: float = -1) -> bytes:
+  def wait_for(self,rex: str, greedy: bool=True, timeout: float = -1) -> bytes:
     """ wait for specific text, specified as regex """
 
     # use global defaults
@@ -276,7 +276,7 @@ class Transport:
     stamp = time.monotonic()
     while (time.monotonic() - stamp) < timeout:
       if self._uart.in_waiting:
-        txt += self._uart.read(self._uart.in_waiting)
+        txt += self._uart.read(self._uart.in_waiting if greedy else 1)
         if re.match(rex,txt):
           return txt
     if self._debug:
@@ -290,6 +290,16 @@ class Transport:
     """ write bytes to the UART-interface """
     self._uart.reset_input_buffer()
     self._uart.write(buffer)
+
+  # --- read bytes from the interface into a buffer   ------------------------
+
+  def readinto(self,
+               buffer: circuitpython_typing.WriteableBuffer,
+               bufsize: int) -> int:
+    """ read data from the uart """
+    mv_buffer = memoryview(buffer)
+    mv_target = mv_buffer[0:bufsize]
+    return self._uart.readinto(mv_target)
 
   # --- hardware tweaks   ----------------------------------------------------
 
