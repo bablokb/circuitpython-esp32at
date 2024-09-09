@@ -10,10 +10,14 @@ support.
 
 It provides the following modules:
 
-  - `wifi`
+  - `esp32at`
   - `ipaddress`
   - `socketpool`
   - `ssl`
+  - `wifi`
+
+Currently, you have to install these modules manually, i.e. copy
+the respective folders to your device.
 
 **Do not install the modules from this repository if you are using a
 CircuitPython build that has native wifi support.**
