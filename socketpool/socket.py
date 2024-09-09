@@ -42,7 +42,7 @@ class Socket:
     self._sock_type = type
     self._use_ssl = False
     self._link_id = None
-    self.settimeout(0)
+    #self.settimeout(0)
     if self._sock_type == SocketPool.SOCK_DGRAM:
       self._conn_type = "UDP"
     elif self._use_ssl:
@@ -76,6 +76,7 @@ class Socket:
     creating a new socket of type SOCK_STREAM. Returns a tuple of
     (new_socket, remote_address)
     """
+    raise NotImplementedError("socket.accept(): not implemented yet!")
 
   def bind(self, address: Tuple[str, int]) -> None:
     """ Bind a socket to an address
@@ -84,6 +85,7 @@ class Socket:
 
       address (tuple) – tuple of (remote_address, remote_port)
     """
+    raise NotImplementedError("socket.bind(): not implemented yet!")
 
   def connect(self,address: Tuple[str, int]) -> None:
     """ Connect a socket to a remote address
@@ -108,6 +110,7 @@ class Socket:
 
       backlog (~int) – length of backlog queue for waiting connetions
     """
+    raise NotImplementedError("socket.listen(): not implemented yet!")
 
   def recvfrom_into(
     self,
@@ -121,6 +124,7 @@ class Socket:
     Parameters:
         buffer (object) – buffer to read into
     """
+    raise NotImplementedError("socket.recvfrom_into(): not implemented yet!")
 
   def recv_into(
     self,
@@ -140,6 +144,7 @@ class Socket:
       buffer (bytearray) – buffer to receive into
       bufsize (int) – optionally, a maximum number of bytes to read.
     """
+    raise NotImplementedError("socket.recv_into(): not implemented yet!")
 
   # pylint: disable=redefined-builtin
   def send(self, bytes: circuitpython_typing.ReadableBuffer) -> int:
@@ -150,6 +155,7 @@ class Socket:
     Parameters:
       bytes (bytes) – some bytes to send
     """
+    raise NotImplementedError("socket.send(): not implemented yet!")
 
   def sendall(self, bytes: circuitpython_typing.ReadableBuffer) -> None:
     """ Send some bytes to the connected remote address. Suits sockets
@@ -162,6 +168,7 @@ class Socket:
     Parameters:
         bytes (bytes) – some bytes to send
     """
+    raise NotImplementedError("socket.sendall(): not implemented yet!")
 
   def sendto(self,
              bytes: circuitpython_typing.ReadableBuffer,
@@ -190,10 +197,11 @@ class Socket:
       flag (~bool) – False means non-blocking, True means block
       indefinitely.
     """
+    raise NotImplementedError("socket.setblocking(): not implemented yet!")
 
   def setsockopt(self, level: int, optname: int, value: int) -> None:
     """ Sets socket options """
-
+    raise NotImplementedError("socket.setsockopt(): not implemented yet!")
 
   def settimeout(self,value: int) -> None:
     """ Set the timeout value for this socket.
@@ -203,6 +211,7 @@ class Socket:
       value (int) – timeout in seconds. 0 means non-blocking. None
       means block indefinitely.
     """
+    raise NotImplementedError("socket.settimeout(): not implemented yet!")
 
   @property
   def type(self) -> int:
