@@ -102,6 +102,7 @@ class Socket:
     SocketPool.
     """
     self._impl.close_connection(self._link_id)
+    self._link_id = None
 
   def listen(self,backlog: int) -> None:
     """ Set socket to listen for incoming connections
