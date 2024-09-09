@@ -50,6 +50,10 @@ class Socket:
     else:
       self._conn_type = "TCP"
 
+    # state variables for the receiver
+    self._recv_size = 0
+    self._recv_read = 0
+
   @property
   def use_ssl(self) -> bool:
     """ Socket uses SSL-encryption (internal, not part of the core-API) """
@@ -96,6 +100,10 @@ class Socket:
     """
     self._link_id = self._impl.start_connection(
       address[0],address[1],self._conn_type)
+
+    # reset receiver after connect
+    self._recv_size = 0
+    self._recv_read = 0
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
@@ -145,7 +153,26 @@ class Socket:
       buffer (bytearray) – buffer to receive into
       bufsize (int) – optionally, a maximum number of bytes to read.
     """
-    raise NotImplementedError("socket.recv_into(): not implemented yet!")
+
+    #print(f"=====> recv_into({bufsize=})")
+    if not 0 <= bufsize <= len(buffer):
+      raise ValueError("bufsize must be 0 to len(buffer)")
+    bytes_to_read = bufsize if bufsize else len(buffer)
+    #print(f"=====> recv_into: {bytes_to_read=}")
+
+    # if we don't know the data-size, get it
+    if not self._recv_size or self._recv_read == self._recv_size:
+      self._recv_size = self._impl.get_recv_size(self._link_id)
+      self._recv_read = 0
+      #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
+
+    # read at most bytes_to_read from socket
+    n = self._impl.read(buffer,
+                        min(bytes_to_read,self._recv_size-self._recv_read))
+    self._recv_read += n
+    #print(f"=====> recv_into: {buffer=}, {n=}")
+    #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
+    return n
 
   # pylint: disable=redefined-builtin
   def send(self, bytes: circuitpython_typing.ReadableBuffer) -> int:
