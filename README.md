@@ -37,7 +37,7 @@ Implemented features:
   - `socketpool.SocketPool` (including DNS-lookup)
   - `socket.connect()`, `socket.close()`, `socket.sendto()`
   - UDP client working
-  - HTTP get requests (TCP only) working
+  - HTTP get requests (TCP and SSL) working
 
 See also examples and test-programs in the `examples`-folder.
 
