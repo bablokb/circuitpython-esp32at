@@ -49,8 +49,9 @@ class SSLSocket:
     self.bind         = socket.bind
     self.listen       = socket.listen
     self.send         = socket.send
-    self.set_blocking = socket.set_blocking
-    self.recv         = socket.recv
+    self.setblocking  = socket.setblocking
+    if hasattr(socket,"recv"):
+      self.recv         = socket.recv
     self.close        = socket.close
     self.recv_into    = socket.recv_into
 
