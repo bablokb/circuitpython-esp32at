@@ -63,6 +63,8 @@ class Socket:
   def use_ssl(self,value: bool) -> None:
     """ set SSL-encryption  (internal, not part of the core-API) """
     self._use_ssl = value and self._sock_type != SocketPool.SOCK_DGRAM
+    if self._use_ssl:
+      self._conn_type = "SSL"
 
   # pylint: disable=undefined-variable
   def __enter__(self) -> Socket:
