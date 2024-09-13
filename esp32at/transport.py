@@ -86,6 +86,7 @@ class Transport:
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
            multi_connection: Optional[bool] = False,
+           baudrate: Optional[int] = 115200,
            debug: bool = False,
            ) -> bool:
     """ initialize hardware, and query AT firmware version """
