@@ -22,20 +22,11 @@ import wifi
 import socketpool
 import adafruit_requests
 
+from pins import *
+
 ITERATIONS = 10
 INTERVAL = 100
 DEBUG  = False
-
-if board.board_id == "raspberry_pi_pico":
-  PIN_TX  = board.GP0
-  PIN_RX  = board.GP1
-  PIN_RST = None
-elif board.board_id == "challenger_rp2350_wifi6_ble5":
-  PIN_TX  = board.ESP_RXD
-  PIN_RX  = board.ESP_TXD
-  PIN_RST = board.ESP_RESET
-else:
-  print(f"no pin-defs for board {board.board_id}")
 
 # Get wifi details and more from a secrets.py file
 try:
