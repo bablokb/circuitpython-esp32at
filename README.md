@@ -6,7 +6,9 @@ circuitpython-esp32at
 This is an implementation of a CircuitPython core-API compatible
 wifi-interface to ESP32C3/ESP32C6 co-processors using AT Commands. It
 is meant as a drop-in for CircuitPython builds without native wifi
-support.
+support (btw: a Pico with C3 will do better than a Pico-W, since the
+network stack on the Pico-W will use up a large amount of the
+available memory).
 
 It provides the following modules:
 
@@ -55,9 +57,16 @@ Required Hardware
 
 Tested with the following boards:
 
-  - Pico and Adafruit Qt-Py ESP32C3
-  - Pico and ESP32C3-Super-Mini
-  - Challenger+RP2350 Wifi6/BLE5 (from <https://ilabs.se>)
+  - Pico and [Adafruit Qt-Py ESP32C3](https://www.adafruit.com/product/5405)<br>
+    Nice and small.
+  - Pico and ESP32C3-Super-Mini<br>
+    Probably the cheapest solution available.
+  - Pico and [Lilygo T-01 C3](https://www.lilygo.cc/products/t-01c3)<br>
+    A minimalistic C3-board. Same footprint as the famous ESP-01S board.
+    Because the standard AT-command port pins are not available, this
+    boards needs a special, self-compiled AT-firmware.
+  - [Challenger+RP2350 Wifi6/BLE5](https://ilabs.se/challenger-rp2350-wifi-ble/)<br>
+    Feather-sized, integrated solution.
 
 The Challenger has an integrated ESP32C6 and the AT firmware is
 already installed. For the other boards, you need to download and
@@ -107,6 +116,10 @@ the core API so this code-snippet will also work with native wifi.
 For normal use, there is no need to use any of the additional methods
 of this module (besides `wifi.init()`). In fact, you should not use
 these methods to stay portable with your code.
+
+The initialization routine `wifi.init()` has a number of parameters. See
+the [Implementation Notes](./impl_notes.md) for details on how to tweak
+the setup.
 
 Experts can use `wifi.transport` to directly access the co-processor
 with special AT-commands.

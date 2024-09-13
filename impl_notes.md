@@ -4,7 +4,8 @@ Implementation Notes
 History and Sources
 -------------------
 
-The core of the low-level AT command interface was inspired and copied from
+The core of the low-level AT command interface was inspired and copied
+in parts from
 <https://github.com/adafruit/Adafruit_CircuitPython_ESP_ATcontrol>. That
 code was initially developed for the ESP8266. The current code will
 probably not work with these old devices anymore.
@@ -20,6 +21,61 @@ these features are implemented in class `Transport`, see below for
 some notes.
 
 
+Initialization
+--------------
+
+Before use, the interface to the co-processor has to be initialized.
+Therefore, the very first statement to execute is `wifi.init()`.
+
+The method has a number of parameters. Most of them are optional, but
+for optimal setup they can be tweaked:
+
+  - `uart`: The `busio.UART`-object used for communication. Needs to
+    be setup with baudrate=115200.
+  - `at_timeout`: The global default timeout for a response to an AT
+    command. The default value of `1` should be ok.
+  - `at_retries`: Retries for failing AT commands. Available for
+    historical reasons and currently with default `1`.
+  - `reset`: Send the reset command to the co-processor during init.
+    If `reset_pin` is defined, also execute a hard reset.
+  - `reset_pin`: GPIO (`microcontroller.Pin`) connected to
+    RESET of the ESP32Cx.
+  - `persist_settings`: If `True` (default), settings are saved to
+    non-volatile storage of the ESP32Cx. See the AT User's Guide for
+    a list of relevant settings. See also the discussion below.
+  - `reconn_interval`: Value of the (automatic) reconnection interval. A
+    value of zero disables automatic reconnection.
+  - `multi_connection`: Support multiple parallel connections. Default is
+    `False`. Support is implemented, but absolutely untested. The default
+    AT firmware allows up to five parallel connections.
+  - `baudrate`: temporarely set a different baudrate than the default
+    value of 115200. **TO BE IMPLMENTED**.
+  - `debug`: If `True`, traces AT requests and responses. Defaults to `False`.
+  - `ipv4_dns_defaults`: see section below
+
+
+Persistent Settings
+-------------------
+
+The default AT firmware saves a number of settings automatically to
+non-volatile storage. Most prominent examples are WLAN credentials or things
+like station-mode vs. AP-mode. The advantage of this procedure is that
+you don't have to provide credentials in your program once the device is
+set up. The drawback is that after a power-on-reset the device is not
+in a reproducible state.
+
+To prevent storing settings, you can pass the parameter
+`persist_settings=False` to `wifi.init()`.
+
+
+Automatic Connects
+------------------
+
+The default behavior of the firmware is to automatically reconnect to the
+same AP as the last time. This works only if settings are stored *and*
+the `reconn_interval`-parameter from `wifi.init()` is not zero.
+
+
 Default DNS-Servers
 -------------------
 
@@ -30,4 +86,4 @@ DNS-server you maybe don't want to use.
 
 You can pass your own default DNS-servers to `wifi.init()`:
 
-    wifi.init(...,ipv4_dns_defaults=["dns1","dns2"]
+    wifi.init(...,ipv4_dns_defaults=["dns1","dns2"],...)
