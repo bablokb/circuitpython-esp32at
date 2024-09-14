@@ -21,6 +21,10 @@ elif board.board_id == "challenger_rp2350_wifi6_ble5":
   PIN_TX  = board.ESP_RXD
   PIN_RX  = board.ESP_TXD
   PIN_RST = board.ESP_RESET
+elif hasattr(board,"TX"):
+  PIN_TX  = board.TX
+  PIN_RX  = board.RX
+  PIN_RST = None
 
 # override with values from my_pins, if available
 try:
