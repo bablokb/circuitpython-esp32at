@@ -59,8 +59,8 @@ Tested with the following boards:
 
   - Pico and [Adafruit Qt-Py ESP32C3](https://www.adafruit.com/product/5405)<br>
     Nice and small.
-  - Pico and ESP32C3-Super-Mini<br>
-    Probably the cheapest solution available.
+  - [Adafruit Itsy-Bitsy M4 Express](https://www.adafruit.com/product/3800) and ESP32C3-Super-Mini<br>
+    The Super-Mini is probably the cheapest solution available.
   - Pico and [Lilygo T-01 C3](https://www.lilygo.cc/products/t-01c3)<br>
     A minimalistic C3-board. Same footprint as the famous ESP-01S board.
     Because the standard AT-command port pins are not available, this
