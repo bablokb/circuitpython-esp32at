@@ -18,8 +18,8 @@ if board.board_id == "raspberry_pi_pico":
   PIN_RX  = board.GP1
   PIN_RST = None
 elif board.board_id == "challenger_rp2350_wifi6_ble5":
-  PIN_TX  = board.ESP_RXD
-  PIN_RX  = board.ESP_TXD
+  PIN_TX  = board.ESP_TX
+  PIN_RX  = board.ESP_RX
   PIN_RST = board.ESP_RESET
 elif hasattr(board,"TX"):
   PIN_TX  = board.TX
