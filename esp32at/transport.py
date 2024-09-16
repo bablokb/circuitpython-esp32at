@@ -129,6 +129,7 @@ class Transport:
 
     # configure the co-processor (best effort)
     try:
+      self.send_atcmd("AT+CIPDINFO=1")
       if not persist_settings: # always on after reset
         self.send_atcmd("AT+SYSSTORE=0")
       self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
