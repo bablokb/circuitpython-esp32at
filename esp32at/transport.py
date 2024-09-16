@@ -31,6 +31,7 @@ except ImportError:
 class TransportError(Exception):
   """The exception thrown when we didn't get acknowledgement to an AT command"""
 
+# pylint: disable=too-many-public-methods, too-many-instance-attributes
 class Transport:
   """ Low-level interface to the AT-commandset of the ESP32xx.  The
   ESP module must be pre-programmed with AT command firmware. See
@@ -38,22 +39,6 @@ class Transport:
   and
   https://github.com/espressif/esp-at
   """
-
-  # pylint: disable=too-many-public-methods, too-many-instance-attributes
-  MODE_STATION = 1
-  MODE_SOFTAP = 2
-  MODE_SOFTAPSTATION = 3
-  TYPE_TCP = "TCP"
-  TCP_MODE = "TCP"
-  TYPE_UDP = "UDP"
-  TYPE_SSL = "SSL"
-  TLS_MODE = "SSL"
-  STATUS_APCONNECTED = 2  # CIPSTATUS method
-  STATUS_SOCKETOPEN = 3  # CIPSTATUS method
-  STATUS_SOCKET_OPEN = 3  # CIPSTATE method
-  STATUS_SOCKETCLOSED = 4  # CIPSTATUS method
-  STATUS_SOCKET_CLOSED = 4  # CIPSTATE method
-  STATUS_NOTCONNECTED = 5  # CIPSTATUS method
 
   transport = None
   """ the singleton instance """
