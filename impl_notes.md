@@ -52,6 +52,7 @@ for optimal setup they can be tweaked:
     value of 115200. **TO BE IMPLMENTED**.
   - `debug`: If `True`, traces AT requests and responses. Defaults to `False`.
   - `ipv4_dns_defaults`: see section below
+  - `country_settings`: see section below
 
 
 Persistent Settings
@@ -87,3 +88,22 @@ DNS-server you maybe don't want to use.
 You can pass your own default DNS-servers to `wifi.init()`:
 
     wifi.init(...,ipv4_dns_defaults=["dns1","dns2"],...)
+
+
+Country Specific Settings
+-------------------------
+
+The parameter `country_settings` control the country/region specific
+settings of the wifi-radio. You can set four parameters:
+
+  - `ignore_ap`: if False, use the settings from the AP
+  - `country`: country-code
+  - `start_channel`: first valid channel
+  - `n_channels`: number of channels
+
+To configure the settings, pass in a list with four values. The default
+value is `[False,None,None,None]`: this will configure all values from
+the AP once the device is connected.
+
+If the device should run as AP, make sure to configure all values according
+to the relevant local laws.
