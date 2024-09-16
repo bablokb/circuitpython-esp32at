@@ -12,6 +12,7 @@
 
 import time
 from collections import namedtuple
+from errno import EAGAIN
 try:
   from typing import Tuple
   import circuitpython_typing
@@ -44,6 +45,14 @@ class _Implementation:
     if reply is None:
       raise RuntimeError("could not query connection-mode")
     return str(reply[8:],'utf-8') == "1"
+
+  @multi_connections.setter
+  def multi_connections(self, flag: bool) -> None:
+    """ enable/disable multi-connections """
+
+    reply = self._t.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set connection-mode")
 
   def get_connections(self):
     """ query connections """
@@ -169,15 +178,26 @@ class _Implementation:
     except:
       pass
 
+  def set_server_timeout(self,value: int) -> None:
+    """ set the server-timeout option """
+
+    try:
+      self._t.send_atcmd(f"AT+CIPSTO={value}")
+    except:
+      pass
+
   def get_recv_size(self, link_id:int) -> int:
     """ return size of data available for reading """
 
     if link_id == -1:
-      rex = ".*\+IPD,[0-9]+:"
+      rex = ".*\+IPD,[^:]+:"
+      off = 1
     else:
-      rex = f".*\+IPD,{link_id},[0-9]+:"
-    size_info = self._t.wait_for(rex,timeout=5,greedy=False)
-    return int(str(size_info[:-1],'utf-8').split(',')[-1])
+      rex = f".*\+IPD,{link_id},[^:]+:"
+      off = 2
+    info = self._t.wait_for(rex,timeout=5,greedy=False)
+    info = str(info[:-1],'utf-8').split(',')
+    return (int(info[off]),info[off+1].strip('"'),int(info[off+2]))
 
   def read(self,
            buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
@@ -185,3 +205,30 @@ class _Implementation:
 
     # just delegate this to the transport layer
     return self._t.readinto(buffer,bufsize)
+
+  def start_server(self, port: int, conn_type: str) -> None:
+    """ start TCP/SSL server on the given port """
+
+    reply = self._t.send_atcmd(
+      f'AT+CIPSERVER=1,{port},"{conn_type}",0',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not start server")
+
+  def stop_server(self) -> None:
+    """ start TCP/SSL server on the given port """
+
+    # delete server and close all connections
+    try:
+      reply = self._t.send_atcmd(
+        'AT+CIPSERVER=0,1',filter="^OK",timeout=5)
+    except Exception as ex:
+      pass
+
+  def check_for_client(self) -> int:
+    """ check for a connection and return link-id """
+
+    try:
+      conn = self._t.wait_for(".*CONNECT",timeout=1,greedy=False)
+      return int(str(conn,'utf-8').split(',',1)[0])
+    except RuntimeError:
+      raise OSError(EAGAIN)

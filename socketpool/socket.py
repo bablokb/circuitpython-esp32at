@@ -54,6 +54,9 @@ class Socket:
     self._recv_size = 0
     self._recv_read = 0
 
+    # state variables for the server
+    self._is_server_socket =  False
+
   @property
   def use_ssl(self) -> bool:
     """ Socket uses SSL-encryption (internal, not part of the core-API) """
@@ -75,6 +78,16 @@ class Socket:
   def __exit__(self, exc_type, exc_val, exc_tb) -> None:
     self.close()
 
+  def _get_conn_info(self) -> Tuple[str,int]:
+    """ get connection info of socket """
+    self._recv_size,host,port = self._impl.get_recv_size(self._link_id)
+    self._recv_read = 0
+    #print(f"=====> _get_conn_info({host=})")
+    #print(f"=====> _get_conn_info({port=})")
+    #print(f"=====> _get_conn_info({self._recv_size=})")
+    #print(f"=====> _get_conn_info({self._recv_read=})")
+    return (host,port)
+
   # pylint: disable=undefined-variable
   def accept(self) -> Tuple[Socket, Tuple[str, int]]:
     """
@@ -82,7 +95,12 @@ class Socket:
     creating a new socket of type SOCK_STREAM. Returns a tuple of
     (new_socket, remote_address)
     """
-    raise NotImplementedError("socket.accept(): not implemented yet!")
+    # no client: throw exception
+    link_id = self._impl.check_for_client()
+    client_socket = Socket(self._socket_pool)
+    client_socket._link_id = link_id
+    address = client_socket._get_conn_info()
+    return (client_socket,address)
 
   def bind(self, address: Tuple[str, int]) -> None:
     """ Bind a socket to an address
@@ -91,7 +109,9 @@ class Socket:
 
       address (tuple) – tuple of (remote_address, remote_port)
     """
-    raise NotImplementedError("socket.bind(): not implemented yet!")
+    self._impl.multi_connections = True # required by server
+    self._impl.start_server(address[1],self._conn_type)
+    self._is_server_socket = True
 
   def connect(self,address: Tuple[str, int]) -> None:
     """ Connect a socket to a remote address
@@ -111,17 +131,22 @@ class Socket:
     """ Closes this Socket and makes its resources available to its
     SocketPool.
     """
-    self._impl.close_connection(self._link_id)
-    self._link_id = None
+    if self._is_server_socket:
+      self._impl.stop_server()
+    else:
+      self._impl.close_connection(self._link_id)
+      self._link_id = None
 
   def listen(self,backlog: int) -> None:
     """ Set socket to listen for incoming connections
 
     Parameters:
 
-      backlog (~int) – length of backlog queue for waiting connetions
+      backlog (int) – length of backlog queue for waiting connetions
     """
-    raise NotImplementedError("socket.listen(): not implemented yet!")
+
+    # this is not implemented by the AT command set, so just ignore
+    return
 
   def recvfrom_into(
     self,
@@ -164,7 +189,7 @@ class Socket:
 
     # if we don't know the data-size, get it
     if not self._recv_size or self._recv_read == self._recv_size:
-      self._recv_size = self._impl.get_recv_size(self._link_id)
+      self._recv_size,_,_ = self._impl.get_recv_size(self._link_id)
       self._recv_read = 0
       #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
 
@@ -227,14 +252,18 @@ class Socket:
 
     Parameters:
 
-      flag (~bool) – False means non-blocking, True means block
+      flag (bool) – False means non-blocking, True means block
       indefinitely.
     """
-    raise NotImplementedError("socket.setblocking(): not implemented yet!")
+
+    # this is not implemented by the AT command set, so just ignore
+    return
 
   def setsockopt(self, level: int, optname: int, value: int) -> None:
     """ Sets socket options """
-    raise NotImplementedError("socket.setsockopt(): not implemented yet!")
+
+    # this is not implemented by the AT command set, so just ignore
+    return
 
   def settimeout(self,value: int) -> None:
     """ Set the timeout value for this socket.
@@ -244,9 +273,17 @@ class Socket:
       value (int) – timeout in seconds. 0 means non-blocking. None
       means block indefinitely.
 
-    Note: the ESP32 AT commandset can only set the send timeout.
     """
-    self._impl.set_timeout(value,self._link_id)
+    # can't set timeout if we have pending data
+    # TODO: block send_atcmd in Transport()
+    if self._recv_size > self._recv_read:
+      return
+    if self._is_server_socket:
+      if value is None:
+        value = 0
+      self._impl.set_server_timeout(value)
+    else:
+      self._impl.set_timeout(value,self._link_id)
 
   @property
   def type(self) -> int:
