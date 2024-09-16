@@ -420,9 +420,9 @@ class Radio:
     In the raspberrypi port (RP2040 CYW43), the access point needs to
     be started before the IP v4 address can be set.
     """
-    ipv4 = ipv4.as_string()
-    netmask = netmask.as_string()
-    gateway = gateway.as_string()
+    ipv4 = str(ipv4)
+    netmask = str(netmask)
+    gateway = str(gateway)
     reply = self._transport.send_atcmd(
       f'AT+CIPSTA="{ipv4}","{gateway}","{netmask}"',filter="^OK")
     if reply is None:
@@ -479,7 +479,7 @@ class Radio:
   @ipv4_dns.setter
   def ipv4_dns(self,value: ipaddress.IPv4Address) -> None:
     """ IP v4 Address of the DNS server to be used. """
-    self.dns = [value.as_string(), self.ipv4_dns_defaults[0]]
+    self.dns = [str(value), self.ipv4_dns_defaults[0]]
 
   @property
   def dns(self) -> Sequence[str]:
@@ -590,7 +590,7 @@ class Radio:
     """
 
     if not isinstance(ip,str):
-      ip = ip.as_string()
+      ip = str(ip)
     try:
       reply = self._transport.send_atcmd(
         f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)

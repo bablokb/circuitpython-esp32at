@@ -79,12 +79,6 @@ def connect():
 
 # --- query station-info   ---------------------------------------------------
 
-def ipv4_to_str(address):
-  if address:
-    return '.'.join([str(address.packed[i]) for i in range(4)])
-  else:
-    return ""
-
 def mac_to_str(mac):
   if mac:
     return str(mac,'utf-8').upper()
@@ -97,10 +91,10 @@ def get_sta_info(heading):
   print(f"  connected:     {wifi.radio.connected}")
   print(f"  hostname:      {wifi.radio.hostname}")
   print(f"  MAC-address:   {mac_to_str(wifi.radio.mac_address)}")
-  print(f"  IPv4-Address:  {ipv4_to_str(wifi.radio.ipv4_address)}")
-  print(f"  Netmask:       {ipv4_to_str(wifi.radio.ipv4_subnet)}")
-  print(f"  Gateway:       {ipv4_to_str(wifi.radio.ipv4_gateway)}")
-  print(f"  DNS:           {ipv4_to_str(wifi.radio.ipv4_dns)}")
+  print(f"  IPv4-Address:  {str(wifi.radio.ipv4_address)}")
+  print(f"  Netmask:       {str(wifi.radio.ipv4_subnet)}")
+  print(f"  Gateway:       {str(wifi.radio.ipv4_gateway)}")
+  print(f"  DNS:           {str(wifi.radio.ipv4_dns)}")
   print(f"  DNS (all):     {wifi.radio.dns}")
   try:
     print(f"  listen-int.: {wifi.radio.listen_interval}")
