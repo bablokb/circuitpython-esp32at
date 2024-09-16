@@ -45,7 +45,7 @@ class IPv4Address:
     """ 4 for IPv4, 6 for IPv6 """
     return 4
 
-  def as_string(self) -> str:
+  def __repr__(self) -> str:
     """ IP as a string in dotted notation """
     return '.'.join([str(self._bytes[i]) for i in range(4)])
 
