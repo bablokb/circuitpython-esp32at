@@ -70,6 +70,50 @@ class Radio:
     self.ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
 
   @property
+  def country_settings(self):
+    """ query country settings.
+    Returns [ignore_ap,country,start_channel,n_channels]. """
+
+    reply = self._transport.send_atcmd("AT+CWCOUNTRY?",
+                                      filter="^\+CWCOUNTRY:")
+    if not reply:
+      raise RuntimeError("could not query country information")
+    settings = str(reply[11:],'utf-8').split(',')
+    return [bool(int(settings[0])),
+            settings[1].strip('"'),
+            int(settings[2]),
+            int(settings[3]),
+            ]
+
+  @country_settings.setter
+  def country_settings(self, value: Sequence = [None,None,None,None]):
+    """ configure country settings. Only change provided settings """
+
+    config = self.country_settings
+    print(f"{config=}")
+    if not value[0] is None:
+      config[0] = str(int(value[0]))
+    else:
+      config[0] = str(int(config[0]))
+    if value[1]:
+      config[1] = f'"{value[1]}"'
+    else:
+      config[1] = f'"{config[1]}"'
+    if not value[2] is None:
+      config[2] = str(value[2])
+    else:
+      config[2] = str(config[2])
+    if not value[3] is None:
+      config[3] = str(value[3])
+    else:
+      config[3] = str(config[3])
+
+    reply = self._transport.send_atcmd(f"AT+CWCOUNTRY={','.join(config)}",
+                            filter="^OK")
+    if not reply:
+      raise RuntimeError("could not query country information")
+
+  @property
   def enabled(self) -> bool:
     """
     True when the wifi radio is enabled.

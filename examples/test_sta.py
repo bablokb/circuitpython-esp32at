@@ -89,9 +89,17 @@ def get_sta_info(heading):
   print(f"station attributes ({heading}):")
   print(f"  WIFI enabled:  {wifi.radio.enabled}")
   print(f"  connected:     {wifi.radio.connected}")
+
+  # this fails for native wifi
+  try:
+    print(f"  country:     {wifi.radio.country_settings}")
+  except Exception as ex:
+    print(f"country_settings failed: {ex}")
+
   print(f"  hostname:      {wifi.radio.hostname}")
   print(f"  MAC-address:   {mac_to_str(wifi.radio.mac_address)}")
   print(f"  IPv4-Address:  {str(wifi.radio.ipv4_address)}")
+
   print(f"  Netmask:       {str(wifi.radio.ipv4_subnet)}")
   print(f"  Gateway:       {str(wifi.radio.ipv4_gateway)}")
   print(f"  DNS:           {str(wifi.radio.ipv4_dns)}")
