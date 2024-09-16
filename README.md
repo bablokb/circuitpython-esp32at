@@ -40,6 +40,7 @@ Implemented features:
   - `socket.connect()`, `socket.close()`, `socket.sendto()`
   - UDP client working
   - HTTP get requests (TCP and SSL) working
+  - HTTP server (TCP) working (not tested with multiple concurrent clients)
 
 See also examples and test-programs in the `examples`-folder.
 
@@ -47,7 +48,6 @@ Roadmap:
 
   - implement `ssl` and `socketpool`: full TCP/IP client functions
     available
-  - implement TCP/IP server functions
   - implement `wifi.radio` AP-methods
   - optimize performance
 

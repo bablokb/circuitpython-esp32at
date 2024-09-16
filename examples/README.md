@@ -13,6 +13,7 @@ the library:
   - `udp_logger.py`: send CSV-data using UDP
   - `query_timeapi.py`: HTTP-GET requests (no SSL)
   - `query_openmeteo.py`: HTTPS-GET requests (i.e. with SSL)
+  - `http_server.py`: simple HTTP-server processing GET, PUT, POST and DELETE
 
 
 secrets.py
