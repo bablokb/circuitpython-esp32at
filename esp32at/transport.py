@@ -280,6 +280,8 @@ class Transport:
       if self._uart.in_waiting:
         txt += self._uart.read(self._uart.in_waiting if greedy else 1)
         if re.match(rex,txt):
+          if self._debug:
+            print(f"{txt=}")
           return txt
     if self._debug:
       print(f"{txt=}")
