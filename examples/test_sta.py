@@ -86,15 +86,21 @@ def mac_to_str(mac):
     return ""
 
 def get_sta_info(heading):
+  # this fails for native wifi or if wifi is off
+  try:
+    cs = wifi.radio.country_settings
+  except:
+    cs = "n.a."
+
+  try:
+    li = wifi.radio.listen_interval
+  except:
+    li = "n.a."
+
   print(f"station attributes ({heading}):")
   print(f"  WIFI enabled:  {wifi.radio.enabled}")
   print(f"  connected:     {wifi.radio.connected}")
-
-  # this fails for native wifi
-  try:
-    print(f"  country:     {wifi.radio.country_settings}")
-  except Exception as ex:
-    print(f"country_settings failed: {ex}")
+  print(f"  country:       {cs}")
 
   print(f"  hostname:      {wifi.radio.hostname}")
   print(f"  MAC-address:   {mac_to_str(wifi.radio.mac_address)}")
@@ -104,10 +110,7 @@ def get_sta_info(heading):
   print(f"  Gateway:       {str(wifi.radio.ipv4_gateway)}")
   print(f"  DNS:           {str(wifi.radio.ipv4_dns)}")
   print(f"  DNS (all):     {wifi.radio.dns}")
-  try:
-    print(f"  listen-int.: {wifi.radio.listen_interval}")
-  except Exception as ex:
-    print(f"listen_interval failed: {ex}")
+  print(f"  listen-int.:   {li}")
 
 # --- set hostname   ---------------------------------------------------------
 
