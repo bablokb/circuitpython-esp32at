@@ -71,7 +71,6 @@ class Radio:
     self._ipv4_address = None
     self._ipv4_gateway = None
     self._ipv4_netmask = None
-    self._mac_address_ap = None
     Radio.radio = self
     self.ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
 
@@ -177,6 +176,14 @@ class Radio:
       raise RuntimeError("could not query MAC-address")
     return reply[12:-1]
 
+  @mac_address.setter
+  def mac_address(self, value: circuitpython_typing.ReadableBuffer) -> None:
+    """ set MAC address for the station."""
+    reply = self._transport.send_atcmd(
+      f'AT+CIPSTAMAC="{value}"',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set MAC-address")
+
   @property
   def tx_power(self) -> float:
     """ Wifi transmission power, in dBm. """
@@ -204,7 +211,19 @@ class Radio:
   @property
   def mac_address_ap(self) -> circuitpython_typing.ReadableBuffer:
     """ MAC address for the AP."""
-    return self._mac_address_ap
+    reply = self._transport.send_atcmd(
+      'AT+CIPAPMAC?',filter="^\+CIPAPMAC:")
+    if reply is None:
+      raise RuntimeError("could not query MAC-address")
+    return reply[11:-1]
+
+  @mac_address_ap.setter
+  def mac_address_ap(self, value: circuitpython_typing.ReadableBuffer) -> None:
+    """ set MAC address for the AP."""
+    reply = self._transport.send_atcmd(
+      f'AT+CIPAPMAC="{value}"',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set MAC-address")
 
   def start_scanning_networks(
     self,*, start_channel: int = 1,
