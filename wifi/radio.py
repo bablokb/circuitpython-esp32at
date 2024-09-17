@@ -688,7 +688,31 @@ class Radio:
     country and RSSI when connected to an access point. None
     otherwise.
     """
-    return None
+    reply = self._transport.send_atcmd("AT+CWJAP?",filter="^\+CWJAP:")
+    if not reply:
+      return None
+
+    info = str(reply[7:],'utf-8').split(',')
+    if len(info) == 1:
+      return None  # probably not connected
+
+    ssid = str(info[0],'utf-8').strip('"')
+    reply = self._transport.send_atcmd(
+      f'AT+CWLAP="{ssid}"',filter="^\+CWLAP:",timeout=15)
+    if not reply:
+      return None
+    info = reply[8:].split(b',')
+    network = Network()
+    network.ssid = ssid
+    network.bssid = info[3]
+    network.rssi = int(info[2])
+    network.channel = int(info[4])
+    network.authmode = AuthMode.MODE_MAP[int(info[0])]
+    try:
+      network.country = self.country_settings[1]
+    except:
+      network.country = ''
+    return network
 
   @property
   def stations_ap(self) -> None:
