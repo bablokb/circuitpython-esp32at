@@ -107,3 +107,10 @@ the AP once the device is connected.
 
 If the device should run as AP, make sure to configure all values according
 to the relevant local laws.
+
+
+Missing Functions
+-----------------
+
+Currently, only `wifi.radio.stations_ap` is not implemented due to
+missing support in the AT command set.
