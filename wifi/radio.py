@@ -44,11 +44,17 @@ class Radio:
     }
   """ error codes returned by CWJAP (connect to AP) """
 
+  # connection states
   _CONNECT_STATE_NOT_STARTED = 0
   _CONNECT_STATE_NO_IP = 1
   _CONNECT_STATE_CONNECTED = 2
   _CONNECT_STATE_IN_PROGESS = 3
   _CONNECT_STATE_DISCONNECTED = 4
+
+  # station/ap mode (can be ORed)
+  RUN_MODE_OFF = 0
+  RUN_MODE_STATION = 1
+  RUN_MODE_AP = 2
 
   def __new__(cls,transport: Transport):
     if Radio.radio:
@@ -111,6 +117,14 @@ class Radio:
                             filter="^OK")
     if not reply:
       raise RuntimeError("could not query country information")
+
+  @property
+  def run_mode(self) -> int:
+    """ query station/AP-mode """
+    reply = self._transport.send_atcmd('AT+CWMODE?',filter="^\+CWMODE:")
+    if not reply:
+      raise RuntimeError("Could not query run-mode")
+    return int(str(reply[8:],'utf-8'))
 
   @property
   def enabled(self) -> bool:
@@ -232,16 +246,26 @@ class Radio:
 
   def start_station(self) -> None:
     """Starts a Station."""
+
+    mode = self.run_mode
+    if mode & Radio.RUN_MODE_STATION:
+      return
+
     reply = self._transport.send_atcmd(
-      f'AT+CWMODE=1',filter="^OK",timeout=5)
+      f'AT+CWMODE={mode+Radio.RUN_MODE_STATION}',filter="^OK",timeout=5)
     if not reply:
-      raise RuntimeError("Could not switch to station-mode")
+      raise RuntimeError("Could not start station-mode")
     return
 
   def stop_station(self) -> None:
-    """Stopts the Station. This will also disable WIFI."""
+    """Stops the Station. This might also disable WIFI."""
+
+    mode = self.run_mode
+    if not (mode & Radio.RUN_MODE_STATION):
+      return
+
     reply = self._transport.send_atcmd(
-      f'AT+CWMODE=0',filter="^OK",timeout=5)
+      f'AT+CWMODE={mode-Radio.RUN_MODE_STATION}',filter="^OK",timeout=5)
     if not reply:
       raise RuntimeError("Could not stop station-mode")
 
@@ -257,7 +281,8 @@ class Radio:
     password: Union[str, circuitpython_typing.ReadableBuffer] = b'',
     *, channel: int = 1,
     authmode: Iterable[AuthMode] = (),
-    max_connections: Union[int, None] = 4) -> None:
+    max_connections: Union[int, None] = 4,
+    hide_ssid: bool = False) -> None:
     """
     Starts running an access point with the specified ssid and password.
 
@@ -279,29 +304,72 @@ class Radio:
 
     If max_connections is given, the access point will allow up to
     that number of stations to connect.
+
+    Superset of parameters, specific to the ESP32 AT interface:
+
+    hide_ssid: hide SSID (default: False)
     """
-    # clear buffered values
-    self._ipv4_address = None
-    self._ipv4_gateway = None
-    self._ipv4_netmask = None
-    return
+
+    # get current mode and return if AP already active
+    mode = self.run_mode
+    if mode & Radio.RUN_MODE_AP:
+      return
+
+    reply = self._transport.send_atcmd(
+      f'AT+CWMODE={mode+Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
+    if not reply:
+      raise RuntimeError("Could not start AP-mode")
+
+    # clear buffered values if not also running as station
+    if not (mode & Radio.RUN_MODE_STATION):
+      self._ipv4_address = None
+      self._ipv4_gateway = None
+      self._ipv4_netmask = None
+
+    # map AuthMode to encryption-params
+    if not authmode:
+      authmode = [AuthMode.OPEN]
+    if AuthMode.OPEN not in authmode and AuthMode.PSK not in authmode:
+      raise ValueError("unsupported AuthMode")
+    if AuthMode.OPEN in authmode:
+      if password:
+        raise ValueError("open AP with password not allowed")
+      else:
+        ecn = 0
+    elif AuthMode.WPA in authmode:
+      if AuthMode.WPA2 in authmode:
+        ecn = 4
+      else:
+        ecn = 2
+    elif AuthMode.WPA2 in authmode:
+      ecn = 3
+
+    # ignore max_connections if unset
+    if max_connections is None:
+      max_connections = ""
+
+    cmd = (f'AT+CWSAP="{ssid}","{password}",{channel},{ecn},' +
+           f'{max_connections},{int(hide_ssid)}')
+    reply = self._transport.send_atcmd(cmd,filter="^OK",timeout=5)
+    if not reply:
+      raise RuntimeError("Could not start AP-mode")
 
   def stop_ap(self) -> None:
     """Stops the access point."""
+
+    mode = self.run_mode
+    if not (mode & Radio.RUN_MODE_AP):
+      return
     reply = self._transport.send_atcmd(
-      f'AT+CWMODE=0',filter="^OK",timeout=5)
+      f'AT+CWMODE={mode-Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
     if not reply:
-      raise RuntimeError("Could not stop AP-mode")
-    # clear buffered values
-    self._ipv4_address = None
-    self._ipv4_gateway = None
-    self._ipv4_netmask = None
+      raise RuntimeError("Could not stop station-mode")
     return
 
   @property
   def ap_active(self) -> bool:
     """True if running as an access point. (read-only)"""
-    return False
+    return (self.run_mode & Radio.RUN_MODE_AP) > 0
 
   # pylint: disable=too-many-locals,unused-variable
   def connect(
