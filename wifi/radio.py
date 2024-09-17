@@ -67,10 +67,16 @@ class Radio:
     if Radio.radio:
       return
     self._transport = transport
+
     self._scan_active = False
     self._ipv4_address = None
     self._ipv4_gateway = None
     self._ipv4_netmask = None
+
+    self._ipv4_address_ap = None
+    self._ipv4_gateway_ap = None
+    self._ipv4_netmask_ap = None
+
     Radio.radio = self
     self.ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
 
@@ -149,6 +155,9 @@ class Radio:
       self._ipv4_address = None
       self._ipv4_gateway = None
       self._ipv4_netmask = None
+      self._ipv4_address_ap = None
+      self._ipv4_gateway_ap = None
+      self._ipv4_netmask_ap = None
 
   @property
   def hostname(self) -> str:
@@ -383,6 +392,11 @@ class Radio:
       f'AT+CWMODE={mode-Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
     if not reply:
       raise RuntimeError("Could not stop station-mode")
+
+    self._ipv4_address_ap = None
+    self._ipv4_gateway_ap = None
+    self._ipv4_netmask_ap = None
+
     return
 
   @property
@@ -493,7 +507,10 @@ class Radio:
   def ipv4_gateway_ap(self) -> Union[ipaddress.IPv4Address, None]:
     """ IP v4 Address of the access point gateway, when enabled. None
     otherwise. (read-only)"""
-    return None
+    if self._ipv4_gateway_ap:
+      return self._ipv4_gateway_ap
+    self.ipv4_address_ap
+    return self._ipv4_gateway_ap
 
   @property
   def ipv4_subnet(self) -> Union[ipaddress.IPv4Address, None]:
@@ -508,7 +525,10 @@ class Radio:
   def ipv4_subnet_ap(self) -> Union[ipaddress.IPv4Address, None]:
     """ IP v4 Address of the access point subnet, when enabled. None
     otherwise. (read-only) """
-    return None
+    if self._ipv4_netmask_ap:
+      return self._ipv4_netmask_ap
+    self.ipv4_address_ap
+    return self._ipv4_netmask_ap
 
   @property
   def ipv4_address(self) -> Union[ipaddress.IPv4Address, None]:
@@ -578,10 +598,27 @@ class Radio:
     """ IP v4 Address of the access point, when enabled. None
     otherwise. (read-only)
     """
-    return None
+    # check for buffered info
+    if self._ipv4_address_ap:
+      return self._ipv4_address_ap
+    replies = self._transport.send_atcmd(
+      f"AT+CIPAP?",filter="^\+CIPAP:",timeout=5)
+    if not replies:
+      return None
+    for line in replies:
+      key, value = line[7:].split(b':',1)
+      value = str(value,'utf-8').strip('"')
+      if value == "0.0.0.0":
+        continue
+      if key == b"ip":
+        self._ipv4_address_ap  = ipaddress.ip_address(value)
+      elif key == b"gateway":
+        self._ipv4_gateway_ap = ipaddress.ip_address(value)
+      elif key == b"netmask":
+        self._ipv4_netmask_ap = ipaddress.ip_address(value)
+    return self._ipv4_address_ap
 
-  @ipv4_address_ap.setter
-  def ipv4_address_ap(
+  def set_ipv4_address_ap(
     self, *,
     ipv4: ipaddress.IPv4Address,
     netmask: ipaddress.IPv4Address,
@@ -590,12 +627,25 @@ class Radio:
     netmask and gateway.
     """
 
+    ipv4 = str(ipv4)
+    netmask = str(netmask)
+    gateway = str(gateway)
+    reply = self._transport.send_atcmd(
+      f'AT+CIPAP="{ipv4}","{gateway}","{netmask}"',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set static IP-configuration")
+
+    # clear buffered values
+    self._ipv4_address_ap = None
+    self._ipv4_gateway_ap = None
+    self._ipv4_netmask_ap = None
+
   @property
   def addresses_ap(self) -> Sequence[str]:
     """ Address(es) of the access point when enabled. Empty sequence
     when disabled. (read-only)
     """
-    return []
+    return [self.ipv4_address_ap] if self.ipv4_address_ap else []
 
   @property
   def ipv4_dns(self) -> ipaddress.IPv4Address:
