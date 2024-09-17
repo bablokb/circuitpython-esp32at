@@ -724,6 +724,8 @@ class Radio:
     ipv4_address: ipv4_address (read-only, None
     if station connected but no address assigned yet or self-assigned
     address)
+
+    Not implemented in AT command set.
     """
     return None
 
