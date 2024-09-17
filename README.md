@@ -1,14 +1,12 @@
 circuitpython-esp32at
 =====================
 
-**This is work in progress and only partially usable yet!**
+**This is work in progress, fairly complete but not fully tested yet!**
 
 This is an implementation of a CircuitPython core-API compatible
 wifi-interface to ESP32C3/ESP32C6 co-processors using AT Commands. It
 is meant as a drop-in for CircuitPython builds without native wifi
-support (btw: a Pico with C3 will do better than a Pico-W, since the
-network stack on the Pico-W will use up a large amount of the
-available memory).
+support.
 
 It provides the following modules:
 
@@ -18,11 +16,16 @@ It provides the following modules:
   - `ssl`
   - `wifi`
 
-Currently, you have to install these modules manually, i.e. copy
-the respective folders to your device.
+The rationale for this project is to transparently support a
+co-processor for non-wifi enabled boards, mainly RP2040/RP2350, but
+any other board with enough RAM should work as well (the SAMD21 does
+not have enough memory, but the SAMD51 works fine).
 
-**Do not install the modules from this repository if you are using a
-CircuitPython build that has native wifi support.**
+One major difference with using a co-processor is that the TCP/IP and
+SSL-stacks don't use up large amounts of memory in the MCU RAM. The
+Pico-W for example can either do networking, or update a display, but
+not both (with the exception of trivial examples). In contrast, the
+Pico together with an ESP32C3 will work fine.
 
 
 Status
@@ -31,29 +34,45 @@ Status
 Implemented features:
 
   - co-processor initialization
-  - network scanning (`wifi.radio.start_scanning_networks()`)
-  - connecting (`wifi.radio.connect()` and `wifi.radio.connected`)
-  - pinging (`wifi.radio.ping()`)
-  - all `wifi.radio` station-methods and properties
-  - modules `ipaddress`, `ssl`
-  - `socketpool.SocketPool` (including DNS-lookup)
-  - `socket.connect()`, `socket.close()`, `socket.sendto()`
-  - UDP client working
-  - HTTP get requests (TCP and SSL) working
-  - HTTP server (TCP) working (not tested with multiple concurrent clients)
+  - all modules: `ipaddress`, `wifi`,`ipaddress`, `ssl`, `socketpool`
+    (except `socketpool.socket.recvfrom_into` and  `socketpool.socket.sendall`)
+
+From an application point of view:
+
+  - TCP (with and without SSL) and UDP client
+  - HTTP requests (TCP and SSL)
+  - HTTP server (TCP only)<br>
+    (currently untested with multiple concurrent clients)
+
+Not implemented:
+
+  - `wifi.radio.stations_ap`: no support from AT commandset
+  - UDP server: planned, needs `socketpool.socket.recvfrom_into`
+  - TCP-server with SSL: needs indiviual firmware because of certificates
+  - MP3 streaming: currently unsupported from core CircuitPython
 
 See also examples and test-programs in the `examples`-folder.
 
-Roadmap:
 
-  - implement `ssl` and `socketpool`: full TCP/IP client functions
-    available
-  - implement `wifi.radio` AP-methods
+Installation
+------------
+
+Currently, you have to install these modules manually, i.e. copy
+the respective folders to your device.
+
+**Do not install the modules from this repository if you are using a
+CircuitPython build that has native wifi support.**
+
+
+Roadmap
+-------
+
+  - implement remaining `socketpool.socket`-methods
   - optimize performance
 
 
-Required Hardware
------------------
+Hardware
+--------
 
 Tested with the following boards:
 
