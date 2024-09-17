@@ -90,7 +90,6 @@ class Radio:
     """ configure country settings. Only change provided settings """
 
     config = self.country_settings
-    print(f"{config=}")
     if not value[0] is None:
       config[0] = str(int(value[0]))
     else:
