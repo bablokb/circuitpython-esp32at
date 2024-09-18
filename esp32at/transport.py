@@ -24,7 +24,7 @@ from digitalio import Direction, DigitalInOut
 
 try:
   import circuitpython_typing
-  from typing import Optional
+  from typing import Optional, Union
 except ImportError:
   pass
 
@@ -71,7 +71,7 @@ class Transport:
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
            multi_connection: Optional[bool] = False,
-           baudrate: Optional[int] = 115200,
+           baudrate: Union[int, str] = None,
            debug: bool = False,
            ) -> bool:
     """ initialize hardware, and query AT firmware version """
@@ -121,6 +121,10 @@ class Transport:
       self.send_atcmd(f"AT+CIPMUX={int(multi_connection)}")
     except: # pylint: disable=bare-except
       pass
+
+    # configure non-default baudrate
+    if not baudrate is None:
+      self.baudrate = baudrate
     return True
 
   # --- query AT firmware version   ------------------------------------------
@@ -138,6 +142,37 @@ class Transport:
   def at_version(self) -> str:
     """ the AT firmware version """
     return self._at_version
+
+  @property
+  def baudrate(self) -> int:
+    """ query current baudrate """
+    return self._uart.baudrate
+
+  @baudrate.setter
+  def baudrate(self, value: str) -> None:
+    """ set (temporary) baudrate of co-processor and UART (best effort) """
+    try:
+      reply = self.send_atcmd("AT+UART_CUR?",filter="^\+UART_CUR:")
+      if not reply:
+        return True
+      old_baudrate = str(reply[10:],'utf-8').split(',')
+    except:
+      return True
+
+    baudrate = str(value).split(',')
+    len_parms = len(baudrate)
+    if len_parms < 2:
+      baudrate.append(old_baudrate[1])   # databits
+    if len_parms < 3:
+      baudrate.append(old_baudrate[2])   # stopbits
+    if len_parms < 4:
+      baudrate.append(old_baudrate[3])   # parity
+    if len_parms < 5:
+      baudrate.append(old_baudrate[4])   # flow control
+
+    reply = self.send_atcmd(f"AT+UART_CUR={','.join(baudrate)}",filter="^OK")
+    if reply:
+      self._uart.baudrate = int(baudrate[0])
 
   # --- soft, hard, factory resets   -----------------------------------------
 

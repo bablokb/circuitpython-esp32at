@@ -30,8 +30,8 @@ Therefore, the very first statement to execute is `wifi.init()`.
 The method has a number of parameters. Most of them are optional, but
 for optimal setup they can be tweaked:
 
-  - `uart`: The `busio.UART`-object used for communication. Needs to
-    be setup with baudrate=115200.
+  - `uart`: The `busio.UART`-object used for communication. Needs
+    an initial baudrate of 115200.
   - `at_timeout`: The global default timeout for a response to an AT
     command. The default value of `1` should be ok.
   - `at_retries`: Retries for failing AT commands. Available for
@@ -48,8 +48,9 @@ for optimal setup they can be tweaked:
   - `multi_connection`: Support multiple parallel connections. Default is
     `False`. Support is implemented, but absolutely untested. The default
     AT firmware allows up to five parallel connections.
-  - `baudrate`: temporarely set a different baudrate than the default
-    value of 115200. **TO BE IMPLMENTED**.
+  - `baudrate`: change baudrate temporarily. Format:
+     `baudrate` or `"baudrate[,databits,stopbits,parity,flow-control]"`.
+     The first alternative does not change any the remaining options.
   - `debug`: If `True`, traces AT requests and responses. Defaults to `False`.
   - `ipv4_dns_defaults`: see section below
   - `country_settings`: see section below
