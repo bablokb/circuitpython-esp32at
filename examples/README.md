@@ -7,6 +7,7 @@ Overview
 This folder contains a number of examples/test-programs that excercise
 the library:
 
+  - `helpers.py`: shared methods, used by all examples
   - `scan_network.py`: simple network-scanner for APs
   - `ping.py`: ping a given host by IP or hostname
   - `test_sta.py`: execute all station-relevant methods of `wifi.radio`

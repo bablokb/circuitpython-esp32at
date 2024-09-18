@@ -10,14 +10,13 @@
 #
 # -------------------------------------------------------------------------
 
-import time
 import board
-import busio
+import time
 import wifi
 import ipaddress
 import supervisor
 
-from pins import *
+import helpers
 
 DEBUG = False
 
@@ -28,15 +27,6 @@ except ImportError:
   print("WiFi secrets are kept in secrets.py, please add them there!")
   raise
 
-# --- set TX power if requested   --------------------------------------------
-
-def set_tx_power():
-  print(f"TX power: {wifi.radio.tx_power}")
-  if 'tx_power' in secrets:
-    print(f"changing TX power to {secrets['tx_power']}")
-    wifi.radio.tx_power = secrets['tx_power']
-    print(f"TX power: {wifi.radio.tx_power}")
-
 # --- scan network   ---------------------------------------------------------
 
 def scan():
@@ -45,37 +35,6 @@ def scan():
     print(f"  {n.ssid:<25}RSSI: {n.rssi} " +
           f"Channel: {n.channel:>2} Auth: {n.authmode:>08b}")
   wifi.radio.stop_scanning_networks()
-
-# --- connect to AP   --------------------------------------------------------
-
-def connect():
-  print(f"connecting to AP {secrets['ssid']} ...")
-  if 'timeout' in secrets:
-    timeout = secrets['timeout']
-  else:
-    timeout = 5
-  if 'retries' in secrets:
-    retries = secrets['retries']
-  else:
-    retries = 3
-
-  state = wifi.radio.connected
-  print(f"  connected: {state}")
-  if not state:
-    # ESP32xx defaults to automatic reconnection to old AP. It will
-    # disconnect first if already connected to an AP.
-    #
-    # Note: you can pass retries to wifi.radio.connect, but that is not portable
-    for _ in range(retries):
-      try:
-        wifi.radio.connect(secrets['ssid'],
-                           secrets['password'],
-                           timeout = timeout
-                           )
-        break
-      except ConnectionError as ex:
-        print(f"{ex}")
-    print(f"  connected: {wifi.radio.connected}")
 
 # --- query station-info   ---------------------------------------------------
 
@@ -227,19 +186,12 @@ while not supervisor.runtime.serial_connected:
   time.sleep(1)    
 print(f"running on board {board.board_id}")
 
-# test for esp32at-library and init co-processor
-if hasattr(wifi,"at_version"):
-  uart = busio.UART(PIN_TX, PIN_RX, baudrate=115200, receiver_buffer_size=2048)
-  wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST)
-  if not wifi.at_version:
-    raise RuntimeError("could not setup co-processor")
-  print(wifi.at_version)
-  wifi.radio.start_station()
+helpers.init(DEBUG)
+helpers.set_tx_power()
 
-set_tx_power()
 scan()
 get_sta_info("before connect")
-connect()
+helpers.connect()
 set_hostname()
 ping()
 disable()
