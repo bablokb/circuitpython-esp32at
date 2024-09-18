@@ -10,8 +10,12 @@
 #
 # -------------------------------------------------------------------------
 
+import time
+import board
 import busio
 import wifi
+import supervisor
+
 from pins import *
 
 # Get wifi details and more from a secrets.py file
@@ -21,6 +25,26 @@ except ImportError:
   print("WiFi secrets are kept in secrets.py, please add them there!")
   raise
 
+# --- get additional args for wifi.init()   ----------------------------------
+
+def _get_init_args():
+  """ get init-args from secrets.py """
+  kwargs = {}
+  for arg in ["country_settings", "ipv4_dns_defaults", "at_timeout",
+              "at_retries",       "reset",             "persist_settings",
+              "reconn_interval",  "multi_connection",  "baudrate"]:
+    if arg in secrets:
+      kwargs[arg] = secrets[arg]
+  return kwargs
+
+# --- wait for connected console   -------------------------------------------
+
+def wait_for_console():
+  """ wait for serial connection """
+  while not supervisor.runtime.serial_connected:
+    time.sleep(1)
+  print(f"running on board {board.board_id}")
+
 # --- initialize co-processor   ----------------------------------------------
 
 def init(DEBUG=False,start_station=True):
@@ -28,7 +52,8 @@ def init(DEBUG=False,start_station=True):
 
   if hasattr(wifi,"at_version"):
     uart = busio.UART(PIN_TX, PIN_RX, baudrate=115200, receiver_buffer_size=2048)
-    wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST)
+    kwargs = _get_init_args()
+    wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
     if not wifi.at_version:
       raise RuntimeError("could not setup co-processor")
     print(wifi.at_version)
