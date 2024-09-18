@@ -142,7 +142,7 @@ class _Implementation:
     self._t.send_atcmd(cmd)
     self._t.wait_for(".*>",timeout=5)
     self._t.write(buffer)
-    self._t.wait_for(".*SEND OK|.*ERROR",timeout=5)
+    self._t.wait_for(".*SEND OK|.*SEND FAIL",timeout=5)
 
   # pylint: disable=no-self-use
   def send_long(self,
