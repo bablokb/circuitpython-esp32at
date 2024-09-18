@@ -10,11 +10,9 @@
 #
 # -------------------------------------------------------------------------
 
-import board
 import time
 import wifi
 import ipaddress
-import supervisor
 
 import helpers
 
@@ -181,11 +179,7 @@ def start_dhcp():
 
 # --- main   -----------------------------------------------------------------
 
-# wait for serial connection
-while not supervisor.runtime.serial_connected:
-  time.sleep(1)    
-print(f"running on board {board.board_id}")
-
+helpers.wait_for_console()
 helpers.init(DEBUG)
 helpers.set_tx_power()
 
