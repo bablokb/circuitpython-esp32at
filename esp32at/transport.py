@@ -305,7 +305,7 @@ class Transport:
           return txt
     if self._debug:
       print(f"{txt=}")
-    raise RuntimeError(f"timeout waiting for {rex}")
+    raise RuntimeError(f"timeout waiting for {rex}. {txt=}")
 
   # --- write bytes to the interface   ---------------------------------------
 
