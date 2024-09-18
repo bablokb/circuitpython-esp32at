@@ -269,7 +269,7 @@ class Transport:
     if self._debug:
       print("<--- (raw)", raw_response)
     if not finished:
-      raise TransportError(f"AT-command {at_cmd} failed")
+      raise TransportError(f"AT-command {at_cmd} failed ({raw_response=})")
 
     # split results by lines
     if filter:
