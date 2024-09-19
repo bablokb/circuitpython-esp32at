@@ -8,6 +8,8 @@
 #
 # -------------------------------------------------------------------------
 
+from esp32at.transport import RESET_NEVER, RESET_ON_FAILURE, RESET_ALWAYS
+
 secrets = {
   # WLAN credentials
   'ssid' : 'my_ssid',
@@ -21,7 +23,8 @@ secrets = {
   #'country_settings': [False,'xx',1,13],
   #'at_timeout': 1,
   #'at_retries': 1,
-  #'reset': False,
+  #'reset': RESET_ON_FAILURE,
+  #'hard_reset': RESET_NEVER,
   #'persist_settings': True,
   #'reconn_interval': 1,
   #'multi_connection': False,
