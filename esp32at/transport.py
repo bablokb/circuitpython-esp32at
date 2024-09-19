@@ -28,6 +28,15 @@ try:
 except ImportError:
   pass
 
+RESET_NEVER = 0
+""" don't reset during init """
+
+RESET_ON_FAILURE = 1
+""" reset on failure during init """
+
+RESET_ALWAYS = 2
+""" always reset during init """
+
 class TransportError(Exception):
   """The exception thrown when we didn't get acknowledgement to an AT command"""
 
@@ -66,7 +75,8 @@ class Transport:
            *,
            at_timeout: Optional[float] = 1,
            at_retries: Optional[int] = 1,
-           reset: Optional[bool] = False,
+           reset: Optional[int] = RESET_ON_FAILURE,
+           hard_reset: Optional[int] = RESET_NEVER,
            reset_pin: Optional[circuitpython_typing.Pin] = None,
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
@@ -85,29 +95,29 @@ class Transport:
     if reset_pin:
       self._reset_pin = DigitalInOut(reset_pin)
       self._reset_pin.switch_to_output(True)
+    else:
+      hard_reset = RESET_NEVER
 
     # check if a reset is requested
-    if reset:
+    if hard_reset == RESET_ALWAYS:
       self.hard_reset()
+    elif reset == RESET_ALWAYS:
       self.soft_reset()
 
-    # try to connect with the ESP32xx co-processor
+    # try two times to connect with the ESP32xx co-processor
     connected = False
-    for _ in range(3):
+    for _ in range(2):
       try:
-        try:
-          self._get_version()
-        except TransportError:
-          # try to reset the device
-          self.hard_reset()
-          self.soft_reset()
-          continue
-        # connected!
+        self._get_version()
         connected = True
         self._echo(False)
         break
       except TransportError:
-        pass  # retry
+        # try to reset the device
+        if hard_reset == RESET_ON_FAILURE:
+          self.hard_reset()
+        elif reset == RESET_ON_FAILURE:
+          self.soft_reset()
 
     if not connected:
       return False
@@ -180,11 +190,17 @@ class Transport:
     """Perform a software reset by AT command. Returns True
     if we successfully performed, false if failed to reset"""
     try:
-      reply = self.send_atcmd("AT+RST", timeout=timeout)
-      self._uart.reset_input_buffer()
-      return reply == b'OK'
+      reply = self.send_atcmd("AT+RST", timeout=timeout,filter="^OK")
     except TransportError:
-      return False
+      reply = ""
+    if reply == b"OK":
+      # RST command acknowleged
+      if self._debug:
+        print("waiting 3 seconds for reset")
+      time.sleep(3)  # in case of a reboot
+    self._uart.baudrate = 115200
+    self._uart.reset_input_buffer()
+    return reply == b'OK'
 
   def restore_factory_settings(self) -> None:
     """Send factory restore settings request"""
@@ -197,8 +213,13 @@ class Transport:
       self._reset_pin.value = False
       time.sleep(0.1)
       self._reset_pin.value = True
+      if self._debug:
+        print("waiting 3 seconds for hard reset")
       time.sleep(3)  # give it a few seconds to wake up
+      self._uart.baudrate = 115200
       self._uart.reset_input_buffer()
+      return True
+    return False
 
   # --- send command to the co-processor   -----------------------------------
 
@@ -220,7 +241,7 @@ class Transport:
       retries = self._at_retries
 
     finished = False
-    for _ in range(retries):
+    for i in range(retries):
       self._uart.reset_input_buffer()  # flush it
       if self._debug:
         print("--->", at_cmd)
@@ -263,7 +284,8 @@ class Transport:
       ):
         finished = True
         break
-      time.sleep(1)
+      if i < retries-1:  # wait before retrying
+        time.sleep(1)
 
     # final processing
     if self._debug:
