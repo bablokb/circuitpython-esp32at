@@ -24,6 +24,7 @@ import time
 import wifi
 import socketpool
 import ssl
+import gc
 import adafruit_requests
 
 import helpers
@@ -56,14 +57,17 @@ url = "".join([
   "&forecast_days=1"
   ])
 
+print(f"free memory before session: {gc.mem_free()}")
 pool = socketpool.SocketPool(wifi.radio)
 requests = adafruit_requests.Session(pool,ssl.create_default_context())
+print(f"free memory after  session: {gc.mem_free()}")
 
-print('ts,T/met °C,H/met %rH,P/met hPa,WMO,Wspd km/s,Wdir °,R mm,elapsed s')
+print('\nts,T/met °C,H/met %rH,P/met hPa,WMO,Wspd km/s,Wdir °,R mm,elapsed s,memfree')
 for i in range(ITERATIONS):
   try:
     start = time.monotonic()
     response = requests.get(url)
+    memfree = gc.mem_free()
     duration = time.monotonic() - start
   except RuntimeError as e:
     print(f"request failed: {e}")
@@ -82,7 +86,7 @@ for i in range(ITERATIONS):
   r    = data["hourly"]["precipitation"][hour]
 
   # print data
-  print(f"{ts},{t:0.1f},{h:0.0f},{ps:0.0f},{c:d},{ws:0.1f},{wd:0.0f},{r:0.1f},{duration:0.3f}")
+  print(f"{ts},{t:0.1f},{h:0.0f},{ps:0.0f},{c:d},{ws:0.1f},{wd:0.0f},{r:0.1f},{duration:0.3f},{memfree}")
   time.sleep(INTERVAL)
 
 response.close()
