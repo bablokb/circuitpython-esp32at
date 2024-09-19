@@ -30,9 +30,9 @@ except ImportError:
 def _get_init_args():
   """ get init-args from secrets.py """
   kwargs = {}
-  for arg in ["country_settings", "ipv4_dns_defaults", "at_timeout",
-              "at_retries",       "reset",             "persist_settings",
-              "reconn_interval",  "multi_connection",  "baudrate"]:
+  for arg in ["country_settings", "ipv4_dns_defaults",   "at_timeout",
+              "at_retries",       "reset", "hard_reset", "persist_settings",
+              "reconn_interval",  "multi_connection",    "baudrate"]:
     if arg in secrets:
       kwargs[arg] = secrets[arg]
   return kwargs
@@ -51,10 +51,20 @@ def init(DEBUG=False,start_station=True):
   """ initialize co-processor """
 
   if hasattr(wifi,"at_version"):
+    print("initializing co-processor with default uart-baudrate")
     uart = busio.UART(PIN_TX, PIN_RX, baudrate=115200, receiver_buffer_size=2048)
     kwargs = _get_init_args()
-    wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
-    if not wifi.at_version:
+    rc = wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
+    if not rc and 'baudrate' in kwargs:
+      # co-processor might already have a higher baudrate from secrets.py
+      baud_alt = int(str(kwargs['baudrate']).split(',',1)[0])
+      if baud_alt != 115200:
+        # try again with different baudrate
+        uart.baudrate = baud_alt
+        uart.reset_input_buffer()
+        print(f"retry wifi.init() with uart-baudrate={baud_alt}")
+        rc = wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
+    if not rc:
       raise RuntimeError("could not setup co-processor")
     print(wifi.at_version)
     if start_station:
