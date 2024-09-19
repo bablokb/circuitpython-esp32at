@@ -54,4 +54,4 @@ for _ in range(ITERATIONS):
 loop_end = time.monotonic()
 
 socket.close()
-print(f"time pro iteration: {(loop_end-loop_start)/ITERATIONS:0.2f}s")
+print(f"time per iteration: {(loop_end-loop_start)/ITERATIONS:0.3f}s")
