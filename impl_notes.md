@@ -36,8 +36,8 @@ for optimal setup they can be tweaked:
     command. The default value of `1` should be ok.
   - `at_retries`: Retries for failing AT commands. Available for
     historical reasons and currently with default `1`.
-  - `reset`: Send the reset command to the co-processor during init.
-    If `reset_pin` is defined, also execute a hard reset.
+  - `reset`: see section below.
+  - `hard_reset`: see section below.
   - `reset_pin`: GPIO (`microcontroller.Pin`) connected to
     RESET of the ESP32Cx.
   - `persist_settings`: If `True` (default), settings are saved to
@@ -54,6 +54,53 @@ for optimal setup they can be tweaked:
   - `debug`: If `True`, traces AT requests and responses. Defaults to `False`.
   - `ipv4_dns_defaults`: see section below
   - `country_settings`: see section below
+
+
+Resets
+------
+
+A reset is possible using the singleton `Transport`-object:
+
+    import wifi
+    wifi.init(...)
+    t = wifi.transport
+    t.soft_reset()
+    t.hard_reset()
+
+A soft reset is only possible if the communication with the
+co-processor is working. A hard reset needs a physical connection
+(reset-pin) to reset the device.
+
+During initialization, you can request an automatic reset:
+
+    from esp32at.transport import RESET_NEVER, RESET_ON_FAILURE, RESET_ALWAYS
+    wifi.init(...,reset=RESET_ON_FAILURE, hard_reset=RESET_NEVER,...)
+
+The defaults (`reset=RESET_ON_FAILURE` and `hard_reset=RESET_NEVER`) are
+the recommended settings.
+
+
+Baudrate
+--------
+
+The initial baudrate is `115200`. You can change this value from
+`wifi.init()`, or set it any time using `wifi.transport.baudrate =
+...`. Both ways this will change the UART-baudrate, and the configuration
+of the co-processor. This setting does not persist. The AT commandset
+*does* support changing the baudrate permanently, but this is not
+supported since this is a perfect way to shoot yourself in the foot.
+
+Changing the baudrate can cause problems during development. If you
+restart the program from the REPL (or with a reset button), the
+co-processor usually does not reset and still expects the changed
+baudrate.
+
+One workaround is a hard reset of the co-processor. A second option is
+to call `wifi.init()` two times. The first time with the default
+initial baudrate, and if the call fails, a second time with the target
+baudrate. For this to work, you should leave `reset` at its default
+value of `RESET_ON_FAILURE`. See the method `init()` in
+`examples/helpers.py` for some boilerplate code.
 
 
 Persistent Settings
