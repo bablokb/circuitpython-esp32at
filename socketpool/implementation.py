@@ -186,6 +186,16 @@ class _Implementation:
     except:
       pass
 
+  @property
+  def lock(self) -> bool:
+    """ lock-status of AT commands (True if data is pending) """
+    return self._t.lock
+
+  @lock.setter
+  def lock(self, value: bool) -> None:
+    """ set lock status """
+    self._t.lock = value
+
   def get_recv_size(self, link_id:int) -> int:
     """ return size of data available for reading """
 
@@ -196,6 +206,7 @@ class _Implementation:
       rex = f".*\+IPD,{link_id},[^:]+:"
       off = 2
     info = self._t.wait_for(rex,timeout=5,greedy=False)
+    self.lock = True
     info = str(info[:-1],'utf-8').split(',')
     return (int(info[off]),info[off+1].strip('"'),int(info[off+2]))
 
