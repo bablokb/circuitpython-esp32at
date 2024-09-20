@@ -201,7 +201,7 @@ class Socket:
     self._recv_read += n
     #print(f"=====> recv_into: {buffer=}, {n=}")
     #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
-    if self._recv_read == self.recv_size:
+    if self._recv_read == self._recv_size:
       self._impl.lock = False
     return n
 
