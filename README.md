@@ -12,6 +12,7 @@ It provides the following modules:
 
   - `esp32at`
   - `ipaddress`
+  - `mdns`
   - `socketpool`
   - `ssl`
   - `wifi`
@@ -47,6 +48,7 @@ From an application point of view:
 Not implemented:
 
   - `wifi.radio.stations_ap`: no support from AT commandset
+  - MDNS-service discovery: no support from AT commandset
   - UDP server: planned, needs `socketpool.socket.recvfrom_into`
   - TCP-server with SSL: needs indiviual firmware because of certificates
   - MP3 streaming: currently unsupported from core CircuitPython

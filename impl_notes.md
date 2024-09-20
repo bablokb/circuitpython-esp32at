@@ -160,5 +160,5 @@ to the relevant local laws.
 Missing Functions
 -----------------
 
-Currently, only `wifi.radio.stations_ap` is not implemented due to
-missing support in the AT command set.
+`wifi.radio.stations_ap` and MDNS service discovery are not
+implemented due to missing support in the AT command set.
