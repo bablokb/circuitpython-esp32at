@@ -80,6 +80,8 @@ class Socket:
 
   def _get_conn_info(self) -> Tuple[str,int]:
     """ get connection info of socket """
+
+    # Note: this will lock AT
     self._recv_size,host,port = self._impl.get_recv_size(self._link_id)
     self._recv_read = 0
     #print(f"=====> _get_conn_info({host=})")
@@ -187,7 +189,7 @@ class Socket:
     bytes_to_read = bufsize if bufsize else len(buffer)
     #print(f"=====> recv_into: {bytes_to_read=}")
 
-    # if we don't know the data-size, get it
+    # if we don't know the data-size, get it (this will lock AT)
     if not self._recv_size or self._recv_read == self._recv_size:
       self._recv_size,_,_ = self._impl.get_recv_size(self._link_id)
       self._recv_read = 0
@@ -199,6 +201,8 @@ class Socket:
     self._recv_read += n
     #print(f"=====> recv_into: {buffer=}, {n=}")
     #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
+    if self._recv_read == self.recv_size:
+      self._impl.lock = False
     return n
 
   # pylint: disable=redefined-builtin
@@ -274,16 +278,17 @@ class Socket:
       means block indefinitely.
 
     """
-    # can't set timeout if we have pending data
-    # TODO: block send_atcmd in Transport()
-    if self._recv_size > self._recv_read:
-      return
-    if self._is_server_socket:
-      if value is None:
-        value = 0
-      self._impl.set_server_timeout(value)
-    else:
-      self._impl.set_timeout(value,self._link_id)
+    # tweak for adafruit_httpserver which tries to set the timeout
+    # after we have pending data
+    try:
+      if self._is_server_socket:
+        if value is None:
+          value = 0
+        self._impl.set_server_timeout(value)
+      else:
+        self._impl.set_timeout(value,self._link_id)
+    except LockError:
+      pass
 
   @property
   def type(self) -> int:
