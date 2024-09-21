@@ -239,7 +239,9 @@ class _Implementation:
     """ check for a connection and return link-id """
 
     try:
-      conn = self._t.wait_for(".*CONNECT",timeout=1,greedy=False)
+      conn = self._t.wait_for(".*,CONNECT",timeout=1,greedy=False)
       return int(str(conn,'utf-8').split(',',1)[0])
     except RuntimeError:
       raise OSError(EAGAIN)
+    except ValueError as ex:
+      raise RuntimeError(f"check_for_client: {conn=}")
