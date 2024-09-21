@@ -15,6 +15,11 @@ secrets = {
   'ssid' : 'my_ssid',
   'password' : 'my_password',
 
+  # AP credentials
+  'ap_ssid': 'AP_esp32at',
+  'ap_password': '12345678',
+  'ap_hostname': 'AP_esp32at_host',
+
   # transmit power
   #'tx_power': 15,
 
