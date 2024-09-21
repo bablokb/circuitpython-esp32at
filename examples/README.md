@@ -15,6 +15,7 @@ the library:
   - `query_timeapi.py`: HTTP-GET requests (no SSL)
   - `query_openmeteo.py`: HTTPS-GET requests (i.e. with SSL)
   - `http_server.py`: simple HTTP-server processing GET, PUT, POST and DELETE
+  - `ap_webserver.py`: AP with webserver using MDNS
 
 
 secrets.py
