@@ -340,13 +340,11 @@ class Radio:
 
     # get current mode and return if AP already active
     mode = self.run_mode
-    if mode & Radio.RUN_MODE_AP:
-      return
-
-    reply = self._transport.send_atcmd(
-      f'AT+CWMODE={mode+Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
-    if not reply:
-      raise RuntimeError("Could not start AP-mode")
+    if not mode & Radio.RUN_MODE_AP:
+      reply = self._transport.send_atcmd(
+        f'AT+CWMODE={mode+Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
+      if not reply:
+        raise RuntimeError("Could not start AP-mode")
 
     # clear buffered values if not also running as station
     if not (mode & Radio.RUN_MODE_STATION):
