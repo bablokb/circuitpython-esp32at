@@ -39,8 +39,15 @@ class Server:
     native interfaces are currently supported.
     """
     self._transport = Transport()
-    self._hostname = None
-    self._instance_name = None
+
+    # default hostname. See shared-bindings/mdns/Server.c.
+    if radio.run_mode & wifi.Radio.RUN_MODE_STATION:
+      mac = radio.mac_address
+    else:
+      mac = radio.mac_address_ap
+    mac3 = ''.join(mac.split[':'][-3:])
+    self._hostname = f"cpy-{mac3}"
+    self._instance_name = ""
 
   def deinit(self) -> None:
     """ Stops the server """
@@ -125,7 +132,7 @@ class Server:
     #                 [,<"key">,<"value">][...]
 
     cmd = (f'AT+MDNS=1,"{self._hostname}","{service_type}",{port},' +
-           f'"{protocol}",{len(txt_records)}')
+           f'"{self._instance_name}","{protocol}",{len(txt_records)}')
     for i,value in enumerate(txt_records):
       cmd += f',"rec{i}","{value}"'
     try:
