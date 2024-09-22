@@ -358,6 +358,11 @@ class Transport:
 
   # --- read bytes from the interface into a buffer   ------------------------
 
+  @property
+  def input_available(self) -> bool:
+    """ check for available input (read-only) """
+    return self._uart.in_waiting > 0
+
   def readinto(self,
                buffer: circuitpython_typing.WriteableBuffer,
                bufsize: int) -> int:
