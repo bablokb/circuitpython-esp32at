@@ -238,6 +238,8 @@ class _Implementation:
   def check_for_client(self) -> int:
     """ check for a connection and return link-id """
 
+    if not self._t.input_available:
+      raise OSError(EAGAIN)
     try:
       conn = self._t.wait_for(".*,CONNECT",timeout=1,greedy=False)
       return int(str(conn,'utf-8').split(',',1)[0])
