@@ -351,6 +351,8 @@ class Transport:
   def write(self,
             buffer: circuitpython_typing.ReadableBuffer) -> None:
     """ write bytes to the UART-interface """
+    if self._debug:
+      print(f"---> {len(buffer)} bytes: {buffer[:min(len(buffer),40)]}...")
     self._uart.reset_input_buffer()
     self._uart.write(buffer)
 
@@ -362,7 +364,10 @@ class Transport:
     """ read data from the uart """
     mv_buffer = memoryview(buffer)
     mv_target = mv_buffer[0:bufsize]
-    return self._uart.readinto(mv_target)
+    if self._debug:
+      n = self._uart.readinto(mv_target)
+      print(f"<--- n bytes: {mv_target[:min(n,40)]}...")
+    return
 
   # --- hardware tweaks   ----------------------------------------------------
 
