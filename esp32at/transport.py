@@ -371,8 +371,10 @@ class Transport:
     mv_target = mv_buffer[0:bufsize]
     if self._debug:
       n = self._uart.readinto(mv_target)
-      print(f"<--- n bytes: {mv_target[:min(n,40)]}...")
-    return
+      print(f"<--- {n} bytes: {buffer[:min(n,40)]}...")
+      return n
+    else:
+      return self._uart.readinto(mv_target)
 
   # --- hardware tweaks   ----------------------------------------------------
 
