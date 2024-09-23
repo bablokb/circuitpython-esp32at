@@ -45,9 +45,9 @@ class Server:
       mac = radio.mac_address
     else:
       mac = radio.mac_address_ap
-    mac3 = ''.join(mac.split[':'][-3:])
+    mac3 = ''.join(str(mac,'utf-8').split(':')[-3:])
     self._hostname = f"cpy-{mac3}"
-    self._instance_name = ""
+    self._instance_name = self._hostname
 
   def deinit(self) -> None:
     """ Stops the server """
@@ -131,10 +131,19 @@ class Server:
     #                [,<"instance">][,<"proto">][,<txt_number>]
     #                 [,<"key">,<"value">][...]
 
-    cmd = (f'AT+MDNS=1,"{self._hostname}","{service_type}",{port},' +
-           f'"{self._instance_name}","{protocol}",{len(txt_records)}')
-    for i,value in enumerate(txt_records):
-      cmd += f',"rec{i}","{value}"'
+    cmd = f'AT+MDNS=1,"{self._hostname}","{service_type}",{port}'
+
+    # this is currently only available in the master-branch:
+    #cmd += f',"{self._instance_name}","{protocol}",{len(txt_records)}'
+    #for i,value in enumerate(txt_records):
+    #  cmd += f',"rec{i}","{value}"'
+
+    # disable MDNS first
+    try:
+      self._transport.send_atcmd('AT+MDNS=0',timeout=5)
+    except:
+      pass
+
     try:
       self._transport.send_atcmd(cmd,timeout=5)
     except Exception as ex:
