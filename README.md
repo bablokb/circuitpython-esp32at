@@ -35,7 +35,7 @@ Status
 Implemented features:
 
   - co-processor initialization
-  - all modules: `ipaddress`, `wifi`,`ipaddress`, `ssl`, `socketpool`
+  - all modules: `ipaddress`, `mdns`, `wifi`,`ipaddress`, `ssl`, `socketpool`
     (except `socketpool.socket.recvfrom_into` and  `socketpool.socket.sendall`)
 
 From an application point of view:
@@ -44,6 +44,7 @@ From an application point of view:
   - HTTP requests (TCP and SSL)
   - HTTP server (TCP only)<br>
     (currently untested with multiple concurrent clients)
+  - operate as AP
 
 Not implemented:
 
