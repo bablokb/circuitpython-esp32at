@@ -249,7 +249,7 @@ class Transport:
     how many times to retry before giving up"""
 
     if self.lock:
-      raise LockError("AT commands are locked (pendig data)")
+      raise LockError("AT commands are locked (pending data)")
 
     # use global defaults
     if timeout < 0:
