@@ -54,6 +54,25 @@ class _Implementation:
     if reply is None:
       raise RuntimeError("could not set connection-mode")
 
+  @property
+  def max_connections(self) -> int:
+    """ query max-connection setting """
+
+    reply = self._t.send_atcmd('AT+CIPSERVERMAXCONN?',
+                               filter="^\+CIPSERVERMAXCONN:")
+    if reply is None:
+      raise RuntimeError("could not query max connections")
+    return int(str(reply[18:],'utf-8'))
+
+  @max_connections.setter
+  def max_connections(self, value: int) -> None:
+    """ set maximum concurrent connections """
+
+    reply = self._t.send_atcmd(
+      f'AT+CIPSERVERMAXCONN={value}',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set max connections")
+
   def get_connections(self):
     """ query connections """
 
