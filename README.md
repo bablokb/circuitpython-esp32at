@@ -141,7 +141,7 @@ of this module (besides `wifi.init()`). In fact, you should not use
 these methods to stay portable with your code.
 
 The initialization routine `wifi.init()` has a number of parameters. See
-the [Implementation Notes](./impl_notes.md) for details on how to tweak
+the [Implementation Notes](./doc/impl_notes.md) for details on how to tweak
 the setup.
 
 Experts can use `wifi.transport` to directly access the co-processor
@@ -151,5 +151,5 @@ with special AT-commands.
 Additional Information
 ----------------------
 
-See [Implementation Notes](./impl_notes.md) for technical information
+See [Implementation Notes](./doc/impl_notes.md) for technical information
 regarding the interface code.
