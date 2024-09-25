@@ -79,14 +79,6 @@ class Socket:
   def __exit__(self, exc_type, exc_val, exc_tb) -> None:
     self.close()
 
-  def _get_conn_info(self) -> Tuple[str,int]:
-    """ get connection info of socket """
-
-    # Note: this will lock AT
-    self._recv_size,host,port = self._impl.get_recv_size(self._link_id)
-    self._recv_read = 0
-    return (host,port)
-
   # pylint: disable=undefined-variable
   def accept(self) -> Tuple[Socket, Tuple[str, int]]:
     """
