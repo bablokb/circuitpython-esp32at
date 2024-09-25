@@ -96,7 +96,9 @@ class _Implementation:
       connections.append(ConnInfo(*info))
     return connections
 
-  def start_connection(self,host:str,port:int,conn_type: str) -> int:
+  def start_connection(self,host:str,port:int,
+                       conn_type: str,
+                       timeout: int) -> int:
     """ Start connection of the given type. Returns the link-id,
     or -1 if in single-connection mode.
     """
@@ -117,10 +119,9 @@ class _Implementation:
     else:
       cmd = "CIPSTART"
 
-    # TODO: don't hardcode timeout
     reply = self._t.send_atcmd(
       f'AT+{cmd}="{conn_type}","{host}",{port}',filter="CONNECT",
-        timeout=5)
+        timeout=timeout)
     if reply is None:
       raise RuntimeError("could not start connection")
     if b',' in reply:

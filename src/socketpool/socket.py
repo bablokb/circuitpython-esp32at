@@ -42,7 +42,7 @@ class Socket:
     self._sock_type = type
     self._use_ssl = False
     self._link_id = None
-    #self.settimeout(0)
+    self._timeout = None
     if self._sock_type == SocketPool.SOCK_DGRAM:
       self._conn_type = "UDP"
     elif self._use_ssl:
@@ -132,8 +132,12 @@ class Socket:
 
       address (tuple) – tuple of (remote_address, remote_port)
     """
+    if self._timeout is None or self._timeout == 0:
+      timeout = 5
+    else:
+      timeout = self._timeout
     self._link_id = self._impl.start_connection(
-      address[0],address[1],self._conn_type)
+      address[0],address[1],self._conn_type,timeout)
 
     # reset receiver after connect
     self._recv_size = 0
@@ -283,6 +287,8 @@ class Socket:
       means block indefinitely.
 
     """
+    self._timeout = value
+
     # tweak for adafruit_httpserver which tries to set the timeout
     # after we have pending data
     try:
