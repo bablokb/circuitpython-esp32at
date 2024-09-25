@@ -340,10 +340,10 @@ class Transport:
         txt += self._uart.read(self._uart.in_waiting if greedy else 1)
         if re.match(rex,txt):
           if self._debug:
-            print(f"{txt=}")
+            print(f"match: {txt=}")
           return txt
     if self._debug:
-      print(f"{txt=}")
+      print(f"no match: {txt=}")
     raise RuntimeError(f"timeout waiting for {rex}. {txt=}")
 
   # --- write bytes to the interface   ---------------------------------------
