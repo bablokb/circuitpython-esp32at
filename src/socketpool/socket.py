@@ -56,6 +56,7 @@ class Socket:
 
     # state variables for the server
     self._is_server_socket =  False
+    self._connections = None
 
   @property
   def use_ssl(self) -> bool:
@@ -97,12 +98,32 @@ class Socket:
     creating a new socket of type SOCK_STREAM. Returns a tuple of
     (new_socket, remote_address)
     """
-    # no client: throw exception
-    link_id = self._impl.check_for_client()
-    client_socket = Socket(self._socket_pool)
-    client_socket._link_id = link_id
-    address = client_socket._get_conn_info()
-    return (client_socket,address)
+    check_ipd = False
+    while True:
+      if check_ipd:
+        # once we have a connect, wait for IPD: i.e. catch exception
+        try:
+          link_id,ipd_msg = self._impl.check_for_client(check_ipd)
+        except:
+          continue
+      else:
+        # no client: throws an exception and leaves the loop and method
+        link_id,ipd_msg = self._impl.check_for_client(check_ipd)
+
+      # we have a connect or IPD-message
+      if ipd_msg:
+        sock = self._connections[link_id]
+        sock._recv_read = 0
+        sock._recv_size = ipd_msg[0]
+        host = ipd_msg[1]
+        port = ipd_msg[2]
+        return (sock,(host,port))
+      # no IPD-message, save connect and continue
+      client_socket = Socket(self._socket_pool)
+      client_socket._link_id = link_id
+      self._connections[link_id] = client_socket
+      # once we have a connect, we need to check connect or ipd-messages
+      check_ipd = True
 
   def bind(self, address: Tuple[str, int]) -> None:
     """ Bind a socket to an address
@@ -114,6 +135,7 @@ class Socket:
     self._impl.multi_connections = True # required by server
     self._impl.start_server(address[1],self._conn_type)
     self._is_server_socket = True
+    self._connections = [None]*self._impl.max_connections
 
   def connect(self,address: Tuple[str, int]) -> None:
     """ Connect a socket to a remote address

@@ -226,7 +226,7 @@ class _Implementation:
       off = 2
     info = self._t.wait_for(rex,timeout=5,greedy=False)
     self.lock = True
-    info = str(info[:-1],'utf-8').split(',')
+    info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
     return (int(info[off]),info[off+1].strip('"'),int(info[off+2]))
 
   def read(self,
@@ -254,14 +254,33 @@ class _Implementation:
     except Exception as ex:
       pass
 
-  def check_for_client(self) -> int:
+  def check_for_client(self,check_ipd: bool = False) -> int:
     """ check for a connection and return link-id """
 
     if not self._t.input_available:
       raise OSError(EAGAIN)
     try:
-      conn = self._t.wait_for(".*,CONNECT",timeout=1,greedy=False)
-      return int(str(conn,'utf-8').split(',',1)[0])
+      if check_ipd:
+        # sometimes there is a second connect before the IPD
+        rex = f".*\+IPD,[0-9],[^:]+:|.*,CONNECT"
+        info = self._t.wait_for(rex,timeout=1,greedy=False)
+        print(f"===> check_for_client: {info=}")
+        if b"CONNECT" in info:
+          # a second connect, return link_id,None
+          return int(str(info,'utf-8').split(',',1)[0]),None
+        else:
+          # an IPD message
+          self.lock = True
+          info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
+          # return link_id,(size,host,port)
+          return int(info[1]),(int(info[2]),info[3].strip('"'),int(info[4]))
+      else:
+        # initial case: only check for a CONNECT
+        rex = ".*,CONNECT"
+        conn = self._t.wait_for(rex,timeout=1,greedy=False)
+        link_id = int(str(conn,'utf-8').split(',',1)[0])
+        print(f"===> check_for_client: {link_id=}")
+        return link_id,None
     except RuntimeError:
       raise OSError(EAGAIN)
     except ValueError as ex:
