@@ -43,7 +43,7 @@ From an application point of view:
   - TCP (with and without SSL) and UDP client
   - HTTP requests (TCP and SSL)
   - HTTP server (TCP only)<br>
-    (currently untested with multiple concurrent clients)
+    (note: multiple concurrent connections are broken)
   - operate as AP
 
 Not implemented:
@@ -71,6 +71,7 @@ Roadmap
 -------
 
   - implement remaining `socketpool.socket`-methods
+  - partial redesign to support concurrent connections
   - optimize performance
 
 
