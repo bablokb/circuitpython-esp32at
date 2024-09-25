@@ -264,7 +264,6 @@ class _Implementation:
         # sometimes there is a second connect before the IPD
         rex = f".*\+IPD,[0-9],[^:]+:|.*,CONNECT"
         info = self._t.wait_for(rex,timeout=1,greedy=False)
-        print(f"===> check_for_client: {info=}")
         if b"CONNECT" in info:
           # a second connect, return link_id,None
           return int(str(info,'utf-8').split(',',1)[0]),None
@@ -279,7 +278,6 @@ class _Implementation:
         rex = ".*,CONNECT"
         conn = self._t.wait_for(rex,timeout=1,greedy=False)
         link_id = int(str(conn,'utf-8').split(',',1)[0])
-        print(f"===> check_for_client: {link_id=}")
         return link_id,None
     except RuntimeError:
       raise OSError(EAGAIN)

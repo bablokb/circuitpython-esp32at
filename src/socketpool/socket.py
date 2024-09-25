@@ -85,10 +85,6 @@ class Socket:
     # Note: this will lock AT
     self._recv_size,host,port = self._impl.get_recv_size(self._link_id)
     self._recv_read = 0
-    #print(f"=====> _get_conn_info({host=})")
-    #print(f"=====> _get_conn_info({port=})")
-    #print(f"=====> _get_conn_info({self._recv_size=})")
-    #print(f"=====> _get_conn_info({self._recv_read=})")
     return (host,port)
 
   # pylint: disable=undefined-variable
@@ -205,24 +201,19 @@ class Socket:
       bufsize (int) – optionally, a maximum number of bytes to read.
     """
 
-    #print(f"=====> recv_into({bufsize=})")
     if not 0 <= bufsize <= len(buffer):
       raise ValueError("bufsize must be 0 to len(buffer)")
     bytes_to_read = bufsize if bufsize else len(buffer)
-    #print(f"=====> recv_into: {bytes_to_read=}")
 
     # if we don't know the data-size, get it (this will lock AT)
     if not self._recv_size or self._recv_read == self._recv_size:
       self._recv_size,_,_ = self._impl.get_recv_size(self._link_id)
       self._recv_read = 0
-      #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
 
     # read at most bytes_to_read from socket
     n = self._impl.read(buffer,
                         min(bytes_to_read,self._recv_size-self._recv_read))
     self._recv_read += n
-    #print(f"=====> recv_into: {buffer=}, {n=}")
-    #print(f"=====> recv_into: {self._recv_size=}, {self._recv_read=}")
     if self._recv_read == self._recv_size:
       self._impl.lock = False
     return n
