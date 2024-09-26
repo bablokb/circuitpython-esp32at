@@ -64,7 +64,11 @@ Currently, you have to install these modules manually, i.e. copy
 all folders below `src` to your device.
 
 **Do not install the modules from this repository if you are using a
-CircuitPython build that has native wifi support.**
+CircuitPython build that has native wifi support.** (it actually does not
+hurt, but these modules will not be used).
+
+See the [Developer's Guide](./doc/dev_guide.md) for more information on
+how to use the modules.
 
 
 Roadmap
@@ -104,48 +108,6 @@ Note that both the Qt-Py ESP32C3 as well as the ESP32C3-Super-Mini have
 badly designed on-board antennas. If they don't connect to your AP, try
 reducing the TX power.
 
-
-Software
---------
-
-The aim is that the modules from this repo will implement the
-communication with the co-processor in a transparent way for the
-developer. Besides the initialization of the UART connection, no
-special code (compared to a native wifi implementation) should be
-necessary:
-
-    import board
-    import busio
-    import wifi
-    
-    PIN_TX = board.GP0
-    PIN_RX = board.GP1
-    DEBUG  = False
-    
-    if hasattr(wifi,"at_version"):
-      uart = busio.UART(PIN_TX, 
-                        PIN_RX, baudrate=115200, receiver_buffer_size=2048)
-      wifi.init(uart,debug=DEBUG)
-      if wifi.at_version:
-        print(f"AT version: {wifi.at_version}")
-        wifi.radio.start_station()
-
-    # use the normal core API
-
-The `wifi`-module in this repo is a superset of the core wifi-API. The sample
-code above tests for the `at_version` attribute, which is not available in
-the core API so this code-snippet will also work with native wifi.
-
-For normal use, there is no need to use any of the additional methods
-of this module (besides `wifi.init()`). In fact, you should not use
-these methods to stay portable with your code.
-
-The initialization routine `wifi.init()` has a number of parameters. See
-the [Implementation Notes](./doc/impl_notes.md) for details on how to tweak
-the setup.
-
-Experts can use `wifi.transport` to directly access the co-processor
-with special AT-commands.
 
 
 Additional Information
