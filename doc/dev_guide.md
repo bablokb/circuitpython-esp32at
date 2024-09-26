@@ -8,7 +8,7 @@ All modules (except `esp32at`) are drop-in replacements of the core
 wifi modules from CircuitPython. These are only available on builds
 that support wifi, i.e. for boards with an integrated modem. By
 keeping the drop-in modules compatible to the core-modules, only a
-minimum of special code is necessary to use them.
+minimum of special code is necessary to use the replacements.
 
 The modules from this repo implement the communication with the
 co-processor in a transparent way for the developer. Besides the
@@ -35,7 +35,11 @@ native wifi implementation) should be necessary:
 
 The `wifi`-module in this repo is a superset of the core wifi-API. The
 sample code above tests if the `at_version` attribute exists before
-using it. This will make this code also run on native wifi builds.
+using it. This will make this code run on native wifi builds as well
+as systems using the modules from here.
+
+Note that `wifi.radio` is a singleton, there is no need to pass it
+around and it does not matter where you initialize it.
 
 For normal use, there is no need to use any of the superset methods
 of this module (besides `wifi.init()`). In fact, you should not use
@@ -195,7 +199,8 @@ First thing to try is to power cycle the host MCU and the co-processor.
 
 Secondly, try to run with default settings. Especially the reset
 configuration should be at it's defaults. Also, the baudrate should not
-be changed.
+be changed. Ideally, you would run `examples/factory_reset.py` to
+reinitialize all settings stored in non-volatile memory.
 
 If this does not help, initialize the co-processor with
 `debug=True`. This creates a lot of output but will give important
@@ -203,7 +208,7 @@ hints if there is a bug in the communication between host and
 co-processor. In case the problem persists, open an issue in the repo
 providing the trace-output and as much information as possible. A
 simple program reproducing the problem will certainly help to track
-down the problem.
+down the issue.
 
 **Note that the trace-output will also contain credentials, be sure to
 remove them before posting!**
