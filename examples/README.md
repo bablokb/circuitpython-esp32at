@@ -16,6 +16,7 @@ the library:
   - `query_openmeteo.py`: HTTPS-GET requests (i.e. with SSL)
   - `http_server.py`: simple HTTP-server processing GET, PUT, POST and DELETE
   - `ap_webserver.py`: AP with webserver using MDNS
+  - `factory_reset.py`: reset configuration to factory settings
 
 
 secrets.py
