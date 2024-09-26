@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# udp_logger: testprogram for circuitpython-esp32at.
+# udp_client: testprogram for circuitpython-esp32at.
 #
 # You need to create a secrets.py file (have a look at sec_template.py).
 #
