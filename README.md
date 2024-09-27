@@ -36,11 +36,12 @@ Implemented features:
 
   - co-processor initialization
   - all modules: `ipaddress`, `mdns`, `wifi`,`ipaddress`, `ssl`, `socketpool`
-    (except `socketpool.socket.recvfrom_into` and  `socketpool.socket.sendall`)
+    (except `socketpool.socket.sendall`)
 
 From an application point of view:
 
-  - TCP (with and without SSL) and UDP client
+  - TCP (with and without SSL)
+  - UDP sender (client) and receiver (aka "server")
   - HTTP requests (TCP and SSL)
   - HTTP server (TCP only)<br>
     (note: multiple concurrent connections are broken)
@@ -50,7 +51,6 @@ Not implemented:
 
   - `wifi.radio.stations_ap`: no support from AT commandset
   - MDNS-service discovery: no support from AT commandset
-  - UDP server: planned, needs `socketpool.socket.recvfrom_into`
   - TCP-server with SSL: needs indiviual firmware because of certificates
   - MP3 streaming: currently unsupported from core CircuitPython
 
