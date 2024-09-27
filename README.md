@@ -1,8 +1,6 @@
 circuitpython-esp32at
 =====================
 
-**This is work in progress, fairly complete but not fully tested yet!**
-
 This is an implementation of a CircuitPython core-API compatible
 wifi-interface to ESP32C3/ESP32C6 co-processors using AT Commands. It
 is meant as a drop-in for CircuitPython builds without native wifi
@@ -32,18 +30,18 @@ Pico together with an ESP32C3 will work fine.
 Status
 ------
 
-Implemented features:
+This library is feature complete with the exceptions noted below. As
+always with new projects, the code needs testing in the field to find
+any remaining bugs.
 
-  - co-processor initialization
-  - all modules: `ipaddress`, `mdns`, `wifi`,`ipaddress`, `ssl`, `socketpool`
+From an application point of view the following features are available:
 
-From an application point of view:
-
+  - co-processor initialization and configuration
   - TCP (with and without SSL)
   - UDP sender (client) and receiver (aka "server")
   - HTTP requests (TCP and SSL)
   - HTTP server (TCP only)<br>
-    (note: multiple concurrent connections are broken)
+    (**note**: *multiple concurrent connections are broken*)
   - operate as AP
 
 Not implemented:
@@ -53,7 +51,8 @@ Not implemented:
   - TCP-server with SSL: needs indiviual firmware because of certificates
   - MP3 streaming: currently unsupported from core CircuitPython
 
-See also examples and test-programs in the `examples`-folder.
+See also the [examples and test-programs](./examples/README.md) in the
+`examples`-folder.
 
 
 Installation
@@ -73,9 +72,11 @@ how to use the modules.
 Roadmap
 -------
 
-  - implement remaining `socketpool.socket`-methods
   - partial redesign to support concurrent connections
   - optimize performance
+  - support sleep and wakeup
+  - document building (specialized versions of) the AT-firmware
+  - (maybe: implement BLE)
 
 
 Hardware
