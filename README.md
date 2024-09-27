@@ -36,7 +36,6 @@ Implemented features:
 
   - co-processor initialization
   - all modules: `ipaddress`, `mdns`, `wifi`,`ipaddress`, `ssl`, `socketpool`
-    (except `socketpool.socket.sendall`)
 
 From an application point of view:
 
