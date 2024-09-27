@@ -12,6 +12,7 @@ the library:
   - `ping.py`: ping a given host by IP or hostname
   - `test_sta.py`: execute all station-relevant methods of `wifi.radio`
   - `udp_client.py`: send CSV-data using UDP
+  - `udp_receiver.py`: receive data using UDP ("UDP server")
   - `query_timeapi.py`: HTTP-GET requests (no SSL)
   - `query_openmeteo.py`: HTTPS-GET requests (i.e. with SSL)
   - `http_server.py`: simple HTTP-server processing GET, PUT, POST and DELETE

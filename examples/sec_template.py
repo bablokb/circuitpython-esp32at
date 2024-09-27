@@ -44,8 +44,9 @@ secrets = {
 
   # settings for other test programs
   'time_api_url': 'http://worldtimeapi.org/api/ip', # query_timeapi.py
-  'udp_host': '192.168.41.20',                      # udp_logger.py
-  'udp_port': 6500,                                 # udp_logger.py
+  'udp_host': '192.168.41.20',                      # udp_client.py
+  'udp_port': 6500,                                 # udp_client.py
+  'udp_lport': 6600,                                # udp_receiver.py
   'METEO_LATITUDE': 53.1234,                        # query_openmeteo.py
   'METEO_LONGITUDE': 14.3210                        # query_openmeteo.py
   }
