@@ -225,7 +225,7 @@ class Socket:
             break
           except:
             pass
-        
+
       if not ipd_msg:
         return 0,(None,None)
       self._recv_read = 0
@@ -287,12 +287,12 @@ class Socket:
     Parameters:
       bytes (bytes) – some bytes to send
     """
-    if self._link_id == None:
+    if self._link_id is None:
       raise RuntimeError("socket is not connected")
     self._impl.send(bytes,self._link_id)
     return len(bytes)
 
-  def sendall(self, bytes: circuitpython_typing.ReadableBuffer) -> None:
+  def sendall(self, buffer: circuitpython_typing.ReadableBuffer) -> None:
     """ Send some bytes to the connected remote address. Suits sockets
     of type SOCK_STREAM
 
@@ -303,7 +303,13 @@ class Socket:
     Parameters:
         bytes (bytes) – some bytes to send
     """
-    raise NotImplementedError("socket.sendall(): not implemented yet!")
+    bytes_to_send = len(buffer)
+    bytes_sent = 0
+    mv_buffer  = memoryview(buffer)
+    while bytes_sent < bytes_to_send:
+      t_len = min(bytes_to_send-bytes_sent,8192)
+      t_buffer = mv_buffer[bytes_sent:bytes_sent+t_len-1]
+      bytes_sent += self.send(t_buffer)
 
   def sendto(self,
              bytes: circuitpython_typing.ReadableBuffer,
@@ -318,7 +324,7 @@ class Socket:
     if self._conn_type != "UDP":
       raise RuntimeError("wrong socket-type (not UDP)")
 
-    if self._link_id == None:
+    if self._link_id is None:
       # contrary to the documentation, we do need a connection
       self.connect(address)
     self._impl.send(bytes,self._link_id)
@@ -368,4 +374,4 @@ class Socket:
   @property
   def type(self) -> int:
     """ Read-only access to the socket type """
-    return self._socket_type
+    return self._sock_type
