@@ -98,7 +98,8 @@ class _Implementation:
 
   def start_connection(self,host:str,port:int,
                        conn_type: str,
-                       timeout: int) -> int:
+                       timeout: int,
+                       address: Tuple[str,port] = None) -> int:
     """ Start connection of the given type. Returns the link-id,
     or -1 if in single-connection mode.
     """
@@ -119,9 +120,18 @@ class _Implementation:
     else:
       cmd = "CIPSTART"
 
+    # parameters: connection-type, remote host, remote port
+    params = f'"{conn_type}","{host}",{port}'
+    if address:
+      if not "UDP" in conn_type:
+        raise ValueError("address supplied and conn_type not UDP")
+      # mode==2: dynamic remote host/port (address here is local!)
+      #          host/port must be valid, but value is not relevant
+      #          local: port,2,host (order is different than above)
+      params += f',{address[1]},2,"{address[0]}"'
+
     reply = self._t.send_atcmd(
-      f'AT+{cmd}="{conn_type}","{host}",{port}',filter="CONNECT",
-        timeout=timeout)
+      f'AT+{cmd}={params}',filter="([0-9],)?CONNECT",timeout=timeout)
     if reply is None:
       raise RuntimeError("could not start connection")
     if b',' in reply:
@@ -263,7 +273,7 @@ class _Implementation:
     try:
       if check_ipd:
         # sometimes there is a second connect before the IPD
-        rex = f".*\+IPD,[0-9],[^:]+:|.*,CONNECT"
+        rex = f".*\+IPD,([0-9],)?[^:]+:|.*,CONNECT"
         info = self._t.wait_for(rex,timeout=1,greedy=False)
         if b"CONNECT" in info:
           # a second connect, return link_id,None
@@ -273,7 +283,12 @@ class _Implementation:
           self.lock = True
           info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
           # return link_id,(size,host,port)
-          return int(info[1]),(int(info[2]),info[3].strip('"'),int(info[4]))
+          if len(info) == 5:
+            # with link_id
+            return int(info[1]),(int(info[2]),info[3].strip('"'),int(info[4]))
+          else:
+            # without link_id
+            return -1,(int(info[1]),info[2].strip('"'),int(info[3]))
       else:
         # initial case: only check for a CONNECT
         rex = ".*,CONNECT"
