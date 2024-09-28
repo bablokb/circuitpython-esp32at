@@ -276,30 +276,16 @@ class Transport:
           if raw_response[-7:] == b"ERROR\r\n":
             finished = True
             break
-          if "AT+CWJAP=" in at_cmd or "AT+CWJEAP=" in at_cmd:
-            if b"WIFI GOT IP\r\n" in raw_response:
-              finished = True
-              break
+          if raw_response[-11:] == b"busy p...\r\n":
+            break
           if b"ERR CODE:" in raw_response:
             finished = True
             break
 
       if finished:
         break
-      # special case, AT+CWJAP= does not return an ok :P
-      if "AT+CWQAP=" in at_cmd and b"WIFI DISCONNECT" in raw_response:
-        finished = True
-        break
       # special case, ping also does not return an OK on timeout
       if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
-        finished = True
-        break
-      # special case, does return OK but in fact it is busy
-      if (
-          "AT+CIFSR" in at_cmd
-          and b"busy" not in raw_response
-          and raw_response[-4:] == b"OK\r\n"
-      ):
         finished = True
         break
       if i < retries-1:  # wait before retrying
