@@ -66,8 +66,8 @@ for optimal setup they can be tweaked:
     an initial baudrate of 115200.
   - `at_timeout`: The global default timeout for a response to an AT
     command. The default value of `1` should be ok.
-  - `at_retries`: Retries for failing AT commands. Available for
-    historical reasons and currently with default `1`.
+  - `at_retries`: Retries for failing AT commands (failing in the sense
+    that not even ERROR is returned). Default: `1`.
   - `reset`: see section below.
   - `hard_reset`: see section below.
   - `reset_pin`: GPIO (`microcontroller.Pin`) connected to
@@ -195,7 +195,16 @@ to the relevant local laws.
 Troubleshooting
 ---------------
 
-First thing to try is to power cycle the host MCU and the co-processor.
+Make sure your co-processor is working correctly. Some of the cheap
+Chinese dev-boards have bad antennas and the WLAN connection isn't
+stable. This will result in various errors that the library cannot
+deal with so it will throw a `RuntimeError`. Also, always check your
+cabling. Check that RX/TX are connected correctly and that there is
+no physical connection problem. 
+
+First thing to try in case of problems is to power cycle the host MCU
+and the co-processor. This can be necessary when switching between
+station mode and AP mode or between client and server setups.
 
 Secondly, try to run with default settings. Especially the reset
 configuration should be at it's defaults. Also, the baudrate should not
