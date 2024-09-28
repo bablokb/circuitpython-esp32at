@@ -17,7 +17,7 @@ import socketpool
 
 import helpers
 secrets = helpers.secrets
-DEBUG  = True
+DEBUG  = False
 
 # --- run server   -----------------------------------------------------------
 
