@@ -226,16 +226,19 @@ class _Implementation:
     """ set lock status """
     self._t.lock = value
 
-  def get_recv_size(self, link_id:int) -> int:
+  def get_recv_size(self, link_id:int, timeout: float) -> int:
     """ return size of data available for reading """
 
+    if timeout is None:
+      # we don't want to wait for ever...
+      timeout = 60
     if link_id == -1:
       rex = ".*\+IPD,[^:]+:"
       off = 1
     else:
       rex = f".*\+IPD,{link_id},[^:]+:"
       off = 2
-    info = self._t.wait_for(rex,timeout=5,greedy=False)
+    info = self._t.wait_for(rex,timeout=timeout,greedy=False)
     self.lock = True
     info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
     return (int(info[off]),info[off+1].strip('"'),int(info[off+2]))

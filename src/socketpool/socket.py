@@ -274,7 +274,8 @@ class Socket:
 
     # if we don't know the data-size, get it (this will lock AT)
     if not self._recv_size or self._recv_read == self._recv_size:
-      self._recv_size,_,_ = self._impl.get_recv_size(self._link_id)
+      self._recv_size,_,_ = self._impl.get_recv_size(self._link_id,
+                                                     self._timeout)
       self._recv_read = 0
 
     # read at most bytes_to_read from socket
