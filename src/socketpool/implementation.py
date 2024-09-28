@@ -10,7 +10,6 @@
 
 """ class Implementation. """
 
-import time
 from collections import namedtuple
 from errno import EAGAIN
 try:
@@ -96,10 +95,11 @@ class _Implementation:
       connections.append(ConnInfo(*info))
     return connections
 
+  # pylint: disable=too-many-arguments
   def start_connection(self,host:str,port:int,
                        conn_type: str,
                        timeout: int,
-                       address: Tuple[str,port] = None) -> int:
+                       address: Tuple[str,int] = None) -> int:
     """ Start connection of the given type. Returns the link-id,
     or -1 if in single-connection mode.
     """
@@ -174,7 +174,7 @@ class _Implementation:
     self._t.write(buffer)
     self._t.wait_for(".*SEND OK|.*SEND FAIL",timeout=5)
 
-  # pylint: disable=no-self-use
+  # pylint: disable=no-self-use, unused-argument
   def send_long(self,
            buffer: circuitpython_typing.ReadableBuffer,
            link_id: int) -> int:
@@ -194,7 +194,7 @@ class _Implementation:
         f'AT+CIPDOMAIN="{hostname}"',filter="\+CIPDOMAIN:",timeout=5)
       return str(reply[12:-1],'utf-8')
     except:
-      reply = None
+      return None
 
   def set_timeout(self,value: int, link_id: int) -> None:
     """ set the send-timeout option """
@@ -260,9 +260,8 @@ class _Implementation:
 
     # delete server and close all connections
     try:
-      reply = self._t.send_atcmd(
-        'AT+CIPSERVER=0,1',filter="^OK",timeout=5)
-    except Exception as ex:
+      self._t.send_atcmd('AT+CIPSERVER=0,1',filter="^OK",timeout=5)
+    except:
       pass
 
   def check_for_client(self,check_ipd: bool = False) -> int:
@@ -271,31 +270,29 @@ class _Implementation:
     if not self._t.input_available:
       raise OSError(EAGAIN)
     try:
+      # sometimes there is a second connect before the IPD
       if check_ipd:
-        # sometimes there is a second connect before the IPD
-        rex = f".*\+IPD,([0-9],)?[^:]+:|.*,CONNECT"
+        rex = ".*\+IPD,([0-9],)?[^:]+:|.*,CONNECT"
         info = self._t.wait_for(rex,timeout=1,greedy=False)
         if b"CONNECT" in info:
           # a second connect, return link_id,None
           return int(str(info,'utf-8').split(',',1)[0]),None
-        else:
-          # an IPD message
-          self.lock = True
-          info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
-          # return link_id,(size,host,port)
-          if len(info) == 5:
-            # with link_id
-            return int(info[1]),(int(info[2]),info[3].strip('"'),int(info[4]))
-          else:
-            # without link_id
-            return -1,(int(info[1]),info[2].strip('"'),int(info[3]))
-      else:
-        # initial case: only check for a CONNECT
-        rex = ".*,CONNECT"
-        conn = self._t.wait_for(rex,timeout=1,greedy=False)
-        link_id = int(str(conn,'utf-8').split(',',1)[0])
-        return link_id,None
+        # else: an IPD message
+        self.lock = True
+        info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
+        # return link_id,(size,host,port)
+        if len(info) == 5:
+          # with link_id
+          return int(info[1]),(int(info[2]),info[3].strip('"'),int(info[4]))
+        # else: # without link_id
+        return -1,(int(info[1]),info[2].strip('"'),int(info[3]))
+
+      # else: only check for a CONNECT
+      rex = ".*,CONNECT"
+      conn = self._t.wait_for(rex,timeout=1,greedy=False)
+      link_id = int(str(conn,'utf-8').split(',',1)[0])
+      return link_id,None
     except RuntimeError:
-      raise OSError(EAGAIN)
+      raise OSError(EAGAIN) # pylint: disable=raise-missing-from
     except ValueError as ex:
-      raise RuntimeError(f"check_for_client: {conn=}")
+      raise RuntimeError(f"check_for_client: {conn=}") from ex

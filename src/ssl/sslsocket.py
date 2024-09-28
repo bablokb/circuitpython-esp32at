@@ -15,7 +15,7 @@
 
 try:
   from circuitpython_typing.socket import CircuitPythonSocketType
-  from typing import Union, Tuple
+  from typing import Union
 except ImportError:
   pass
 

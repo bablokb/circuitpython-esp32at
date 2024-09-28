@@ -11,13 +11,11 @@
 
 """ class SocketPool. """
 
-import errno
-import time
-import gc
 from micropython import const
 
 try:
   from typing import Tuple
+  import circuitpython_typing
 except ImportError:
   pass
 
@@ -67,11 +65,11 @@ class SocketPool:
     """ Constructor """
     self._radio = radio
 
-  # pylint: disable=redefined-builtin
+  # pylint: disable=redefined-builtin, unused-variable
   def socket(self,
              family: int = AF_INET,
              type: int = SOCK_STREAM,
-             proto: int = IPPROTO_IP) -> Socket:
+             proto: int = IPPROTO_IP) -> circuitpython_typing.Socket:
     """
     Create a new socket and return it
 
@@ -85,10 +83,10 @@ class SocketPool:
 
     The fileno argument available in socket.socket() in CPython is not supported.
     """
-    from .socket import Socket
+    from .socket import Socket   # pylint: disable=import-outside-toplevel
     return Socket(self,family,type,proto)
 
-  # pylint: disable=too-many-arguments
+  # pylint: disable=too-many-arguments, no-self-use
   def getaddrinfo(self,
                   host: str,
                   port: int,

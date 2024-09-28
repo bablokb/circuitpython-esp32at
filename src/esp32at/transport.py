@@ -20,7 +20,7 @@ import time
 import re
 
 import busio
-from digitalio import Direction, DigitalInOut
+from digitalio import DigitalInOut
 
 try:
   import circuitpython_typing
@@ -166,12 +166,13 @@ class Transport:
   def baudrate(self, value: str) -> None:
     """ set (temporary) baudrate of co-processor and UART (best effort) """
     try:
+      # pylint: disable=anomalous-backslash-in-string
       reply = self.send_atcmd("AT+UART_CUR?",filter="^\+UART_CUR:")
       if not reply:
-        return True
+        return
       old_baudrate = str(reply[10:],'utf-8').split(',')
-    except:
-      return True
+    except: # pylint: disable=bare-except
+      return
 
     baudrate = str(value).split(',')
     len_parms = len(baudrate)
@@ -373,8 +374,7 @@ class Transport:
       n = self._uart.readinto(mv_target)
       print(f"<--- {n} bytes: {buffer[:min(n,40)]}...")
       return n
-    else:
-      return self._uart.readinto(mv_target)
+    return self._uart.readinto(mv_target)
 
   # --- hardware tweaks   ----------------------------------------------------
 

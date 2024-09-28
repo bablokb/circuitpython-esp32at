@@ -20,11 +20,11 @@ except ImportError:
   pass
 
 import ipaddress
+from esp32at.transport import Transport
 from .network import Network
 from .authmode import AuthMode
-from esp32at.transport import Transport
 
-# pylint: disable=too-many-public-methods,unused-argument,no-self-use,anomalous-backslash-in-string
+# pylint: disable=too-many-public-methods,unused-argument,no-self-use,anomalous-backslash-in-string, too-many-instance-attributes
 class Radio:
   """
   Native wifi radio.
@@ -59,8 +59,7 @@ class Radio:
   def __new__(cls,transport: Transport):
     if Radio.radio:
       return Radio.radio
-    else:
-      return super(Radio,cls).__new__(cls)
+    return super(Radio,cls).__new__(cls)
 
   def __init__(self,transport: Transport) -> None:
     """ Constructor. """
@@ -96,6 +95,7 @@ class Radio:
             int(settings[3]),
             ]
 
+  # pylint: disable=dangerous-default-value
   @country_settings.setter
   def country_settings(self, value: Sequence = [None,None,None,None]):
     """ configure country settings. Only change provided settings """
@@ -245,26 +245,23 @@ class Radio:
     self._scan_active = True
     for channel in range(start_channel,stop_channel+1):
       if not self._scan_active:
-        raise StopIteration
-      try:
-        replies = self._transport.send_atcmd(
-          f"AT+CWLAP=,,{channel}",filter="^\+CWLAP:",timeout=15)
-        if not replies:
-          continue
-        if isinstance(replies,bytes):
-          replies = [replies]
-        for line in replies:
-          info = line[8:].split(b',')
-          network = Network()
-          network.ssid = str(info[1],'utf-8')
-          network.bssid = info[3]
-          network.rssi = int(info[2])
-          network.channel = int(info[4])
-          network.country = ""
-          network.authmode = AuthMode.MODE_MAP[int(info[0])]
-          yield network
-      except:
-        raise
+        return
+      replies = self._transport.send_atcmd(
+        f"AT+CWLAP=,,{channel}",filter="^\+CWLAP:",timeout=15)
+      if not replies:
+        continue
+      if isinstance(replies,bytes):
+        replies = [replies]
+      for line in replies:
+        info = line[8:].split(b',')
+        network = Network()
+        network.ssid = str(info[1],'utf-8')
+        network.bssid = info[3]
+        network.rssi = int(info[2])
+        network.channel = int(info[4])
+        network.country = ""
+        network.authmode = AuthMode.MODE_MAP[int(info[0])]
+        yield network
 
   def stop_scanning_networks(self) -> None:
     """Stop scanning for Wifi networks and free any resources used to
@@ -289,7 +286,7 @@ class Radio:
     """Stops the Station. This might also disable WIFI."""
 
     mode = self.run_mode
-    if not (mode & Radio.RUN_MODE_STATION):
+    if not mode & Radio.RUN_MODE_STATION:
       return
 
     reply = self._transport.send_atcmd(
@@ -303,6 +300,7 @@ class Radio:
     self._ipv4_netmask = None
     return
 
+  # pylint: disable=too-many-branches
   def start_ap(
     self,
     ssid: Union[str, circuitpython_typing.ReadableBuffer],
@@ -347,7 +345,7 @@ class Radio:
         raise RuntimeError("Could not start AP-mode")
 
     # clear buffered values if not also running as station
-    if not (mode & Radio.RUN_MODE_STATION):
+    if not mode & Radio.RUN_MODE_STATION:
       self._ipv4_address = None
       self._ipv4_gateway = None
       self._ipv4_netmask = None
@@ -360,8 +358,7 @@ class Radio:
     if AuthMode.OPEN in authmode:
       if password:
         raise ValueError("open AP with password not allowed")
-      else:
-        ecn = 0
+      ecn = 0
     elif AuthMode.WPA in authmode:
       if AuthMode.WPA2 in authmode:
         ecn = 4
@@ -384,7 +381,7 @@ class Radio:
     """Stops the access point."""
 
     mode = self.run_mode
-    if not (mode & Radio.RUN_MODE_AP):
+    if not mode & Radio.RUN_MODE_AP:
       return
     reply = self._transport.send_atcmd(
       f'AT+CWMODE={mode-Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
@@ -480,7 +477,7 @@ class Radio:
         reason = Radio._CONNECT_ERRORS[code]
       else:
         reason = f"unknown error occured (code: {code})"
-      raise ConnectionError("connection failed ({reason})")
+      raise ConnectionError(f"connection failed ({reason})")
 
   @property
   def connected(self) -> bool:
@@ -498,7 +495,7 @@ class Radio:
     access point. None otherwise. (read-only) """
     if self._ipv4_gateway:
       return self._ipv4_gateway
-    self.ipv4_address
+    self.ipv4_address # pylint: disable=pointless-statement
     return self._ipv4_gateway
 
   @property
@@ -507,7 +504,7 @@ class Radio:
     otherwise. (read-only)"""
     if self._ipv4_gateway_ap:
       return self._ipv4_gateway_ap
-    self.ipv4_address_ap
+    self.ipv4_address_ap # pylint: disable=pointless-statement
     return self._ipv4_gateway_ap
 
   @property
@@ -516,7 +513,7 @@ class Radio:
     access point. None otherwise. (read-only) """
     if self._ipv4_netmask:
       return self._ipv4_netmask
-    self.ipv4_address
+    self.ipv4_address # pylint: disable=pointless-statement
     return self._ipv4_netmask
 
   @property
@@ -525,7 +522,7 @@ class Radio:
     otherwise. (read-only) """
     if self._ipv4_netmask_ap:
       return self._ipv4_netmask_ap
-    self.ipv4_address_ap
+    self.ipv4_address_ap # pylint: disable=pointless-statement
     return self._ipv4_netmask_ap
 
   @property
@@ -537,7 +534,7 @@ class Radio:
     if self._ipv4_address:
       return self._ipv4_address
     replies = self._transport.send_atcmd(
-      f"AT+CIPSTA?",filter="^\+CIPSTA:",timeout=5)
+      "AT+CIPSTA?",filter="^\+CIPSTA:",timeout=5)
     if not replies:
       return None
     for line in replies:
@@ -600,7 +597,7 @@ class Radio:
     if self._ipv4_address_ap:
       return self._ipv4_address_ap
     replies = self._transport.send_atcmd(
-      f"AT+CIPAP?",filter="^\+CIPAP:",timeout=5)
+      "AT+CIPAP?",filter="^\+CIPAP:",timeout=5)
     if not replies:
       return None
     for line in replies:
@@ -708,7 +705,7 @@ class Radio:
     network.authmode = AuthMode.MODE_MAP[int(info[0])]
     try:
       network.country = self.country_settings[1]
-    except:
+    except: # pylint: disable=bare-except
       network.country = ''
     return network
 
@@ -739,7 +736,7 @@ class Radio:
     active.
     """
     reply = self._transport.send_atcmd(
-      f'AT+CWDHCP=1,1',filter="^OK")
+      'AT+CWDHCP=1,1',filter="^OK")
     if not reply:
       raise RuntimeError("Could not start DHCP")
     # clear buffered values
@@ -752,7 +749,7 @@ class Radio:
     address.
     """
     reply = self._transport.send_atcmd(
-      f'AT+CWDHCP=0,1',filter="^OK")
+      'AT+CWDHCP=0,1',filter="^OK")
     if not reply:
       raise RuntimeError("Could not stop DHCP")
     # clear buffered values
@@ -763,7 +760,7 @@ class Radio:
   def start_dhcp_ap(self) -> None:
     """ Starts the access point DHCP server. """
     reply = self._transport.send_atcmd(
-      f'AT+CWDHCP=1,2',filter="^OK")
+      'AT+CWDHCP=1,2',filter="^OK")
     if not reply:
       raise RuntimeError("Could not start DHCP (AP)")
 
@@ -772,7 +769,7 @@ class Radio:
     IP address.
     """
     reply = self._transport.send_atcmd(
-      f'AT+CWDHCP=0,2',filter="^OK")
+      'AT+CWDHCP=0,2',filter="^OK")
     if not reply:
       raise RuntimeError("Could not stop DHCP (AP)")
 
@@ -806,5 +803,5 @@ class Radio:
         except Exception as ex:
           raise RuntimeError(f"illegal format: {str(reply[6:],'utf-8')}") from ex
       return None
-    except:
+    except: # pylint: disable=bare-except
       return None

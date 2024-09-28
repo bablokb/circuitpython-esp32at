@@ -14,9 +14,15 @@
 """ class Socket. """
 
 import time
-from .socketpool import SocketPool
+from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
 
+try:
+  from typing import Optional
+except ImportError:
+  pass
+
+# pylint: disable=too-many-instance-attributes
 class Socket:
   """ Class Socket """
 
@@ -84,7 +90,7 @@ class Socket:
   def __exit__(self, exc_type, exc_val, exc_tb) -> None:
     self.close()
 
-  # pylint: disable=undefined-variable
+  # pylint: disable=protected-access
   def accept(self) -> Tuple[Socket, Tuple[str, int]]:
     """
     Accept a connection on a listening socket of type SOCK_STREAM,
@@ -97,7 +103,7 @@ class Socket:
         # once we have a connect, wait for IPD: i.e. catch exception
         try:
           link_id,ipd_msg = self._impl.check_for_client(check_ipd)
-        except:
+        except: # pylint: disable=bare-except
           continue
       else:
         # no client: throws an exception and leaves the loop and method
@@ -176,6 +182,7 @@ class Socket:
       self._impl.close_connection(self._link_id)
       self._link_id = None
 
+  # pylint: disable=no-self-use
   def listen(self,backlog: int) -> None:
     """ Set socket to listen for incoming connections
 
@@ -212,7 +219,7 @@ class Socket:
           try:
             _,ipd_msg = self._impl.check_for_client(True)
             break
-          except:
+          except: # pylint: disable=bare-except
             pass
       elif self._timeout == 0:
         # non blocking, throws OSError if no data is available
@@ -223,7 +230,7 @@ class Socket:
           try:
             _,ipd_msg = self._impl.check_for_client(True)
             break
-          except:
+          except: # pylint: disable=bare-except
             pass
 
       if not ipd_msg:
@@ -330,6 +337,7 @@ class Socket:
     self._impl.send(bytes,self._link_id)
     return len(bytes)
 
+  # pylint: disable=no-self-use
   def setblocking(self,flag: bool) -> Union[int, None]:
     """ Set the blocking behaviour of this socket.
 
@@ -342,6 +350,7 @@ class Socket:
     # this is not implemented by the AT command set, so just ignore
     return
 
+  # pylint: disable=no-self-use
   def setsockopt(self, level: int, optname: int, value: int) -> None:
     """ Sets socket options """
 

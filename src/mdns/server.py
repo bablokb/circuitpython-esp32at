@@ -99,6 +99,7 @@ class Server:
     """
     raise NotImplementedError()
 
+  # pylint: disable=dangerous-default-value, unused-argument
   def advertise_service(self, *,
                         service_type: str,
                         protocol: str,
@@ -141,7 +142,7 @@ class Server:
     # disable MDNS first
     try:
       self._transport.send_atcmd('AT+MDNS=0',timeout=5)
-    except:
+    except: # pylint: disable=bare-except
       pass
 
     try:

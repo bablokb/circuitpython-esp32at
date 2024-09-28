@@ -17,15 +17,15 @@ CircuitPython.
 import busio
 from digitalio import Direction, DigitalInOut
 
+from esp32at.transport import Transport
 from .radio import Radio
 from .authmode import AuthMode
 from .network import Network
 from .packet import Packet
 from .monitor import Monitor
-from esp32at.transport import Transport
 
 try:
-  from typing import Optional
+  from typing import Optional, Sequence
 except ImportError:
   pass
 
@@ -33,19 +33,20 @@ transport = Transport()
 radio = Radio(transport)
 at_version = None # pylint: disable=invalid-name
 
+# pylint: disable=dangerous-default-value
 def init(uart: busio.UART,
          *,
          ipv4_dns_defaults: Optional[Sequence[str]] = [],
          country_settings: Optional = [0,None,None,None],
          **kwargs,
-         ) -> Bool:
+         ) -> bool:
   """ initialize wifi-hardware (i.e. the co-processor """
-  global at_version, radio # pylint: disable=invalid-name,global-statement
+  global at_version # pylint: disable=invalid-name,global-statement
 
-  rc = transport.init(uart,**kwargs)
+  rc = transport.init(uart,**kwargs) # pylint: disable=invalid-name
   if rc:
     at_version = transport.at_version # pylint: disable=invalid-name
-    if len(ipv4_dns_defaults):
+    if ipv4_dns_defaults:
       radio.ipv4_dns_defaults = ipv4_dns_defaults
     radio.country_settings = country_settings
   return rc
