@@ -43,7 +43,7 @@ class _Implementation:
     reply = self._t.send_atcmd('AT+CIPMUX?',filter="^\+CIPMUX:")
     if reply is None:
       raise RuntimeError("could not query connection-mode")
-    return str(reply[8:],'utf-8') == "1"
+    return reply[8:] == "1"
 
   @multi_connections.setter
   def multi_connections(self, flag: bool) -> None:
@@ -61,7 +61,7 @@ class _Implementation:
                                filter="^\+CIPSERVERMAXCONN:")
     if reply is None:
       raise RuntimeError("could not query max connections")
-    return int(str(reply[18:],'utf-8'))
+    return int(reply[18:])
 
   @max_connections.setter
   def max_connections(self, value: int) -> None:
@@ -85,7 +85,7 @@ class _Implementation:
     ConnInfo = namedtuple('ConnInfo',
                           'link_id conn_type ip rport lport is_server')
     for line in replies:
-      info = str(line[10:],'utf-8').split(',')
+      info = line[10:].split(',')
       info[0] = int(info[0])
       info[1] = info[1].strip('"')
       info[2] = info[2].strip('"')
@@ -135,7 +135,7 @@ class _Implementation:
     if reply is None:
       raise RuntimeError("could not start connection")
     if b',' in reply:
-      return int(str(reply,'utf-8').split(',',1)[0])
+      return int(reply.split(',',1)[0])
     return -1
 
   def close_connection(self,link_id: int) -> None:
@@ -192,7 +192,7 @@ class _Implementation:
     try:
       reply = self._t.send_atcmd(
         f'AT+CIPDOMAIN="{hostname}"',filter="\+CIPDOMAIN:",timeout=5)
-      return str(reply[12:-1],'utf-8')
+      return reply[12:-1]
     except:
       return None
 
@@ -240,7 +240,7 @@ class _Implementation:
       off = 2
     info = self._t.wait_for(rex,timeout=timeout,greedy=False)
     self.lock = True
-    info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
+    info = info[:-1].split(',') # remove trailing ':' and split
     return (int(info[off]),info[off+1].strip('"'),int(info[off+2]))
 
   def read(self,
@@ -277,12 +277,12 @@ class _Implementation:
       if check_ipd:
         rex = ".*\+IPD,([0-9],)?[^:]+:|.*,CONNECT"
         info = self._t.wait_for(rex,timeout=1,greedy=False)
-        if b"CONNECT" in info:
+        if "CONNECT" in info:
           # a second connect, return link_id,None
-          return int(str(info,'utf-8').split(',',1)[0]),None
+          return int(info.split(',',1)[0]),None
         # else: an IPD message
         self.lock = True
-        info = str(info[:-1],'utf-8').split(',') # remove trailing ':' and split
+        info = info[:-1].split(',') # remove trailing ':' and split
         # return link_id,(size,host,port)
         if len(info) == 5:
           # with link_id
@@ -293,7 +293,7 @@ class _Implementation:
       # else: only check for a CONNECT
       rex = ".*,CONNECT"
       conn = self._t.wait_for(rex,timeout=1,greedy=False)
-      link_id = int(str(conn,'utf-8').split(',',1)[0])
+      link_id = int(conn.split(',',1)[0])
       return link_id,None
     except RuntimeError:
       raise OSError(EAGAIN) # pylint: disable=raise-missing-from

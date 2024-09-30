@@ -88,7 +88,7 @@ class Radio:
                                       filter="^\+CWCOUNTRY:")
     if not reply:
       raise RuntimeError("could not query country information")
-    settings = str(reply[11:],'utf-8').split(',')
+    settings = reply[11:].split(',')
     return [bool(int(settings[0])),
             settings[1].strip('"'),
             int(settings[2]),
@@ -129,7 +129,7 @@ class Radio:
     reply = self._transport.send_atcmd('AT+CWMODE?',filter="^\+CWMODE:")
     if not reply:
       raise RuntimeError("Could not query run-mode")
-    return int(str(reply[8:],'utf-8'))
+    return int(reply[8:])
 
   @property
   def enabled(self) -> bool:
@@ -141,7 +141,7 @@ class Radio:
       'AT+CWINIT?',filter="^\+CWINIT:")
     if reply is None:
       raise RuntimeError("Bad response to CWINIT?")
-    return str(reply[8:],'utf-8') == "1"
+    return reply[8:] == "1"
 
   @enabled.setter
   def enabled(self, value: bool) -> None:
@@ -166,7 +166,7 @@ class Radio:
       'AT+CWHOSTNAME?',filter="^\+CWHOSTNAME:")
     if reply is None:
       raise RuntimeError("could not query hostname")
-    return str(reply[12:],'utf-8')
+    return reply[12:]
 
   @hostname.setter
   def hostname(self, name: str) -> None:
@@ -183,7 +183,7 @@ class Radio:
       'AT+CIPSTAMAC?',filter="^\+CIPSTAMAC:")
     if reply is None:
       raise RuntimeError("could not query MAC-address")
-    return reply[12:-1]
+    return bytes(reply[12:-1],'utf-8')
 
   @mac_address.setter
   def mac_address(self, value: circuitpython_typing.ReadableBuffer) -> None:
@@ -198,7 +198,7 @@ class Radio:
     """ Wifi transmission power, in dBm. """
     reply = self._transport.send_atcmd("AT+RFPOWER?",filter="^\+RFPOWER:")
     if reply:
-      return int(str(reply[9:],'utf-8').split(',',1)[0])*0.25
+      return int(reply[9:].split(',',1)[0])*0.25
     raise RuntimeError("Bad response to RFPOWER?")
 
   @tx_power.setter
@@ -214,7 +214,7 @@ class Radio:
     """
     reply = self._transport.send_atcmd("AT+CWJAP?",filter="^\+CWJAP:")
     if reply:
-      return int(str(reply[7:],'utf-8').split(',')[6])
+      return int(reply[7:].split(',')[6])
     raise RuntimeError("Could not query listen-interval. Not connected?")
 
   @property
@@ -224,7 +224,7 @@ class Radio:
       'AT+CIPAPMAC?',filter="^\+CIPAPMAC:")
     if reply is None:
       raise RuntimeError("could not query MAC-address")
-    return reply[11:-1]
+    return bytes(reply[11:-1],'utf-8')
 
   @mac_address_ap.setter
   def mac_address_ap(self, value: circuitpython_typing.ReadableBuffer) -> None:
@@ -250,12 +250,12 @@ class Radio:
         f"AT+CWLAP=,,{channel}",filter="^\+CWLAP:",timeout=15)
       if not replies:
         continue
-      if isinstance(replies,bytes):
+      if isinstance(replies,str):
         replies = [replies]
       for line in replies:
-        info = line[8:].split(b',')
+        info = line[8:].split(',')
         network = Network()
-        network.ssid = str(info[1],'utf-8')
+        network.ssid = info[1]
         network.bssid = info[3]
         network.rssi = int(info[2])
         network.channel = int(info[4])
@@ -471,8 +471,8 @@ class Radio:
 
     if not reply:
       raise ConnectionError("connection failed (no error code)")
-    if b'CWJAP' in reply:
-      code = str(reply[7:],'utf-8')
+    if 'CWJAP' in reply:
+      code = reply[7:]
       if code in Radio._CONNECT_ERRORS:
         reason = Radio._CONNECT_ERRORS[code]
       else:
@@ -485,7 +485,7 @@ class Radio:
     reply = self._transport.send_atcmd(
         "AT+CWSTATE?",filter="^\+CWSTATE:")
     if reply:
-      state = int(str(reply[9:],'utf-8').split(',',1)[0])
+      state = int(reply[9:].split(',',1)[0])
       return state == Radio._CONNECT_STATE_CONNECTED
     raise RuntimeError("Bad response to CWSTATE?")
 
@@ -538,15 +538,15 @@ class Radio:
     if not replies:
       return None
     for line in replies:
-      key, value = line[8:].split(b':',1)
-      value = str(value,'utf-8').strip('"')
+      key, value = line[8:].split(':',1)
+      value = value.strip('"')
       if value == "0.0.0.0":
         continue
-      if key == b"ip":
+      if key == "ip":
         self._ipv4_address = ipaddress.ip_address(value)
-      elif key == b"gateway":
+      elif key == "gateway":
         self._ipv4_gateway = ipaddress.ip_address(value)
-      elif key == b"netmask":
+      elif key == "netmask":
         self._ipv4_netmask = ipaddress.ip_address(value)
     return self._ipv4_address
 
@@ -601,15 +601,15 @@ class Radio:
     if not replies:
       return None
     for line in replies:
-      key, value = line[7:].split(b':',1)
-      value = str(value,'utf-8').strip('"')
+      key, value = line[7:].split(':',1)
+      value = value.strip('"')
       if value == "0.0.0.0":
         continue
-      if key == b"ip":
+      if key == "ip":
         self._ipv4_address_ap  = ipaddress.ip_address(value)
-      elif key == b"gateway":
+      elif key == "gateway":
         self._ipv4_gateway_ap = ipaddress.ip_address(value)
-      elif key == b"netmask":
+      elif key == "netmask":
         self._ipv4_netmask_ap = ipaddress.ip_address(value)
     return self._ipv4_address_ap
 
@@ -647,7 +647,7 @@ class Radio:
     """ IP v4 Address of the DNS server to be used. """
     reply = self._transport.send_atcmd("AT+CIPDNS?",filter="^\+CIPDNS:")
     if reply:
-      dns = str(reply[8:],'utf-8').split(',')[1].strip('"')
+      dns = reply[8:].split(',')[1].strip('"')
       return ipaddress.ip_address(dns)
     return None
 
@@ -661,7 +661,7 @@ class Radio:
     """ Addresses of the DNS server to be used. """
     reply = self._transport.send_atcmd("AT+CIPDNS?",filter="^\+CIPDNS:")
     if reply:
-      dns = str(reply[8:],'utf-8').split(',')[1:]
+      dns = reply[8:].split(',')[1:]
       return [d.strip('"') for d in dns]
     return []
 
@@ -687,16 +687,16 @@ class Radio:
     if not reply:
       return None
 
-    info = str(reply[7:],'utf-8').split(',')
+    info = reply[7:].split(',')
     if len(info) == 1:
       return None  # probably not connected
 
-    ssid = str(info[0],'utf-8').strip('"')
+    ssid = info[0].strip('"')
     reply = self._transport.send_atcmd(
       f'AT+CWLAP="{ssid}"',filter="^\+CWLAP:",timeout=15)
     if not reply:
       return None
-    info = reply[8:].split(b',')
+    info = reply[8:].split(',')
     network = Network()
     network.ssid = ssid
     network.bssid = info[3]
@@ -796,12 +796,12 @@ class Radio:
       reply = self._transport.send_atcmd(
         f'AT+PING="{ip}"',filter="^\+PING:",timeout=5)
       if reply:
-        if b'TIMEOUT' in reply:
+        if 'TIMEOUT' in reply:
           return None
         try:
-          return float(str(reply[6:],'utf-8'))
+          return float(reply[6:])
         except Exception as ex:
-          raise RuntimeError(f"illegal format: {str(reply[6:],'utf-8')}") from ex
+          raise RuntimeError(f"illegal format: {reply[6:]}") from ex
       return None
     except: # pylint: disable=bare-except
       return None
