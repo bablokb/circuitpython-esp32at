@@ -30,6 +30,10 @@ Pico together with an ESP32C3 will work fine.
 Status
 ------
 
+**This is the main branch, which is actively under development. The
+code in this branch might or might not work.  For productive use,
+switch to branch 1.0.x or use one of the published releases!**
+
 This library is feature complete with the exceptions noted below. As
 always with new projects, the code needs testing in the field to find
 any remaining bugs.
