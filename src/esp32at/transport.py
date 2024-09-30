@@ -21,21 +21,40 @@ import re
 
 import busio
 from digitalio import DigitalInOut
+from micropython import const
 
 try:
   import circuitpython_typing
-  from typing import Optional, Union
+  from typing import Optional, Union, Sequence
 except ImportError:
   pass
 
-RESET_NEVER = 0
+RESET_NEVER = const(0)
 """ don't reset during init """
 
-RESET_ON_FAILURE = 1
+RESET_ON_FAILURE = const(1)
 """ reset on failure during init """
 
-RESET_ALWAYS = 2
+RESET_ALWAYS = const(2)
 """ always reset during init """
+
+CALLBACK_CONN = const(0)
+""" index to callback method """
+
+CALLBACK_IPD = const(1)
+""" index to callback method """
+
+CALLBACK_PROMPT = const(2)
+""" index to callback method """
+
+CALLBACK_WIFI = const(3)
+""" index to callback method """
+
+CALLBACK_STA = const(4)
+""" index to callback method """
+
+CALLBACK_SEND = const(5)
+""" index to callback method """
 
 class LockError(Exception):
   """ The exception thrown when the AT command processor is locked """
@@ -55,6 +74,21 @@ class Transport:
   transport = None
   """ the singleton instance """
 
+  _MSG_PASSIVE_END = ["OK", "ERROR", "busy p...", "SEND OK", "SEND FAIL"]
+  """ end-messages in passive-mode """
+
+  # pylint: disable=anomalous-backslash-in-string
+  _MSG_REX = [
+    "^([0-9]+,)?(CONNECT|CLOSED)",
+    "^\+IPD",
+    "^>",
+    "^WIFI",
+    "^\+(DIST_)?STA_",
+    "^SEND Cancelled"
+    ]
+  """ regex for messages, indices must match callback indices """
+
+
   def __new__(cls):
     if Transport.transport:
       return Transport.transport
@@ -64,6 +98,7 @@ class Transport:
     """ Do nothing constructor. Use init() for hardware-setup """
     if Transport.transport:
       return
+    self._msg_callbacks = [lambda msg: None]*6
     self._lock = False
     self._uart = None
     self._at_timeout = 1
@@ -148,7 +183,7 @@ class Transport:
     version number"""
     reply = self.send_atcmd("AT+GMR",filter="^AT version:")
     if reply:
-      self._at_version = str(reply, "utf-8")
+      self._at_version = reply
     else:
       raise TransportError("could not query AT version")
 
@@ -170,7 +205,7 @@ class Transport:
       reply = self.send_atcmd("AT+UART_CUR?",filter="^\+UART_CUR:")
       if not reply:
         return
-      old_baudrate = str(reply[10:],'utf-8').split(',')
+      old_baudrate = reply[10:].split(',')
     except: # pylint: disable=bare-except
       return
 
@@ -198,7 +233,7 @@ class Transport:
       reply = self.send_atcmd("AT+RST", timeout=timeout,filter="^OK")
     except TransportError:
       reply = ""
-    if reply == b"OK":
+    if reply == "OK":
       # RST command acknowleged
       if self._debug:
         print("waiting 3 seconds for reset")
@@ -225,6 +260,56 @@ class Transport:
       self._uart.reset_input_buffer()
       return True
     return False
+
+  # --- message processing   -------------------------------------------------
+
+  def set_callback(self,index,func):
+    """ configure callback for given CB index """
+    self._msg_callbacks[index] = func
+
+  def read_atmsg(self,timeout: float = -1,
+                 passive=False) -> Tuple[bool, Union[Sequence[str],None]]:
+    """ read pending AT messages """
+
+    # use global defaults
+    if timeout < 0:
+      timeout = self._at_timeout
+
+    result = []
+    start = time.monotonic()
+    while time.monotonic() - start < timeout or self._uart.in_waiting:
+      if not self._uart.in_waiting:
+        continue
+      msg = self._uart.readline()[:-2]
+      if self._debug:
+        print(f"<--- {msg=}")
+      if not msg:                           # ignore empty lines
+        continue
+      msg = str(msg,'utf-8')
+
+      # in passive mode just return everything until OK/ERROR
+      if passive:
+        result.append(msg)
+        if self._debug:
+          print(f"     appending to result...")
+        if msg in Transport._MSG_PASSIVE_END:
+          return msg!='busy p...',result
+        continue
+
+      # otherwise, check for messages with callbacks
+      for index,rex in enumerate(Transport._MSG_REX):
+        if re.match(rex,msg):
+          if self._debug:
+            print(f"     callback processing...")
+          self._msg_callbacks[index](msg)
+        break
+
+    # timed out or incomplete response
+    if passive:
+      return False,result
+
+    # in active mode the return value is not relevant
+    return True,[]
 
   # --- send command to the co-processor   -----------------------------------
 
@@ -258,49 +343,38 @@ class Transport:
     if retries < 0:
       retries = self._at_retries
 
-    finished = False
+
+    # process pending active messages
+    self.read_atmsg(passive=False)
+
+    # input should be cleared, send command
     for i in range(retries):
-      self._uart.reset_input_buffer()  # flush it
       if self._debug:
         print("--->", at_cmd)
       self._uart.write(bytes(at_cmd, "utf-8"))
       self._uart.write(b"\x0d\x0a")
-      stamp = time.monotonic()
-      raw_response = b""
-      while (time.monotonic() - stamp) < timeout:
-        if self._uart.in_waiting:
-          raw_response += self._uart.read(1)
-          if raw_response[-4:] == b"OK\r\n":
-            finished = True
-            break
-          if raw_response[-7:] == b"ERROR\r\n":
-            finished = True
-            break
-          if raw_response[-11:] == b"busy p...\r\n":
-            break
-          if b"ERR CODE:" in raw_response:
-            finished = True
-            break
-
-      if finished:
+      # read response
+      success, raw_response = self._read_atmsg(passive=True)
+      if success:
         break
-      # special case, ping also does not return an OK on timeout
-      if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
-        finished = True
-        break
-      if i < retries-1:  # wait before retrying
+      if i<retries-1:
         time.sleep(1)
+
+    # process pending active messages
+    self.read_atmsg(passive=False)
 
     # final processing
     if self._debug:
-      print("<--- (raw)", raw_response)
-    if not finished:
+      for lines in raw_response:
+        print(f"raw: {line}")
+    if not success:
+      # special case, ping also does not return an OK on timeout
+      # if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
       raise TransportError(f"AT-command {at_cmd} failed ({raw_response=})")
 
-    # split results by lines
+    # check for filter
     if filter:
-      response = raw_response[:-2].split(b"\r\n")
-      response = [r for r in response if re.match(filter,r)]
+      response = [msg for msg in raw_response if re.match(filter,msg)]
       if len(response) == 0:
         response = None
       elif len(response) == 1:
@@ -308,7 +382,8 @@ class Transport:
     else:
       response = raw_response
     if self._debug:
-      print("<---", response)
+      for lines in response:
+        print(f"<--- {line}")
     return response
 
   # --- wait for specific texts (prompt, result)   ---------------------------
@@ -320,7 +395,7 @@ class Transport:
     if timeout < 0:
       timeout = self._at_timeout
 
-    txt = b""
+    txt = ""
     stamp = time.monotonic()
     while (time.monotonic() - stamp) < timeout:
       if self._uart.in_waiting:
