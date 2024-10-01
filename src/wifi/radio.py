@@ -493,10 +493,13 @@ class Radio:
     cmd += f'{listen_interval},{scan_mode},{timeout},{pmf}'
     try:
       # will return None in case of no errors
+      start = time.monotonic()
       reply = self._transport.send_atcmd(
         cmd,
+        timeout=timeout,
         retries=retries,
         filter="^\+CWJAP:")
+      timeout -= time.monotonic() - start
     except Exception as ex:
       raise ConnectionError(f"{ex}") from ex
 
