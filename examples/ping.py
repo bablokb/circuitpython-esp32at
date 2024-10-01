@@ -27,6 +27,7 @@ except ImportError:
 
 # --- ping host   ------------------------------------------------------------
 
+helpers.wait_for_console()
 helpers.init(DEBUG)
 helpers.set_tx_power()
 helpers.connect()
