@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Ping: testprogram for circuitpython-esp32at.
+# Test station-functions of wifi.radio.
 #
 # You need to create a secrets.py file (have a look at sec_template.py).
 #
