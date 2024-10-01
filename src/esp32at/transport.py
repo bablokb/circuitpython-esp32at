@@ -104,7 +104,7 @@ class Transport:
     self._at_timeout = 1
     self._at_retries = 1
     self._reset_pin = None
-    self._debug = None
+    self.debug = None
     self._at_version = None
     self.reconn_interval = 1
     Transport.transport = self
@@ -128,7 +128,7 @@ class Transport:
     self._uart = uart
     self._at_timeout = at_timeout
     self._at_retries = at_retries
-    self._debug = debug
+    self.debug = debug
     self.reconn_interval = reconn_interval
 
     if reset_pin:
@@ -235,7 +235,7 @@ class Transport:
       reply = ""
     if reply == "OK":
       # RST command acknowleged
-      if self._debug:
+      if self.debug:
         print("waiting 3 seconds for reset")
       time.sleep(3)  # in case of a reboot
     self._uart.baudrate = 115200
@@ -253,7 +253,7 @@ class Transport:
       self._reset_pin.value = False
       time.sleep(0.1)
       self._reset_pin.value = True
-      if self._debug:
+      if self.debug:
         print("waiting 3 seconds for hard reset")
       time.sleep(3)  # give it a few seconds to wake up
       self._uart.baudrate = 115200
@@ -281,7 +281,7 @@ class Transport:
       if not self._uart.in_waiting:
         continue
       msg = self._uart.readline()[:-2]
-      if self._debug:
+      if self.debug:
         print(f"<--- {msg=}")
       if not msg:                           # ignore empty lines
         continue
@@ -293,7 +293,7 @@ class Transport:
       if msg not in Transport._MSG_PASSIVE_END:
         for index,rex in enumerate(Transport._MSG_REX):
           if re.match(rex,msg):
-            if self._debug:
+            if self.debug:
               print(f"     callback processing for '{msg}'")
             self._msg_callbacks[index](msg)
             processed = True
@@ -302,7 +302,7 @@ class Transport:
       # in passive mode just return everything until OK/ERROR
       if not processed and passive:
         result.append(msg)
-        if self._debug:
+        if self.debug:
           print(f"     appending to result...")
         if msg in Transport._MSG_PASSIVE_END:
           return msg!='busy p...',result
@@ -353,7 +353,7 @@ class Transport:
 
     # input should be cleared, send command
     for i in range(retries):
-      if self._debug:
+      if self.debug:
         print("--->", at_cmd)
       self._uart.write(bytes(at_cmd, "utf-8"))
       self._uart.write(b"\x0d\x0a")
@@ -368,7 +368,7 @@ class Transport:
     self.read_atmsg(passive=False)
 
     # final processing
-    if self._debug:
+    if self.debug:
       for line in raw_response:
         print(f"raw: {line}")
     if not success:
@@ -385,7 +385,7 @@ class Transport:
         response = response[0]
     else:
       response = raw_response
-    if self._debug:
+    if self.debug:
       if isinstance(response,str):
         print(f"<--- {response}")
       else:
@@ -408,10 +408,10 @@ class Transport:
       if self._uart.in_waiting:
         txt += self._uart.read(self._uart.in_waiting if greedy else 1)
         if re.match(rex,txt):
-          if self._debug:
+          if self.debug:
             print(f"match: {txt=}")
           return txt
-    if self._debug:
+    if self.debug:
       print(f"no match: {txt=}")
     raise RuntimeError(f"timeout waiting for {rex}. {txt=}")
 
@@ -420,7 +420,7 @@ class Transport:
   def write(self,
             buffer: circuitpython_typing.ReadableBuffer) -> None:
     """ write bytes to the UART-interface """
-    if self._debug:
+    if self.debug:
       print(f"---> {len(buffer)} bytes: {buffer[:min(len(buffer),40)]}...")
     self._uart.reset_input_buffer()
     self._uart.write(buffer)
@@ -438,7 +438,7 @@ class Transport:
     """ read data from the uart """
     mv_buffer = memoryview(buffer)
     mv_target = mv_buffer[0:bufsize]
-    if self._debug:
+    if self.debug:
       n = self._uart.readinto(mv_target)
       print(f"<--- {n} bytes: {buffer[:min(n,40)]}...")
       return n
