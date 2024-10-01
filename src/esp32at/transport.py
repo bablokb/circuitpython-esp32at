@@ -143,6 +143,16 @@ class Transport:
     elif reset == RESET_ALWAYS:
       self.soft_reset()
 
+    #     # check ready message from firmware if we just started
+    #     start = time.monotonic()
+    #     if start < 3:
+    #       if self.debug:
+    #         print("waiting for 'ready' from firmware...")
+    #       while time.monotonic() - start < 5:
+    #         ready,_ = self.read_atmsg(passive=False,wait_for="ready",timeout=0.1)
+    #         if ready:
+    #           break
+
     # try two times to connect with the ESP32xx co-processor
     connected = False
     for _ in range(2):
@@ -267,7 +277,7 @@ class Transport:
     """ configure callback for given CB index """
     self._msg_callbacks[index] = func
 
-  def read_atmsg(self,timeout: float = -1,
+  def read_atmsg(self,timeout: float = -1, wait_for: str = None,
                  passive=False) -> Tuple[bool, Union[Sequence[str],None]]:
     """ read pending AT messages """
 
@@ -286,13 +296,23 @@ class Transport:
       return False,result
 
     # read all messages
-    while self._uart.in_waiting:
+    processed = False
+    while ((passive and time.monotonic() - start < timeout) or
+           self._uart.in_waiting):
+      if not self._uart.in_waiting:
+        continue
       msg = self._uart.readline()[:-2]
       if self.debug:
         print(f"<--- {msg=}")
       if not msg:                           # ignore empty lines
         continue
       msg = str(msg,'utf-8')
+
+      # shortcut when waiting for a specific message
+      if msg == wait_for:
+        return True,[msg]
+      elif wait_for:
+        continue
 
       # even in passive mode the AT-firmware sends unrelated messages
       # so check for messages with callback first
@@ -319,8 +339,8 @@ class Transport:
     if passive:
       return False,result
 
-    # in active mode the return value is not relevant
-    return True,[]
+    # active mode: return processing state, but no messages
+    return processed,[]
 
   # --- send command to the co-processor   -----------------------------------
 
@@ -393,7 +413,7 @@ class Transport:
     else:
       response = raw_response
     if self.debug:
-      if isinstance(response,str):
+      if response is None or isinstance(response,str):
         print(f"<--- {response}")
       else:
         for line in response:
