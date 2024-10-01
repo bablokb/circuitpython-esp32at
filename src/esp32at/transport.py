@@ -279,7 +279,12 @@ class Transport:
 
   def read_atmsg(self,timeout: float = -1, wait_for: str = None,
                  passive=False) -> Tuple[bool, Union[Sequence[str],None]]:
-    """ read pending AT messages """
+    """
+    Read pending AT messages.
+
+    In passive mode the timeout is ignored to prevent subsequent 'busy p...'
+    messages.
+    """
 
     # use global defaults
     if timeout < 0:
@@ -292,13 +297,12 @@ class Transport:
     while time.monotonic() - start < timeout and not self._uart.in_waiting:
       pass
 
-    if not self._uart.in_waiting:
+    if not passive and not self._uart.in_waiting:
       return False,result
 
     # read all messages
     processed = False
-    while ((passive and time.monotonic() - start < timeout) or
-           self._uart.in_waiting):
+    while passive or self._uart.in_waiting:
       if not self._uart.in_waiting:
         continue
       msg = self._uart.readline()[:-2]
