@@ -276,10 +276,17 @@ class Transport:
       timeout = self._at_timeout
 
     result = []
+
+    # wait at most timeout seconds for input
     start = time.monotonic()
-    while time.monotonic() - start < timeout or self._uart.in_waiting:
-      if not self._uart.in_waiting:
-        continue
+    while time.monotonic() - start < timeout and not self._uart.in_waiting:
+      pass
+
+    if not self._uart.in_waiting:
+      return False,result
+
+    # read all messages
+    while self._uart.in_waiting:
       msg = self._uart.readline()[:-2]
       if self.debug:
         print(f"<--- {msg=}")
@@ -349,7 +356,7 @@ class Transport:
 
 
     # process pending active messages
-    self.read_atmsg(passive=False)
+    self.read_atmsg(passive=False,timeout=0)
 
     # input should be cleared, send command
     for i in range(retries):
@@ -365,7 +372,7 @@ class Transport:
         time.sleep(1)
 
     # process pending active messages
-    self.read_atmsg(passive=False)
+    self.read_atmsg(passive=False,timeout=0)
 
     # final processing
     if self.debug:
