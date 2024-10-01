@@ -19,6 +19,7 @@ try:
 except ImportError:
   pass
 
+import time
 import ipaddress
 from esp32at.transport import Transport, CALLBACK_WIFI, CALLBACK_STA
 from .network import Network
@@ -94,7 +95,7 @@ class Radio:
       self._conn_state = Radio._CONNECT_STATE_DISCONNECTED
       if self._transport.debug:
         print("radio: disconnected")
-    elif msg == "WIFI GOT_IP":
+    elif msg == "WIFI GOT IP":
       self._conn_state = Radio._CONNECT_STATE_CONNECTED
       if self._transport.debug:
         print("radio: fully connected (with IP)")
@@ -514,7 +515,7 @@ class Radio:
       while (
         self._conn_state != Radio._CONNECT_STATE_CONNECTED and
         time.monotonic() - start < timeout):
-        self._transport.read_atmsg(timout=1)
+        self._transport.read_atmsg(timeout=1)
       return
 
     # otherwise, there is an error
