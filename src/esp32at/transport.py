@@ -354,7 +354,7 @@ class Transport:
       self._uart.write(bytes(at_cmd, "utf-8"))
       self._uart.write(b"\x0d\x0a")
       # read response
-      success, raw_response = self._read_atmsg(passive=True)
+      success, raw_response = self.read_atmsg(passive=True)
       if success:
         break
       if i<retries-1:
@@ -365,7 +365,7 @@ class Transport:
 
     # final processing
     if self._debug:
-      for lines in raw_response:
+      for line in raw_response:
         print(f"raw: {line}")
     if not success:
       # special case, ping also does not return an OK on timeout
@@ -382,8 +382,11 @@ class Transport:
     else:
       response = raw_response
     if self._debug:
-      for lines in response:
-        print(f"<--- {line}")
+      if isinstance(response,str):
+        print(f"<--- {response}")
+      else:
+        for line in response:
+          print(f"<--- {line}")
     return response
 
   # --- wait for specific texts (prompt, result)   ---------------------------
