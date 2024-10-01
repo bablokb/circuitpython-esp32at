@@ -20,7 +20,7 @@ except ImportError:
   pass
 
 import ipaddress
-from esp32at.transport import Transport
+from esp32at.transport import Transport, CALLBACK_WIFI, CALLBACK_STA
 from .network import Network
 from .authmode import AuthMode
 
@@ -45,10 +45,11 @@ class Radio:
   """ error codes returned by CWJAP (connect to AP) """
 
   # connection states
+  _CONNECT_STATE_UNKNOWN = -1
   _CONNECT_STATE_NOT_STARTED = 0
   _CONNECT_STATE_NO_IP = 1
   _CONNECT_STATE_CONNECTED = 2
-  _CONNECT_STATE_IN_PROGESS = 3
+  _CONNECT_STATE_IN_PROGRESS = 3
   _CONNECT_STATE_DISCONNECTED = 4
 
   # station/ap mode (can be ORed)
@@ -66,7 +67,10 @@ class Radio:
     if Radio.radio:
       return
     self._transport = transport
+    self._transport.set_callback(CALLBACK_WIFI,self._wifi_callback)
+    self._transport.set_callback(CALLBACK_STA,self._sta_callback)
 
+    self._conn_state = Radio._CONNECT_STATE_UNKNOWN
     self._scan_active = False
     self._ipv4_address = None
     self._ipv4_gateway = None
@@ -78,6 +82,38 @@ class Radio:
 
     Radio.radio = self
     self.ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
+
+  def _wifi_callback(self,msg):
+    """ callback for Transport.read_atmsg() to set connection state """
+
+    if msg == "WIFI CONNECTED":
+      self._conn_state = Radio._CONNECT_STATE_IN_PROGRESS
+      if self._transport.debug:
+        print("radio: connect in progress")
+    elif msg == "WIFI DISCONNECT":
+      self._conn_state = Radio._CONNECT_STATE_DISCONNECTED
+      if self._transport.debug:
+        print("radio: disconnected")
+    elif msg == "WIFI GOT_IP":
+      self._conn_state = Radio._CONNECT_STATE_CONNECTED
+      if self._transport.debug:
+        print("radio: fully connected (with IP)")
+
+  def _sta_callback(self,msg):
+    """ callback for Transport.read_atmsg() to set station state """
+
+    # TODO: implement!
+
+    msg,args = msg.split(':')   # args have to be trimmed!
+    if msg == "+STA_CONNECTED":
+      # args[0] is station-MAC
+      pass
+    elif msg == "DIST_STA_IP":
+      # args[0] is station-MAC, args[1] is IP
+      pass
+    elif msg == "STA_DISCONNECTED":
+      # args[0] is station-MAC
+      pass
 
   @property
   def country_settings(self):
@@ -456,11 +492,11 @@ class Radio:
     cmd = f'AT+CWJAP="{ssid}","{password}",{bssid},{pci_en},{reconn_interval},'
     cmd += f'{listen_interval},{scan_mode},{timeout},{pmf}'
     try:
+      # will return None in case of no errors
       reply = self._transport.send_atcmd(
         cmd,
         retries=retries,
-        timeout=timeout,
-        filter="^WIFI GOT IP|^\+CWJAP:")
+        filter="^\+CWJAP:")
     except Exception as ex:
       raise ConnectionError(f"{ex}") from ex
 
@@ -469,8 +505,16 @@ class Radio:
     self._ipv4_gateway = None
     self._ipv4_netmask = None
 
+    # wait at most timeout seconds for connection
     if not reply:
-      raise ConnectionError("connection failed (no error code)")
+      start = time.monotonic()
+      while (
+        self._conn_state != Radio._CONNECT_STATE_CONNECTED and
+        time.monotonic() - start < timeout):
+        self._transport.read_atmsg(timout=1)
+      return
+
+    # otherwise, there is an error
     if 'CWJAP' in reply:
       code = reply[7:]
       if code in Radio._CONNECT_ERRORS:
