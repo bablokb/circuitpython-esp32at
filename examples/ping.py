@@ -40,7 +40,11 @@ ping_ip = ipaddress.ip_address(ip_str)
 print(f"pinging IP {ip_str} ...")
 for nr in range(1,4):
   ptime = wifi.radio.ping(ping_ip)
-  print(f"  {nr=}, time={ptime}ms")
+  if ptime is None:
+    result = "timed out"
+  else:
+    result = f"{ptime}ms"
+  print(f"  {nr=}, time={result}")
   time.sleep(1)
 
 # pinging by hostname is not part of the core API
@@ -53,5 +57,9 @@ if hasattr(wifi,"at_version"):
   print(f"pinging host {ping_host} ...")
   for nr in range(1,4):
     ptime = wifi.radio.ping(ping_host)
-    print(f"  {nr=}, time={ptime}ms")
+    if ptime is None:
+      result = "timed out"
+    else:
+      result = f"{ptime}ms"
+    print(f"  {nr=}, time={result}")
     time.sleep(1)
