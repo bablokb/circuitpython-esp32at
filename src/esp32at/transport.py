@@ -287,22 +287,26 @@ class Transport:
         continue
       msg = str(msg,'utf-8')
 
+      # even in passive mode the AT-firmware sends unrelated messages
+      # so check for messages with callback first
+      processed = False
+      if msg not in Transport._MSG_PASSIVE_END:
+        for index,rex in enumerate(Transport._MSG_REX):
+          if re.match(rex,msg):
+            if self._debug:
+              print(f"     callback processing for '{msg}'")
+            self._msg_callbacks[index](msg)
+            processed = True
+            break
+
       # in passive mode just return everything until OK/ERROR
-      if passive:
+      if not processed and passive:
         result.append(msg)
         if self._debug:
           print(f"     appending to result...")
         if msg in Transport._MSG_PASSIVE_END:
           return msg!='busy p...',result
         continue
-
-      # otherwise, check for messages with callbacks
-      for index,rex in enumerate(Transport._MSG_REX):
-        if re.match(rex,msg):
-          if self._debug:
-            print(f"     callback processing...")
-          self._msg_callbacks[index](msg)
-        break
 
     # timed out or incomplete response
     if passive:
