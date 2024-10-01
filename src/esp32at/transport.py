@@ -358,7 +358,7 @@ class Transport:
       self._uart.write(bytes(at_cmd, "utf-8"))
       self._uart.write(b"\x0d\x0a")
       # read response
-      success, raw_response = self.read_atmsg(passive=True)
+      success, raw_response = self.read_atmsg(passive=True,timeout=timeout)
       if success:
         break
       if i<retries-1:
