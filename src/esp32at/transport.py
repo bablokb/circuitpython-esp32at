@@ -395,7 +395,7 @@ class Transport:
       if i<retries-1:
         time.sleep(1)
 
-    # process pending active messages
+    # process cmd-triggered active messages (if any)
     self.read_atmsg(passive=False,timeout=0)
 
     # final processing
@@ -403,8 +403,6 @@ class Transport:
       for line in raw_response:
         print(f"raw: {line}")
     if not success:
-      # special case, ping also does not return an OK on timeout
-      # if "AT+PING" in at_cmd and b"ERROR\r\n" in raw_response:
       raise TransportError(f"AT-command {at_cmd} failed ({raw_response=})")
 
     # check for filter
