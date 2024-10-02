@@ -177,7 +177,7 @@ class Transport:
       if not persist_settings: # always on after reset
         self.send_atcmd("AT+SYSSTORE=0")
       self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
-      self.send_atcmd(f"AT+CIPMUX={int(multi_connection)}")
+      self.multi_connections = multi_connection
     except: # pylint: disable=bare-except
       pass
 
@@ -500,6 +500,15 @@ class Transport:
     reply = self.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK")
     if reply is None:
       raise RuntimeError("could not set connection-mode")
+
+    # set passive receive-mode
+    if flag:
+      parms = f"{self.max_connections},1"
+    else:
+      parms = "1"
+    reply = self.send_atcmd(f'AT+CIPRECVTYPE={parms}',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set passive receive-mode")
 
   @property
   def max_connections(self) -> int:
