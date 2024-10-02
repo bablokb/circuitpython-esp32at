@@ -36,42 +36,6 @@ class _Implementation:
     """ Constructor """
     self._t = Transport()  # get transport-singleton
 
-  @property
-  def multi_connections(self) -> bool:
-    """ query multi-connection setting """
-
-    reply = self._t.send_atcmd('AT+CIPMUX?',filter="^\+CIPMUX:")
-    if reply is None:
-      raise RuntimeError("could not query connection-mode")
-    return reply[8:] == "1"
-
-  @multi_connections.setter
-  def multi_connections(self, flag: bool) -> None:
-    """ enable/disable multi-connections """
-
-    reply = self._t.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK")
-    if reply is None:
-      raise RuntimeError("could not set connection-mode")
-
-  @property
-  def max_connections(self) -> int:
-    """ query max-connection setting """
-
-    reply = self._t.send_atcmd('AT+CIPSERVERMAXCONN?',
-                               filter="^\+CIPSERVERMAXCONN:")
-    if reply is None:
-      raise RuntimeError("could not query max connections")
-    return int(reply[18:])
-
-  @max_connections.setter
-  def max_connections(self, value: int) -> None:
-    """ set maximum concurrent connections """
-
-    reply = self._t.send_atcmd(
-      f'AT+CIPSERVERMAXCONN={value}',filter="^OK")
-    if reply is None:
-      raise RuntimeError("could not set max connections")
-
   def get_connections(self):
     """ query connections """
 
@@ -107,7 +71,7 @@ class _Implementation:
     # check for an existing connection
     connections = self.get_connections()
     if connections:
-      if self.multi_connections:
+      if self._t.multi_connections:
         # check if host:port are already connected
         # which is complicated, so we leave this for later
         pass
@@ -115,7 +79,7 @@ class _Implementation:
         # for simplicity, just close the existing connection
         self.close_connection(-1)
 
-    if self.multi_connections:
+    if self._t.multi_connections:
       cmd = "CIPSTARTEX"
     else:
       cmd = "CIPSTART"

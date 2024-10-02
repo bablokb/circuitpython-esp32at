@@ -149,10 +149,10 @@ class Socket:
         address[0],address[1],self._conn_type,timeout,address)
       return
 
-    self._impl.multi_connections = True # required by server
+    self._radio.transport.multi_connections = True # required by server
     self._impl.start_server(address[1],self._conn_type)
     self._is_server_socket = True
-    self._connections = [None]*self._impl.max_connections
+    self._connections = [None]*self._radio.transport.max_connections
 
   def connect(self,address: Tuple[str, int]) -> None:
     """ Connect a socket to a remote address
