@@ -14,6 +14,7 @@
 """ class Socket. """
 
 import time
+from esp32at.transport import Transport, CALLBACK_CONN, CALLBACK_IPD
 from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
 
@@ -46,6 +47,7 @@ class Socket:
     self._impl = _Implementation()
     self._socket_pool = socket_pool
     self._radio = self._socket_pool._radio
+    self._t = Transport()
     self._sock_type = type
     self._use_ssl = False
     self._link_id = None
@@ -64,10 +66,66 @@ class Socket:
     # state variables for the server
     self._is_server_socket =  False
     self._connections = None
+    self._data_prompt = None
     self._local_host = None
     self._local_port = None
     self._remote_host = None
     self._remote_port = None
+
+  def _conn_callback(self,msg):
+    """ callback for connection messages """
+
+    # check for CONNECT or CLOSED
+    msg = msg.split(',')
+    if len(msg) == 1:
+      link_id, action = -1,msg[0]
+    else:
+      link_id, action = msg
+    if self._t.debug:
+      print(f"socket: {action} for {link_id}")
+
+    if action == 'CONNECT':
+      if self._is_server_socket:
+        client_socket = Socket(self._socket_pool)
+        client_socket._link_id = link_id # pylint: disable=protected-access
+        self._connections[link_id] = client_socket
+      else:
+        self._link_id = link_id
+        self._recv_size = 0
+        self._recv_read = 0
+
+    else:
+      # TODO: read buffer until empty (add to close()??)
+      if self._is_server_socket:
+        try:
+          # self._connections[link_id].close()  # geht nicht im Callback!!
+          self._connections[link_id] = None
+        except: # pylint: disable=bare-except
+          pass
+      else:
+        self._link_id = None
+        #self.close()
+
+  def _ipd_callback(self,msg):
+    """ callback for IPD messages """
+    if self._t.debug:
+      print(f"socket: data-prompt: {msg}")
+
+    # must be +IPD,<length> or +IPD,<link_id>,<length>
+    msg = msg.split(',')
+    if len(msg) == 2:
+      self._data_prompt = -1,int(msg[1])
+    else:
+      self._data_prompt = msg[1],int(msg[2])
+
+  # pylint: disable=undefined-variable
+  def __enter__(self) -> Socket:
+    """ No-op used by Context Managers. """
+    return self
+
+  # pylint: disable=undefined-variable
+  def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    self.close()
 
   @property
   def use_ssl(self) -> bool:
@@ -81,15 +139,6 @@ class Socket:
     if self._use_ssl:
       self._conn_type = "SSL"
 
-  # pylint: disable=undefined-variable
-  def __enter__(self) -> Socket:
-    """ No-op used by Context Managers. """
-    return self
-
-  # pylint: disable=undefined-variable
-  def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-    self.close()
-
   # pylint: disable=protected-access
   def accept(self) -> Tuple[Socket, Tuple[str, int]]:
     """
@@ -97,32 +146,24 @@ class Socket:
     creating a new socket of type SOCK_STREAM. Returns a tuple of
     (new_socket, remote_address)
     """
-    check_ipd = False
-    while True:
-      if check_ipd:
-        # once we have a connect, wait for IPD: i.e. catch exception
-        try:
-          link_id,ipd_msg = self._impl.check_for_client(check_ipd)
-        except: # pylint: disable=bare-except
-          continue
-      else:
-        # no client: throws an exception and leaves the loop and method
-        link_id,ipd_msg = self._impl.check_for_client(check_ipd)
 
-      # we have a connect or IPD-message
-      if ipd_msg:
-        sock = self._connections[link_id]
-        sock._recv_read = 0
-        sock._recv_size = ipd_msg[0]
-        host = ipd_msg[1]
-        port = ipd_msg[2]
-        return (sock,(host,port))
-      # no IPD-message, save connect and continue
-      client_socket = Socket(self._socket_pool)
-      client_socket._link_id = link_id
-      self._connections[link_id] = client_socket
-      # once we have a connect, we need to check connect or ipd-messages
-      check_ipd = True
+    # read pending messages
+    self._t.read_atmsg(passive=False,timeout=0)
+
+    if not self._data_prompt:
+      raise OSError(EAGAIN)
+    # otherwise, parse data-prompt, check connection and return socket
+    link_id, length = self._data_prompt
+    sock = self._connections[link_id]
+    sock._recv_size = length
+    sock._recv_read = 0
+    self._data_prompt = None
+    conn = self._impl.get_connections(link_id)
+    if conn:
+      sock._remote_host = conn.ip
+      sock._remote_port = conn.rport
+      return sock,(conn.ip,conn.rport)
+    raise RuntimeError("illegal state: connection without remote host/port?")
 
   def bind(self, address: Tuple[str, int]) -> None:
     """ Bind a socket to an address
@@ -137,6 +178,7 @@ class Socket:
 
     self._local_host = address[0]
     self._local_port = address[1]
+    self._is_server_socket = True
 
     # UDP: does not start a server, but a connection
     if "UDP" in self._conn_type:
@@ -145,14 +187,17 @@ class Socket:
         timeout = 5
       else:
         timeout = self._timeout
-      self._link_id = self._impl.start_connection(
+      self._impl.start_connection(
         address[0],address[1],self._conn_type,timeout,address)
       return
 
-    self._radio.transport.multi_connections = True # required by server
+    # keep track of connections
+    self._t.set_callback(CALLBACK_CONN,self._conn_callback)
+    self._t.set_callback(CALLBACK_IPD,self._ipd_callback)
+    self._connections = [None]*self._t.max_connections
+
+    self._t.multi_connections = True # required by server
     self._impl.start_server(address[1],self._conn_type)
-    self._is_server_socket = True
-    self._connections = [None]*self._radio.transport.max_connections
 
   def connect(self,address: Tuple[str, int]) -> None:
     """ Connect a socket to a remote address
@@ -165,12 +210,17 @@ class Socket:
       timeout = 5
     else:
       timeout = self._timeout
-    self._link_id = self._impl.start_connection(
+
+    self._t.set_callback(CALLBACK_CONN,self._conn_callback)
+    self._t.set_callback(CALLBACK_IPD,self._ipd_callback)
+
+    start = time.monotonic()
+    self._impl.start_connection(
       address[0],address[1],self._conn_type,timeout)
 
-    # reset receiver after connect
-    self._recv_size = 0
-    self._recv_read = 0
+    # wait until link_id is set by callback
+    while not self._link_id and time.monotonic() - start < timeout:
+      time.sleep(0.1)
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
@@ -272,14 +322,24 @@ class Socket:
       raise ValueError("bufsize must be 0 to len(buffer)")
     bytes_to_read = bufsize if bufsize else len(buffer)
 
-    # if we don't know the data-size, get it (this will lock AT)
+    # if we don't know the data-size, get it
     if not self._recv_size or self._recv_read == self._recv_size:
-      self._recv_size,_,_ = self._impl.get_recv_size(self._link_id,
-                                                     self._timeout)
+      if self._timeout is None or self._timeout == 0:
+        timeout = 5
+      else:
+        timeout = self._timeout
+      start = time.monotonic()
+      while not self._data_prompt and time.monotonic() - start < timeout:
+        # read pending messages (hope for IPD)
+        self._t.read_atmsg(passive=False,timeout=0)
+      if not self._data_prompt:
+        return 0
+      self._recv_size = self._data_prompt[1]
       self._recv_read = 0
+      self._data_prompt = None
 
     # read at most bytes_to_read from socket
-    n = self._impl.read(buffer,
+    n = self._impl.recv_data(buffer,
                         min(bytes_to_read,self._recv_size-self._recv_read))
     self._recv_read += n
     if self._recv_read == self._recv_size:

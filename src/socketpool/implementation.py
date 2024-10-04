@@ -13,12 +13,12 @@
 from collections import namedtuple
 from errno import EAGAIN
 try:
-  from typing import Tuple
+  from typing import Tuple, Sequence, Union
   import circuitpython_typing
 except ImportError:
   pass
 
-from esp32at.transport import Transport
+from esp32at.transport import Transport, CALLBACK_SEND
 
 # pylint: disable=anomalous-backslash-in-string,bare-except
 class _Implementation:
@@ -35,14 +35,22 @@ class _Implementation:
   def __init__(self) -> None:
     """ Constructor """
     self._t = Transport()  # get transport-singleton
+    self._ready_for_data = False
+    self._send_ok = None
+    #self._t.set_callback(CALLBACK_PROMPT,self._prompt_callback)
+    self._t.set_callback(CALLBACK_SEND,self._send_callback)
 
-  def get_connections(self):
+  def get_connections(
+    self,
+    link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
     """ query connections """
 
     replies = self._t.send_atcmd('AT+CIPSTATE?',filter="^\+CIPSTATE:")
     if replies is None:
-      return []
-    if isinstance(replies,bytes):
+      if link_id is None:
+        return []
+      return None
+    if isinstance(replies,str):   # single connection returned
       replies = [replies]
 
     connections = []
@@ -56,17 +64,18 @@ class _Implementation:
       info[3] = int(info[3])
       info[4] = int(info[4])
       info[5] = int(info[5]) == 1
-      connections.append(ConnInfo(*info))
+      if link_id is None:
+        connections.append(ConnInfo(*info))
+      elif link_id == info[0]:
+        return ConnInfo(*info)
     return connections
 
   # pylint: disable=too-many-arguments
   def start_connection(self,host:str,port:int,
                        conn_type: str,
                        timeout: int,
-                       address: Tuple[str,int] = None) -> int:
-    """ Start connection of the given type. Returns the link-id,
-    or -1 if in single-connection mode.
-    """
+                       address: Tuple[str,int] = None) -> None:
+    """ Start connection of the given type. """
 
     # check for an existing connection
     connections = self.get_connections()
@@ -95,12 +104,9 @@ class _Implementation:
       params += f',{address[1]},2,"{address[0]}"'
 
     reply = self._t.send_atcmd(
-      f'AT+{cmd}={params}',filter="([0-9],)?CONNECT",timeout=timeout)
+      f'AT+{cmd}={params}',filter="^OK",timeout=timeout)
     if reply is None:
       raise RuntimeError("could not start connection")
-    if b',' in reply:
-      return int(reply.split(',',1)[0])
-    return -1
 
   def close_connection(self,link_id: int) -> None:
     """ Close connection (best effort) """
@@ -114,6 +120,18 @@ class _Implementation:
       self._t.send_atcmd(cmd,timeout=5)
     except:
       pass
+
+  def _prompt_callback(self,msg):
+    """ callback for data-prompt """
+    self._ready_for_data = True
+    if self._t.debug:
+      print(f"implementation: ready-for-data ({msg})")
+
+  def _send_callback(self,msg):
+    """ callback for send status """
+    if self._t.debug:
+      print(f"implementation: status of send: {msg}")
+    self._send_ok = "OK" in msg
 
   def send(self,
            buffer: circuitpython_typing.ReadableBuffer,
@@ -132,11 +150,12 @@ class _Implementation:
     else:
       cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
-    # TODO: check for connect
-    self._t.send_atcmd(cmd)
-    self._t.wait_for(".*>",timeout=5)
-    self._t.write(buffer)
-    self._t.wait_for(".*SEND OK|.*SEND FAIL",timeout=5)
+    # TODO: do we have to timeout?!
+    self._t.send_atcmd(cmd)                           # init send
+    self._t.write(buffer)                             # write data to uart
+    while self._send_ok is None:                      # wait for send result
+      self._t.read_atmsg(passive=False,timeout=0)
+    self._send_ok = None
 
   # pylint: disable=no-self-use, unused-argument
   def send_long(self,
@@ -190,22 +209,25 @@ class _Implementation:
     """ set lock status """
     self._t.lock = value
 
-  def get_recv_size(self, link_id:int, timeout: float) -> int:
-    """ return size of data available for reading """
+  def recv_data(self,
+           buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
+    """ read pending data """
 
-    if timeout is None:
-      # we don't want to wait for ever...
-      timeout = 60
-    if link_id == -1:
-      rex = ".*\+IPD,[^:]+:"
-      off = 1
-    else:
-      rex = f".*\+IPD,{link_id},[^:]+:"
-      off = 2
-    info = self._t.wait_for(rex,timeout=timeout,greedy=False)
+    # request data: AT sends CIPRECVDATA with length and data
+    self._t.send_atcmd(
+      f"AT+CIPRECVDATA={bufsize}",read_until="+CIPRECVDATA:")
     self.lock = True
-    info = info[:-1].split(',') # remove trailing ':' and split
-    return (int(info[off]),info[off+1].strip('"'),int(info[off+2]))
+    # read actual length from interface
+    txt = b""
+    while True:
+      c = self._t.read(1) # pylint: disable=invalid-name
+      if c == b',':
+        break
+      txt += c
+    act_len = int(str(txt,'utf-8'))
+    if self._t.debug:
+      print(f"{act_len=}")
+    return self.read(buffer,act_len)
 
   def read(self,
            buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:

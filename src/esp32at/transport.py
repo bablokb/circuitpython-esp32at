@@ -25,7 +25,7 @@ from micropython import const
 
 try:
   import circuitpython_typing
-  from typing import Optional, Union, Sequence
+  from typing import Optional, Union, Sequence, Tuple
 except ImportError:
   pass
 
@@ -44,16 +44,13 @@ CALLBACK_CONN = const(0)
 CALLBACK_IPD = const(1)
 """ index to callback method """
 
-CALLBACK_PROMPT = const(2)
+CALLBACK_WIFI = const(2)
 """ index to callback method """
 
-CALLBACK_WIFI = const(3)
+CALLBACK_STA = const(3)
 """ index to callback method """
 
-CALLBACK_STA = const(4)
-""" index to callback method """
-
-CALLBACK_SEND = const(5)
+CALLBACK_SEND = const(4)
 """ index to callback method """
 
 class LockError(Exception):
@@ -74,17 +71,16 @@ class Transport:
   transport = None
   """ the singleton instance """
 
-  _MSG_PASSIVE_END = ["OK", "ERROR", "busy p...", "SEND OK", "SEND FAIL"]
+  _MSG_PASSIVE_END = ["OK", "ERROR", "busy p..."]
   """ end-messages in passive-mode """
 
   # pylint: disable=anomalous-backslash-in-string
   _MSG_REX = [
     "^([0-9]+,)?(CONNECT|CLOSED)",
     "^\+IPD",
-    "^>",
     "^WIFI",
     "^\+(DIST_)?STA_",
-    "^SEND Cancelled"
+    "^SEND"
     ]
   """ regex for messages, indices must match callback indices """
 
@@ -173,7 +169,6 @@ class Transport:
 
     # configure the co-processor (best effort)
     try:
-      self.send_atcmd("AT+CIPDINFO=1")
       if not persist_settings: # always on after reset
         self.send_atcmd("AT+SYSSTORE=0")
       self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
@@ -277,7 +272,8 @@ class Transport:
     """ configure callback for given CB index """
     self._msg_callbacks[index] = func
 
-  def read_atmsg(self,timeout: float = -1, wait_for: str = None,
+  # pylint: disable=too-many-branches,too-many-arguments
+  def read_atmsg(self,timeout: float = -1, read_until: str = None,
                  passive=False) -> Tuple[bool, Union[Sequence[str],None]]:
     """
     Read pending AT messages.
@@ -305,18 +301,27 @@ class Transport:
     while passive or self._uart.in_waiting:
       if not self._uart.in_waiting:
         continue
-      msg = self._uart.readline()[:-2]
+
+      # special processing when parsing until a specific string:
+      # read in single-byte mode until EOL or the target-string is read
+      if read_until:
+        msg = b""
+        while True:
+          msg += self._uart.read(1)
+          if msg[-2:] == b'\r\n':     # EOL: complete msg without <read_until>
+            msg = msg[:-2]
+            break
+          if read_until in msg:
+            if self.debug:
+              print(f"<--- msg(read_until)={read_until}")
+            return True, read_until
+      else:
+        msg = self._uart.readline()[:-2]
       if self.debug:
         print(f"<--- {msg=}")
       if not msg:                           # ignore empty lines
         continue
       msg = str(msg,'utf-8')
-
-      # shortcut when waiting for a specific message
-      if msg == wait_for:
-        return True,[msg]
-      elif wait_for:
-        continue
 
       # even in passive mode the AT-firmware sends unrelated messages
       # so check for messages with callback first
@@ -334,7 +339,7 @@ class Transport:
       if not processed and passive:
         result.append(msg)
         if self.debug:
-          print(f"     appending to result...")
+          print("     appending to result...")
         if msg in Transport._MSG_PASSIVE_END:
           return msg!='busy p...',result
         continue
@@ -363,13 +368,14 @@ class Transport:
                  at_cmd: str,
                  timeout: float = -1,
                  retries: int = -1,
+                 read_until: str = None,
                  filter: str = None) -> bytes:
     """Send an AT command, check that we got an OK response,
     and then cut out the reply lines to return. We can set
     a variable timeout (how long we'll wait for response) and
     how many times to retry before giving up"""
 
-    if self.lock:
+    if self.lock and not "AT+CIPRECVDATA" in at_cmd:
       raise LockError("AT commands are locked (pending data)")
 
     # use global defaults
@@ -389,19 +395,24 @@ class Transport:
       self._uart.write(bytes(at_cmd, "utf-8"))
       self._uart.write(b"\x0d\x0a")
       # read response
-      success, raw_response = self.read_atmsg(passive=True,timeout=timeout)
+      success, raw_response = self.read_atmsg(
+        passive=True,read_until=read_until,timeout=timeout)
       if success:
         break
       if i<retries-1:
         time.sleep(1)
 
     # process cmd-triggered active messages (if any)
-    self.read_atmsg(passive=False,timeout=0)
+    if not read_until:
+      self.read_atmsg(passive=False,timeout=0)
 
     # final processing
     if self.debug:
-      for line in raw_response:
-        print(f"raw: {line}")
+      if raw_response is None or isinstance(raw_response,str):
+        print(f"raw: {raw_response}")
+      else:
+        for line in raw_response:
+          print(f"raw {line}")
     if not success:
       raise TransportError(f"AT-command {at_cmd} failed ({raw_response=})")
 
@@ -464,7 +475,7 @@ class Transport:
   def readinto(self,
                buffer: circuitpython_typing.WriteableBuffer,
                bufsize: int) -> int:
-    """ read data from the uart """
+    """ read data from the uart into a buffer """
     mv_buffer = memoryview(buffer)
     mv_target = mv_buffer[0:bufsize]
     if self.debug:
@@ -472,6 +483,10 @@ class Transport:
       print(f"<--- {n} bytes: {buffer[:min(n,40)]}...")
       return n
     return self._uart.readinto(mv_target)
+
+  def read(self, count: int) -> int:
+    """ read raw data from the uart """
+    return self._uart.read(count)
 
   # --- hardware tweaks   ----------------------------------------------------
 
