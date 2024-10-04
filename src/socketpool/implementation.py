@@ -151,7 +151,9 @@ class _Implementation:
       cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
     # TODO: do we have to timeout?!
-    self._t.send_atcmd(cmd)                           # init send
+    reply = self._t.send_atcmd(cmd)                   # init send
+    if "ERROR" in reply:                              # link_id could be closed
+      raise OSError("send failed")
     self._t.write(buffer)                             # write data to uart
     while self._send_ok is None:                      # wait for send result
       self._t.read_atmsg(passive=False,timeout=0)

@@ -274,6 +274,7 @@ class Socket:
       elif self._timeout == 0:
         # non blocking, throws OSError if no data is available
         #_,ipd_msg = self._impl.check_for_client(True)
+        pass
       else:
         start = time.monotonic()
         while time.monotonic() - start < self._timeout:
