@@ -267,18 +267,18 @@ class Socket:
         # block indefinitely
         while True:
           try:
-            _,ipd_msg = self._impl.check_for_client(True)
+            #_,ipd_msg = self._impl.check_for_client(True)
             break
           except: # pylint: disable=bare-except
             pass
       elif self._timeout == 0:
         # non blocking, throws OSError if no data is available
-        _,ipd_msg = self._impl.check_for_client(True)
+        #_,ipd_msg = self._impl.check_for_client(True)
       else:
         start = time.monotonic()
         while time.monotonic() - start < self._timeout:
           try:
-            _,ipd_msg = self._impl.check_for_client(True)
+            #_,ipd_msg = self._impl.check_for_client(True)
             break
           except: # pylint: disable=bare-except
             pass
@@ -294,8 +294,6 @@ class Socket:
     # read bytes from socket
     n = self._impl.read(buffer,bytes_to_read)
     self._recv_read += n
-    if self._recv_read == self._recv_size:
-      self._impl.lock = False
 
     return n,(self._remote_host,self._remote_port)
 
@@ -342,8 +340,6 @@ class Socket:
     n = self._impl.recv_data(buffer,
                         min(bytes_to_read,self._recv_size-self._recv_read))
     self._recv_read += n
-    if self._recv_read == self._recv_size:
-      self._impl.lock = False
     return n
 
   # pylint: disable=redefined-builtin
@@ -429,17 +425,12 @@ class Socket:
     """
     self._timeout = value
 
-    # tweak for adafruit_httpserver which tries to set the timeout
-    # after we have pending data
-    try:
-      if self._is_server_socket:
-        if value is None:
-          value = 0
-        self._impl.set_server_timeout(value)
-      else:
-        self._impl.set_timeout(value,self._link_id)
-    except LockError:
-      pass
+    if self._is_server_socket:
+      if value is None:
+        value = 0
+      self._impl.set_server_timeout(value)
+    else:
+      self._impl.set_timeout(value,self._link_id)
 
   @property
   def type(self) -> int:

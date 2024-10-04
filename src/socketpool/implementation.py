@@ -199,16 +199,6 @@ class _Implementation:
     except:
       pass
 
-  @property
-  def lock(self) -> bool:
-    """ lock-status of AT commands (True if data is pending) """
-    return self._t.lock
-
-  @lock.setter
-  def lock(self, value: bool) -> None:
-    """ set lock status """
-    self._t.lock = value
-
   def recv_data(self,
            buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
     """ read pending data """
@@ -216,7 +206,6 @@ class _Implementation:
     # request data: AT sends CIPRECVDATA with length and data
     self._t.send_atcmd(
       f"AT+CIPRECVDATA={bufsize}",read_until="+CIPRECVDATA:")
-    self.lock = True
     # read actual length from interface
     txt = b""
     while True:
@@ -252,36 +241,3 @@ class _Implementation:
       self._t.send_atcmd('AT+CIPSERVER=0,1',filter="^OK",timeout=5)
     except:
       pass
-
-  def check_for_client(self,check_ipd: bool = False) -> int:
-    """ check for a connection and return link-id """
-
-    if not self._t.input_available:
-      raise OSError(EAGAIN)
-    try:
-      # sometimes there is a second connect before the IPD
-      if check_ipd:
-        rex = ".*\+IPD,([0-9],)?[^:]+:|.*,CONNECT"
-        info = self._t.wait_for(rex,timeout=1,greedy=False)
-        if "CONNECT" in info:
-          # a second connect, return link_id,None
-          return int(info.split(',',1)[0]),None
-        # else: an IPD message
-        self.lock = True
-        info = info[:-1].split(',') # remove trailing ':' and split
-        # return link_id,(size,host,port)
-        if len(info) == 5:
-          # with link_id
-          return int(info[1]),(int(info[2]),info[3].strip('"'),int(info[4]))
-        # else: # without link_id
-        return -1,(int(info[1]),info[2].strip('"'),int(info[3]))
-
-      # else: only check for a CONNECT
-      rex = ".*,CONNECT"
-      conn = self._t.wait_for(rex,timeout=1,greedy=False)
-      link_id = int(conn.split(',',1)[0])
-      return link_id,None
-    except RuntimeError:
-      raise OSError(EAGAIN) # pylint: disable=raise-missing-from
-    except ValueError as ex:
-      raise RuntimeError(f"check_for_client: {conn=}") from ex

@@ -53,9 +53,6 @@ CALLBACK_STA = const(3)
 CALLBACK_SEND = const(4)
 """ index to callback method """
 
-class LockError(Exception):
-  """ The exception thrown when the AT command processor is locked """
-
 class TransportError(Exception):
   """The exception thrown when we didn't get acknowledgement to an AT command"""
 
@@ -95,7 +92,6 @@ class Transport:
     if Transport.transport:
       return
     self._msg_callbacks = [lambda msg: None]*6
-    self._lock = False
     self._uart = None
     self._at_timeout = 1
     self._at_retries = 1
@@ -353,16 +349,6 @@ class Transport:
 
   # --- send command to the co-processor   -----------------------------------
 
-  @property
-  def lock(self) -> bool:
-    """ lock-status of AT commands (True if data is pending) """
-    return self._lock
-
-  @lock.setter
-  def lock(self, value: bool) -> None:
-    """ set lock status """
-    self._lock = value
-
   # pylint: disable=redefined-builtin,too-many-statements
   def send_atcmd(self, # pylint: disable=too-many-branches
                  at_cmd: str,
@@ -374,9 +360,6 @@ class Transport:
     and then cut out the reply lines to return. We can set
     a variable timeout (how long we'll wait for response) and
     how many times to retry before giving up"""
-
-    if self.lock and not "AT+CIPRECVDATA" in at_cmd:
-      raise LockError("AT commands are locked (pending data)")
 
     # use global defaults
     if timeout < 0:
