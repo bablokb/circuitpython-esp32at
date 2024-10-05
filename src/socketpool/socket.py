@@ -220,7 +220,7 @@ class Socket:
 
     # wait until link_id is set by callback
     while not self._link_id and time.monotonic() - start < timeout:
-      time.sleep(0.1)
+      self._t.read_atmsg(passive=False,timeout=0)
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
