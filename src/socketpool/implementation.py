@@ -36,7 +36,7 @@ class _Implementation:
     """ Constructor """
     self._t = Transport()  # get transport-singleton
     self._ready_for_data = False
-    self._send_ok = None
+    self._send_pending = False
     #self._t.set_callback(CALLBACK_PROMPT,self._prompt_callback)
     self._t.set_callback(CALLBACK_SEND,self._send_callback)
 
@@ -131,7 +131,7 @@ class _Implementation:
     """ callback for send status """
     if self._t.debug:
       print(f"implementation: status of send: {msg}")
-    self._send_ok = "OK" in msg
+    self._send_pending = False
 
   def send(self,
            buffer: circuitpython_typing.ReadableBuffer,
@@ -150,14 +150,16 @@ class _Implementation:
     else:
       cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
+    # in case a previous send has not been acknowledged, wait
+    while self._send_pending:
+      self._t.read_atmsg(passive=False,timeout=0)
+    self._send_pending = True
+
     # TODO: do we have to timeout?!
     reply = self._t.send_atcmd(cmd)                   # init send
     if "ERROR" in reply:                              # link_id could be closed
       raise OSError("send failed")
     self._t.write(buffer)                             # write data to uart
-    while self._send_ok is None:                      # wait for send result
-      self._t.read_atmsg(passive=False,timeout=0)
-    self._send_ok = None
 
   # pylint: disable=no-self-use, unused-argument
   def send_long(self,
