@@ -45,7 +45,9 @@ pool = socketpool.SocketPool(wifi.radio)
 requests = adafruit_requests.Session(pool)
 
 for i in range(ITERATIONS):
+  start = time.monotonic()
   response = requests.get(url)
-  print(f"{response.json()['datetime']}")
-  time.sleep(INTERVAL)
+  elapsed = time.monotonic()-start
+  print(f"{response.json()['datetime']},{elapsed}")
+  time.sleep(INTERVAL-elapsed)
 response.close()
