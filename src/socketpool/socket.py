@@ -321,26 +321,23 @@ class Socket:
       raise ValueError("bufsize must be 0 to len(buffer)")
     bytes_to_read = bufsize if bufsize else len(buffer)
 
-    # if we don't know the data-size, get it
-    if not self._recv_size or self._recv_read == self._recv_size:
-      if self._timeout is None or self._timeout == 0:
-        timeout = 5
-      else:
-        timeout = self._timeout
-      start = time.monotonic()
-      while not self._data_prompt and time.monotonic() - start < timeout:
-        # read pending messages (hope for IPD)
-        self._t.read_atmsg(passive=False,timeout=0)
-      if not self._data_prompt:
-        return 0
-      self._recv_size = self._data_prompt[1]
-      self._recv_read = 0
-      self._data_prompt = None
+    # we need a data-prompt (IPD) before we can read data
+    if self._timeout is None or self._timeout == 0:
+      timeout = 5
+    else:
+      timeout = self._timeout
+    start = time.monotonic()
+    while not self._data_prompt and time.monotonic() - start < timeout:
+      # read pending messages (hope for IPD)
+      self._t.read_atmsg(passive=False,timeout=0)
+    if not self._data_prompt:
+      return 0
+    self._recv_size = self._data_prompt[1]
+    self._data_prompt = None
 
     # read at most bytes_to_read from socket
     n = self._impl.recv_data(buffer,
-                        min(bytes_to_read,self._recv_size-self._recv_read))
-    self._recv_read += n
+                        min(bytes_to_read,self._recv_size))
     return n
 
   # pylint: disable=redefined-builtin
