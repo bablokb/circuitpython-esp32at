@@ -62,18 +62,20 @@ pool = socketpool.SocketPool(wifi.radio)
 requests = adafruit_requests.Session(pool,ssl.create_default_context())
 print(f"free memory after  session: {gc.mem_free()}")
 
-print('\nts,T/met °C,H/met %rH,P/met hPa,WMO,Wspd km/s,Wdir °,R mm,elapsed s,memfree')
+print('\nts,T/met °C,H/met %rH,P/met hPa,WMO,Wspd km/s,Wdir °,R mm,send s,recv s,memfree')
 for i in range(ITERATIONS):
   try:
     start = time.monotonic()
     response = requests.get(url)
     memfree = gc.mem_free()
-    duration = time.monotonic() - start
+    send_duration = time.monotonic() - start
   except RuntimeError as e:
     print(f"request failed: {e}")
     continue
 
+  start = time.monotonic()
   data = response.json()
+  recv_duration = time.monotonic() - start
   # parse data
   t    = data["current_weather"]["temperature"]
   c    = data["current_weather"]["weathercode"]
@@ -86,7 +88,7 @@ for i in range(ITERATIONS):
   r    = data["hourly"]["precipitation"][hour]
 
   # print data
-  print(f"{ts},{t:0.1f},{h:0.0f},{ps:0.0f},{c:d},{ws:0.1f},{wd:0.0f},{r:0.1f},{duration:0.3f},{memfree}")
+  print(f"{ts},{t:0.1f},{h:0.0f},{ps:0.0f},{c:d},{ws:0.1f},{wd:0.0f},{r:0.1f},{send_duration:0.3f},{recv_duration:0.3f},{memfree}")
   time.sleep(INTERVAL)
 
 response.close()
