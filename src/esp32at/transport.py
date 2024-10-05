@@ -294,8 +294,8 @@ class Transport:
 
     # read all messages
     processed = False
-    while passive or self._uart.in_waiting:
-      if not self._uart.in_waiting:
+    while passive or self._uart.in_waiting > 1:
+      if not self._uart.in_waiting > 1:
         continue
 
       # special processing when parsing until a specific string:
