@@ -42,8 +42,10 @@ pool   = socketpool.SocketPool(wifi.radio)
 socket = pool.socket(family=socketpool.SocketPool.AF_INET,
                      type=socketpool.SocketPool.SOCK_DGRAM)
 
-loop_start = time.monotonic()
-for _ in range(ITERATIONS):
+for i in range(ITERATIONS):
+  if i == 1:
+    # i==0: the very first sendto will also connect and therefore takes longer
+    loop_start = time.monotonic()
   ts = time.monotonic()
   cputemp = microcontroller.cpu.temperature
   data = f"{ts:6.4f},{cputemp:.1f}\n"
@@ -54,4 +56,4 @@ for _ in range(ITERATIONS):
 loop_end = time.monotonic()
 
 socket.close()
-print(f"time per iteration: {(loop_end-loop_start)/ITERATIONS:0.3f}s")
+print(f"time per iteration: {(loop_end-loop_start)/(ITERATIONS-1):0.3f}s")
