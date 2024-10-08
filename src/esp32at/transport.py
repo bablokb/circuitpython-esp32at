@@ -149,11 +149,12 @@ class Transport:
     connected = False
     for _ in range(2):
       try:
+        self.multi_connections = multi_connection
         self._get_version()
         connected = True
         self._echo(False)
         break
-      except TransportError:
+      except:
         # try to reset the device
         if hard_reset == RESET_ON_FAILURE:
           self.hard_reset()
@@ -168,7 +169,6 @@ class Transport:
       if not persist_settings: # always on after reset
         self.send_atcmd("AT+SYSSTORE=0")
       self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
-      self.multi_connections = multi_connection
     except: # pylint: disable=bare-except
       pass
 
