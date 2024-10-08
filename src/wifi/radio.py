@@ -105,7 +105,7 @@ class Radio:
 
     # TODO: implement!
 
-    msg,args = msg.split(':')   # args have to be trimmed!
+    msg,args = msg.split(':',1)   # args have to be trimmed!
     if msg == "+STA_CONNECTED":
       # args[0] is station-MAC
       pass
