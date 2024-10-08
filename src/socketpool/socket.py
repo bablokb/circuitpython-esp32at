@@ -15,7 +15,7 @@
 
 import time
 from errno import EAGAIN
-from esp32at.transport import Transport, CALLBACK_CONN, CALLBACK_IPD
+from esp32at.transport import Transport
 from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
 
@@ -27,9 +27,6 @@ except ImportError:
 # pylint: disable=too-many-instance-attributes
 class Socket:
   """ Class Socket """
-
-  data_prompt = None
-  """ current data prompt """
 
   # pylint: disable=redefined-builtin,too-many-arguments,unused-argument
   def __init__(
@@ -49,8 +46,8 @@ class Socket:
     if family != SocketPool.AF_INET:
       raise ValueError("Only AF_INET family supported")
     self._impl = _Implementation()
-    self._socket_pool = socket_pool
-    self._radio = self._socket_pool._radio
+    self._socketpool = socket_pool
+    self._radio = self._socketpool._radio
     self._t = Transport()
     self._sock_type = type
     self._use_ssl = False
@@ -69,57 +66,10 @@ class Socket:
 
     # state variables for the server
     self._is_server_socket =  False
-    self._connections = None
     self._local_host = None
     self._local_port = None
     self._remote_host = None
     self._remote_port = None
-
-  def _conn_callback(self,msg):
-    """ callback for connection messages """
-
-    # check for CONNECT or CLOSED
-    msg = msg.split(',')
-    if len(msg) == 1:
-      link_id, action = -1,msg[0]
-    else:
-      link_id, action = int(msg[0]),msg[1]
-    if self._t.debug:
-      print(f"socket: {action} for {link_id}")
-
-    if action == 'CONNECT':
-      if self._is_server_socket:
-        client_socket = Socket(self._socket_pool)
-        client_socket._link_id = link_id # pylint: disable=protected-access
-        self._connections[link_id] = client_socket
-      else:
-        self._link_id = link_id
-        self._recv_size = 0
-        self._recv_read = 0
-
-    else:
-      # TODO: read buffer until empty (add to close()??)
-      if self._is_server_socket:
-        try:
-          # self._connections[link_id].close()  # geht nicht im Callback!!
-          self._connections[link_id] = None
-        except: # pylint: disable=bare-except
-          pass
-      else:
-        self._link_id = None
-        #self.close()
-
-  def _ipd_callback(self,msg):
-    """ callback for IPD messages """
-    if self._t.debug:
-      print(f"socket: data-prompt: {msg}")
-
-    # must be +IPD,<length> or +IPD,<link_id>,<length>
-    msg = msg.split(',')
-    if len(msg) == 2:
-      Socket.data_prompt = -1,int(msg[1])
-    else:
-      Socket.data_prompt = int(msg[1]),int(msg[2])
 
   # pylint: disable=undefined-variable
   def __enter__(self) -> Socket:
@@ -153,12 +103,12 @@ class Socket:
     # read pending messages
     self._t.read_atmsg(passive=False,timeout=0)
 
-    if not Socket.data_prompt:
+    if not self._socketpool.conn_inbound:
       raise OSError(EAGAIN)
 
-    # otherwise, read data-prompt, check connection and return socket
-    link_id = Socket.data_prompt[0]
-    sock = self._connections[link_id]
+    # otherwise, check connection and return socket
+    link_id = self._socketpool.conn_inbound.pop()
+    sock = self._socketpool.connections[link_id]
     conn = self._impl.get_connections(link_id)
     if conn:
       sock._remote_host = conn.ip
@@ -192,11 +142,6 @@ class Socket:
         address[0],address[1],self._conn_type,timeout,address)
       return
 
-    # keep track of connections
-    self._t.set_callback(CALLBACK_CONN,self._conn_callback)
-    self._t.set_callback(CALLBACK_IPD,self._ipd_callback)
-    self._connections = [None]*self._t.max_connections
-
     self._t.multi_connections = True # required by server
     self._impl.start_server(address[1],self._conn_type)
 
@@ -211,9 +156,6 @@ class Socket:
       timeout = 5
     else:
       timeout = self._timeout
-
-    self._t.set_callback(CALLBACK_CONN,self._conn_callback)
-    self._t.set_callback(CALLBACK_IPD,self._ipd_callback)
 
     start = time.monotonic()
     self._impl.start_connection(
@@ -324,24 +266,24 @@ class Socket:
 
     if self._t.debug:
       print(f"recv_into: {bytes_to_read=}")
-      print(f"           {Socket.data_prompt=}")
+      print(f"           {self.data_prompt=}")
     # we need a data-prompt (IPD) before we can read data
     if self._timeout is None or self._timeout == 0:
       timeout = 5
     else:
       timeout = self._timeout
     start = time.monotonic()
-    while not Socket.data_prompt and time.monotonic() - start < timeout:
+    while not self.data_prompt and time.monotonic() - start < timeout:
       # read pending messages (hope for IPD)
       self._t.read_atmsg(passive=False,timeout=0)
-    if not Socket.data_prompt:
+    if not self.data_prompt:
       return 0
-    link_id, self._recv_size = Socket.data_prompt
-    Socket.data_prompt = None
+    link_id, recv_size = self.data_prompt
+    self.data_prompt = None
 
     # read at most bytes_to_read from socket
     n = self._impl.recv_data(buffer,
-                        min(bytes_to_read,self._recv_size),link_id)
+                        min(bytes_to_read,recv_size),link_id)
     return n
 
   # pylint: disable=redefined-builtin
