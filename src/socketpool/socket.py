@@ -14,6 +14,7 @@
 """ class Socket. """
 
 import time
+from errno import EAGAIN
 from esp32at.transport import Transport, CALLBACK_CONN, CALLBACK_IPD
 from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
@@ -26,6 +27,9 @@ except ImportError:
 # pylint: disable=too-many-instance-attributes
 class Socket:
   """ Class Socket """
+
+  data_prompt = None
+  """ current data prompt """
 
   # pylint: disable=redefined-builtin,too-many-arguments,unused-argument
   def __init__(
@@ -66,7 +70,6 @@ class Socket:
     # state variables for the server
     self._is_server_socket =  False
     self._connections = None
-    self._data_prompt = None
     self._local_host = None
     self._local_port = None
     self._remote_host = None
@@ -80,7 +83,7 @@ class Socket:
     if len(msg) == 1:
       link_id, action = -1,msg[0]
     else:
-      link_id, action = msg
+      link_id, action = int(msg[0]),msg[1]
     if self._t.debug:
       print(f"socket: {action} for {link_id}")
 
@@ -114,9 +117,9 @@ class Socket:
     # must be +IPD,<length> or +IPD,<link_id>,<length>
     msg = msg.split(',')
     if len(msg) == 2:
-      self._data_prompt = -1,int(msg[1])
+      Socket.data_prompt = -1,int(msg[1])
     else:
-      self._data_prompt = msg[1],int(msg[2])
+      Socket.data_prompt = int(msg[1]),int(msg[2])
 
   # pylint: disable=undefined-variable
   def __enter__(self) -> Socket:
@@ -150,14 +153,12 @@ class Socket:
     # read pending messages
     self._t.read_atmsg(passive=False,timeout=0)
 
-    if not self._data_prompt:
+    if not Socket.data_prompt:
       raise OSError(EAGAIN)
-    # otherwise, parse data-prompt, check connection and return socket
-    link_id, length = self._data_prompt
+
+    # otherwise, read data-prompt, check connection and return socket
+    link_id = Socket.data_prompt[0]
     sock = self._connections[link_id]
-    sock._recv_size = length
-    sock._recv_read = 0
-    self._data_prompt = None
     conn = self._impl.get_connections(link_id)
     if conn:
       sock._remote_host = conn.ip
@@ -321,23 +322,26 @@ class Socket:
       raise ValueError("bufsize must be 0 to len(buffer)")
     bytes_to_read = bufsize if bufsize else len(buffer)
 
+    if self._t.debug:
+      print(f"recv_into: {bytes_to_read=}")
+      print(f"           {Socket.data_prompt=}")
     # we need a data-prompt (IPD) before we can read data
     if self._timeout is None or self._timeout == 0:
       timeout = 5
     else:
       timeout = self._timeout
     start = time.monotonic()
-    while not self._data_prompt and time.monotonic() - start < timeout:
+    while not Socket.data_prompt and time.monotonic() - start < timeout:
       # read pending messages (hope for IPD)
       self._t.read_atmsg(passive=False,timeout=0)
-    if not self._data_prompt:
+    if not Socket.data_prompt:
       return 0
-    self._recv_size = self._data_prompt[1]
-    self._data_prompt = None
+    link_id, self._recv_size = Socket.data_prompt
+    Socket.data_prompt = None
 
     # read at most bytes_to_read from socket
     n = self._impl.recv_data(buffer,
-                        min(bytes_to_read,self._recv_size))
+                        min(bytes_to_read,self._recv_size),link_id)
     return n
 
   # pylint: disable=redefined-builtin

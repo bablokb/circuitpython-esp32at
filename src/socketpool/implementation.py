@@ -11,7 +11,6 @@
 """ class Implementation. """
 
 from collections import namedtuple
-from errno import EAGAIN
 try:
   from typing import Tuple, Sequence, Union
   import circuitpython_typing
@@ -204,12 +203,16 @@ class _Implementation:
       pass
 
   def recv_data(self,
-           buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
+                buffer: circuitpython_typing.WriteableBuffer, bufsize: int,
+                link_id: int) -> int:
     """ read pending data """
 
     # request data: AT sends CIPRECVDATA with length and data
-    self._t.send_atcmd(
-      f"AT+CIPRECVDATA={bufsize}",read_until="+CIPRECVDATA:")
+    if link_id is None or link_id == -1:
+      cmd = f"AT+CIPRECVDATA={bufsize}"
+    else:
+      cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
+    self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
     # read actual length from interface
     txt = b""
     while True:
