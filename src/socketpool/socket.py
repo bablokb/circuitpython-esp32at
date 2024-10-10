@@ -51,7 +51,6 @@ class Socket:
     self._t = Transport()
     self._sock_type = type
     self._use_ssl = False
-    self._link_id = None
     self._timeout = None
     if self._sock_type == SocketPool.SOCK_DGRAM:
       self._conn_type = "UDP"
@@ -60,9 +59,8 @@ class Socket:
     else:
       self._conn_type = "TCP"
 
-    # state variables for the receiver
-    self._recv_size = 0
-    self._recv_read = 0
+    self.data_prompt = None
+    self._link_id = None
 
     # state variables for the server
     self._is_server_socket =  False
@@ -200,46 +198,31 @@ class Socket:
         buffer (object) – buffer to read into
     """
 
-    if self._recv_size and self._recv_read < self._recv_size:
-      # still some data to be read
-      bytes_to_read = min(len(buffer),self._recv_size-self._recv_read)
+    # we need a data-prompt (IPD) before we can read data
+    if self._timeout is None or self._timeout == 0:
+      timeout = 5
     else:
-      # check for new data
-      ipd_msg = None
-      if self._timeout is None:
-        # block indefinitely
-        while True:
-          try:
-            #_,ipd_msg = self._impl.check_for_client(True)
-            break
-          except: # pylint: disable=bare-except
-            pass
-      elif self._timeout == 0:
-        # non blocking, throws OSError if no data is available
-        #_,ipd_msg = self._impl.check_for_client(True)
-        pass
-      else:
-        start = time.monotonic()
-        while time.monotonic() - start < self._timeout:
-          try:
-            #_,ipd_msg = self._impl.check_for_client(True)
-            break
-          except: # pylint: disable=bare-except
-            pass
+      timeout = self._timeout
+    start = time.monotonic()
+    while not self.data_prompt and time.monotonic() - start < timeout:
+      # read pending messages (hope for IPD)
+      self._t.read_atmsg(passive=False,timeout=0)
+    if not self.data_prompt:
+      raise OSError(EAGAIN)
 
-      if not ipd_msg:
-        return 0,(None,None)
-      self._recv_read = 0
-      self._recv_size = ipd_msg[0]
-      self._remote_host = ipd_msg[1]
-      self._remote_port = ipd_msg[2]
-      bytes_to_read = min(len(buffer),self._recv_size)
+    link_id, recv_size = self.data_prompt
+    self.data_prompt = None
 
-    # read bytes from socket
-    n = self._impl.read(buffer,bytes_to_read)
-    self._recv_read += n
+    # query host and port
+    conn = self._impl.get_connections(link_id if link_id > -1 else 0)
+    if conn:
+      remote_host = conn.ip
+      remote_port = conn.rport
+    raise RuntimeError("illegal state: connection without remote host/port?")
 
-    return n,(self._remote_host,self._remote_port)
+    # read at most len(buffer) from socket
+    n = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)
+    return n,(remote_host,remote_port)
 
   def recv_into(
     self,
