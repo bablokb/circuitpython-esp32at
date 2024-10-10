@@ -50,6 +50,7 @@ From an application point of view the following features are available:
 
 Not implemented:
 
+  - web-workflow: this *requires* native wifi
   - `wifi.radio.stations_ap`: no support from AT commandset
   - MDNS-service discovery: no support from AT commandset
   - TCP-server with SSL: needs indiviual firmware because of certificates
