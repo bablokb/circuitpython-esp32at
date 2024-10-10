@@ -36,8 +36,8 @@ class _Implementation:
     self._t = Transport()  # get transport-singleton
     self._ready_for_data = False
     self._send_pending = False
-    #self._t.set_callback(CALLBACK_PROMPT,self._prompt_callback)
     self._t.set_callback(CALLBACK_SEND,self._send_callback)
+    _Implementation._impl = self
 
   def get_connections(
     self,
@@ -120,16 +120,10 @@ class _Implementation:
     except:
       pass
 
-  def _prompt_callback(self,msg):
-    """ callback for data-prompt """
-    self._ready_for_data = True
-    if self._t.debug:
-      print(f"implementation: ready-for-data ({msg})")
-
   def _send_callback(self,msg):
     """ callback for send status """
     if self._t.debug:
-      print(f"implementation: status of send: {msg}")
+      print(f"implementation._send_callback(): {msg}")
     self._send_pending = False
 
   def send(self,
@@ -150,6 +144,7 @@ class _Implementation:
       cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
     # in case a previous send has not been acknowledged, wait
+    # TODO: think about timing out with Exception
     while self._send_pending:
       self._t.read_atmsg(passive=False,timeout=0)
     self._send_pending = True
@@ -157,7 +152,10 @@ class _Implementation:
     # TODO: do we have to timeout?!
     reply = self._t.send_atcmd(cmd)                   # init send
     if "ERROR" in reply:                              # link_id could be closed
-      raise OSError("send failed")
+      if self._t.debug:
+        print(f"send failed with ERROR for {link_id}")
+      self._send_pending = False
+      raise OSError(f"send failed for {link_id}")
     self._t.write(buffer)                             # write data to uart
 
   # pylint: disable=no-self-use, unused-argument
