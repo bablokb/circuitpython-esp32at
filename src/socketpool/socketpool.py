@@ -65,12 +65,14 @@ class SocketPool:
   def __init__(self, radio: wifi.radio) -> None:
     """ Constructor """
     self._radio = radio
+    self._t = Transport()
 
     # keep track of connections
     self._t.set_callback(CALLBACK_CONN,self._conn_callback)
     self._t.set_callback(CALLBACK_IPD,self._ipd_callback)
     self.connections = [None]*self._t.max_connections
     self.conn_inbound = []
+    SocketPool._socketpool = self
 
   def _conn_callback(self,msg):
     """ callback for connection messages """
@@ -82,19 +84,19 @@ class SocketPool:
     else:
       link_id, action = int(msg[0]),msg[1]
     if self._t.debug:
-      print(f"socket: {action} for {link_id}")
+      print(f"socketpool._conn_callback(): {action} for {link_id}")
 
     if action == 'CONNECT':
       if link_id == -1:
-        sock._link_id = -1               # pylint: disable=protected-access
         if self.connections[0]:
           sock = self.connections[0]
         else:
-          sock = Socket(self._socket_pool)
+          sock = self.socket()
           self.connections[0] = sock
+        sock._link_id = -1               # pylint: disable=protected-access
       else:
+        sock = self.socket()
         sock._link_id = link_id          # pylint: disable=protected-access
-        sock = Socket(self._socket_pool)
         self.connections[link_id] = sock
         self.conn_inbound.append(link_id)
 
@@ -107,7 +109,7 @@ class SocketPool:
   def _ipd_callback(self,msg):
     """ callback for IPD messages """
     if self._t.debug:
-      print(f"socket: data-prompt: {msg}")
+      print(f"socketpool._ipd_callback(): {msg}")
 
     # must be +IPD,<length> or +IPD,<link_id>,<length>
     msg = msg.split(',')
@@ -115,8 +117,8 @@ class SocketPool:
       link_id = 0
       data_prompt = -1,int(msg[1])
     else:
-      link_id = int(msg[0])
-      data_prompt = int(msg[1]),int(msg[2])
+      link_id = int(msg[1])
+      data_prompt = link_id,int(msg[2])
     self.connections[link_id].data_prompt = data_prompt
 
   # pylint: disable=redefined-builtin, unused-variable
