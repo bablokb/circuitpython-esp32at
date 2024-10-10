@@ -205,6 +205,11 @@ class _Implementation:
                 link_id: int) -> int:
     """ read pending data """
 
+    # in case a previous send has not been acknowledged, wait
+    # TODO: think about timing out with Exception
+    while self._send_pending:
+      self._t.read_atmsg(passive=False,timeout=0)
+
     # request data: AT sends CIPRECVDATA with length and data
     if link_id is None or link_id == -1:
       cmd = f"AT+CIPRECVDATA={bufsize}"
