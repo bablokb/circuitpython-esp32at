@@ -39,6 +39,12 @@ class _Implementation:
     self._t.set_callback(CALLBACK_SEND,self._send_callback)
     _Implementation._impl = self
 
+  def _wait_while_pending(self):
+    """ wait while a previous send is pending """
+    # TODO: think about timing out with Exception
+    while self._send_pending:
+      self._t.read_atmsg(passive=False,timeout=0)
+
   def get_connections(
     self,
     link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
@@ -110,13 +116,15 @@ class _Implementation:
   def close_connection(self,link_id: int) -> None:
     """ Close connection (best effort) """
 
+    # in case a previous send has not been acknowledged, wait
+    self._wait_while_pending()
+
     if link_id is None or link_id == -1:
       cmd = "AT+CIPCLOSE"
     else:
       cmd = f"AT+CIPCLOSE={link_id}"
     try:
-      # TODO: don't hardcode timeout
-      self._t.send_atcmd(cmd,timeout=5)
+      self._t.send_atcmd(cmd)
     except:
       pass
 
@@ -144,9 +152,7 @@ class _Implementation:
       cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
     # in case a previous send has not been acknowledged, wait
-    # TODO: think about timing out with Exception
-    while self._send_pending:
-      self._t.read_atmsg(passive=False,timeout=0)
+    self._wait_while_pending()
     self._send_pending = True
 
     # TODO: do we have to timeout?!
@@ -206,9 +212,7 @@ class _Implementation:
     """ read pending data """
 
     # in case a previous send has not been acknowledged, wait
-    # TODO: think about timing out with Exception
-    while self._send_pending:
-      self._t.read_atmsg(passive=False,timeout=0)
+    self._wait_while_pending()
 
     # request data: AT sends CIPRECVDATA with length and data
     if link_id is None or link_id == -1:
