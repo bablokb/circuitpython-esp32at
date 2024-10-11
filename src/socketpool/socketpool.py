@@ -87,21 +87,33 @@ class SocketPool:
       print(f"socketpool._conn_callback(): {action} for {link_id}")
 
     if action == 'CONNECT':
+      # single-connection mode, always outbound
       if link_id == -1:
         if self.connections[0]:
           sock = self.connections[0]
+          sock._link_id = -1
         else:
-          sock = self.socket()
-          self.connections[0] = sock
-        sock._link_id = -1               # pylint: disable=protected-access
+          sock = self.socket(_link_id=-1)
+
+      # multi-connection mode, could be outbound or inbound
       else:
-        sock = self.socket()
-        sock._link_id = link_id          # pylint: disable=protected-access
-        self.connections[link_id] = sock
-        self.conn_inbound.append(link_id)
+        sock = self.connections[link_id]
+        if sock and sock._link_id is None:
+          # outbound: just set link_id
+          sock._link_id = link_id
+        elif sock and sock._link_id == link_id:
+          # this (connect of an already connected link) should not happen!
+          if not link_id in self.conn_inbound:
+            self.conn_inbound.append(link_id)
+        else:
+          #inbound: sock does not exist
+          sock = self.socket(_link_id=link_id)
+          self.conn_inbound.append(link_id)
 
     else:
       # TODO: read buffer until empty (add to close()??)
+      if link_id == -1:
+        link_id = 0
       self.connections[link_id] = None
       if link_id in self.conn_inbound:
         self.conn_inbound.remove(link_id)
@@ -125,7 +137,8 @@ class SocketPool:
   def socket(self,
              family: int = AF_INET,
              type: int = SOCK_STREAM,
-             proto: int = IPPROTO_IP) -> circuitpython_typing.Socket:
+             proto: int = IPPROTO_IP,
+             _link_id: int = None) -> circuitpython_typing.Socket:
     """
     Create a new socket and return it
 
@@ -139,8 +152,28 @@ class SocketPool:
 
     The fileno argument available in socket.socket() in CPython is not supported.
     """
+
+    # Without _link_id, the socket is created from application side. So
+    # search for a slot
+    if _link_id is None:
+      if self._t.multi_connections:
+        # use next free element as slot, don't set link_id
+        for index, conn in enumeration(self.connections):
+          if not conn:
+            break
+        slot = index
+      else:
+        # always use slot 0
+        slot = 0
+    elif _link_id == -1:  # provided by _callback_connect
+      slot = 0
+    else:
+      slot = _link_id
+
     from .socket import Socket   # pylint: disable=import-outside-toplevel
-    return Socket(self,family,type,proto)
+    sock = Socket(self,family,type,proto,_link_id=_link_id)
+    self.connections[slot] = sock
+    return sock
 
   # pylint: disable=too-many-arguments, no-self-use
   def getaddrinfo(self,

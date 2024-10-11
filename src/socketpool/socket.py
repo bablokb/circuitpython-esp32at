@@ -36,6 +36,7 @@ class Socket:
     type: int = SocketPool.SOCK_STREAM,
     proto: int = 0,
     fileno: Optional[int] = None,
+    _link_id: Optional[int] = None
     ):
     """ Constructor.
 
@@ -60,7 +61,7 @@ class Socket:
       self._conn_type = "TCP"
 
     self.data_prompt = None
-    self._link_id = None
+    self._link_id = _link_id
 
     # state variables for the server
     self._is_server_socket =  False
