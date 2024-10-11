@@ -127,7 +127,6 @@ class Socket:
 
     self._local_host = address[0]
     self._local_port = address[1]
-    self._is_server_socket = True
 
     # UDP: does not start a server, but a connection
     if "UDP" in self._conn_type:
@@ -141,6 +140,7 @@ class Socket:
         address[0],address[1],self._conn_type,timeout,address)
       return
 
+    self._is_server_socket = True
     self._impl.start_server(address[1],self._conn_type)
 
   def connect(self,address: Tuple[str, int]) -> None:
