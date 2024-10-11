@@ -12,12 +12,15 @@
 #
 # -------------------------------------------------------------------------
 
+import time
 import wifi
 import socketpool
 
 import helpers
 secrets = helpers.secrets
+
 DEBUG  = False
+INTERVAL = 10  # for list of connected stations
 
 # --- run server   -----------------------------------------------------------
 
@@ -66,17 +69,29 @@ class MyServer(Server):
     with pool.socket() as server_socket:
       yield from self.start(server_socket)
 
-  # --- run AP and server   --------------------------------------------------
+# --- some helper functions   ------------------------------------------------
 
-  def run(self):
-    """ start AP and then run server """
-    self.start_ap()
-    started = False
-    for _ in self.run_server():
-      if not started:
-        print(f"Listening on http://{wifi.radio.ipv4_address_ap}:80")
-        started = True
-      gc.collect()
+# minimal implementation of asyncio.sleep() as a generator
+def asyncio_sleep(seconds):
+  start_time = time.monotonic()
+  while time.monotonic() - start_time < seconds:
+    yield
+
+# list stations connected to AP
+def print_stations():
+  while True:
+    stations = wifi.radio.stations_ap
+    if stations:
+      print("connected stations:")
+      for station in stations:
+        print(f"{station[0]}: {station[2]}")
+    yield from asyncio_sleep(INTERVAL)
+
+# --- main   -----------------------------------------------------------------
 
 myserver = MyServer()
-myserver.run()
+myserver.start_ap()
+print(f"Listening on http://{wifi.radio.ipv4_address_ap}:80")
+
+for _ in zip(print_stations(),myserver.run_server()):
+  pass
