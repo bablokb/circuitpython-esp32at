@@ -53,6 +53,9 @@ CALLBACK_STA = const(3)
 CALLBACK_SEND = const(4)
 """ index to callback method """
 
+class RebootError(Exception):
+  """The exception thrown during firmware reboot"""
+
 class TransportError(Exception):
   """The exception thrown when we didn't get acknowledgement to an AT command"""
 
@@ -132,17 +135,7 @@ class Transport:
     if hard_reset == RESET_ALWAYS:
       self.hard_reset()
     elif reset == RESET_ALWAYS:
-      self.soft_reset()
-
-    #     # check ready message from firmware if we just started
-    #     start = time.monotonic()
-    #     if start < 3:
-    #       if self.debug:
-    #         print("waiting for 'ready' from firmware...")
-    #       while time.monotonic() - start < 5:
-    #         ready,_ = self.read_atmsg(passive=False,wait_for="ready",timeout=0.1)
-    #         if ready:
-    #           break
+      self.soft_reset()           # this can fail if the firmware is not ready
 
     # try two times to connect with the ESP32xx co-processor
     connected = False
@@ -170,11 +163,13 @@ class Transport:
         connected = True
         self._echo(False)
         break
-      except:
+      except Exception as ex:
         # try to reset the device
         if hard_reset == RESET_ON_FAILURE:
           self.hard_reset()
         elif reset == RESET_ON_FAILURE:
+          if isinstance(ex,RebootError):  # give the system some time to boot
+            time.sleep(3)
           self.soft_reset()
 
     if not connected:
@@ -246,6 +241,7 @@ class Transport:
   def soft_reset(self, timeout: int = 5) -> bool:
     """Perform a software reset by AT command. Returns True
     if we successfully performed, false if failed to reset"""
+
     try:
       reply = self.send_atcmd("AT+RST", timeout=timeout,filter="^OK")
     except TransportError:
@@ -333,6 +329,10 @@ class Transport:
         print(f"<--- {msg=}")
       if not msg:                           # ignore empty lines
         continue
+
+      if b'ESP-ROM' in msg or b'\x1b[0;32m' in msg:
+        raise RebootError("firmware boot in progress")
+
       msg = str(msg,'utf-8')
 
       # even in passive mode the AT-firmware sends unrelated messages
@@ -382,7 +382,6 @@ class Transport:
       timeout = self._at_timeout
     if retries < 0:
       retries = self._at_retries
-
 
     # process pending active messages
     self.read_atmsg(passive=False,timeout=0)
