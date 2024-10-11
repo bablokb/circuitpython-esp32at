@@ -80,6 +80,7 @@ class Radio:
     self._ipv4_address_ap = None
     self._ipv4_gateway_ap = None
     self._ipv4_netmask_ap = None
+    self._stations_ap = {}
 
     Radio.radio = self
     self.ipv4_dns_defaults = ['8.8.8.8']  # default ESP32-AT
@@ -103,18 +104,21 @@ class Radio:
   def _sta_callback(self,msg):
     """ callback for Transport.read_atmsg() to set station state """
 
-    # TODO: implement!
-
-    msg,args = msg.split(':',1)   # args have to be trimmed!
+    if self._transport.debug:
+      print(f"radio._sta_callback: {msg=}")
+    msg,args = msg.split(':',1)
+    args = args.split(',')
+    mac = args[0].strip('"')
     if msg == "+STA_CONNECTED":
       # args[0] is station-MAC
-      pass
-    elif msg == "DIST_STA_IP":
+      self._stations_ap[mac] = None
+    elif msg == "+DIST_STA_IP":
       # args[0] is station-MAC, args[1] is IP
-      pass
-    elif msg == "STA_DISCONNECTED":
+      ip  = args[1].strip('"')
+      self._stations_ap[mac] = ip
+    elif msg == "+STA_DISCONNECTED" and mac in self._stations_ap:
       # args[0] is station-MAC
-      pass
+      del self._stations_ap[mac]
 
   @property
   def country_settings(self):
@@ -758,7 +762,7 @@ class Radio:
     return network
 
   @property
-  def stations_ap(self) -> None:
+  def stations_ap(self) -> Sequence[Tuple]:
     """ In AP mode, returns list of named tuples, each of which
     contains:
 
@@ -768,9 +772,15 @@ class Radio:
     if station connected but no address assigned yet or self-assigned
     address)
 
-    Not implemented in AT command set.
     """
-    return None
+    result = []
+    for key, value in self._stations_ap.items():
+      if value is None:
+        ip = None
+      else:
+        ip = ipaddress.ip_address(value)
+      result.append((key,0,ip))
+    return result
 
   def start_dhcp(
     self, *,
