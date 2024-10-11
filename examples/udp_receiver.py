@@ -43,7 +43,7 @@ host = wifi.radio.ipv4_address
 print(f"setting up UDP-socket on {host}:{port}")
 
 
-buffer = bytearray(32)
+buffer = bytearray(512)
 pool   = socketpool.SocketPool(wifi.radio)
 socket = pool.socket(family=socketpool.SocketPool.AF_INET,
                      type=socketpool.SocketPool.SOCK_DGRAM)
