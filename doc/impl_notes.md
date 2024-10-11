@@ -24,5 +24,7 @@ some notes.
 Missing Functions
 -----------------
 
-`wifi.radio.stations_ap` and MDNS service discovery are not
-implemented due to missing support in the AT command set.
+MDNS service discovery is not implemented due to missing support in
+the AT command set.
+
+Web workflow is not supported, since it needs native wifi.

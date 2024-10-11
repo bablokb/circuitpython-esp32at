@@ -45,13 +45,11 @@ From an application point of view the following features are available:
   - UDP sender (client) and receiver (aka "server")
   - HTTP requests (TCP and SSL)
   - HTTP server (TCP only)<br>
-    (**note**: *multiple concurrent connections are broken*)
   - operate as AP
 
 Not implemented:
 
   - web-workflow: this *requires* native wifi
-  - `wifi.radio.stations_ap`: no support from AT commandset
   - MDNS-service discovery: no support from AT commandset
   - TCP-server with SSL: needs indiviual firmware because of certificates
   - MP3 streaming: currently unsupported from core CircuitPython
@@ -77,7 +75,6 @@ how to use the modules.
 Roadmap
 -------
 
-  - partial redesign to support concurrent connections
   - optimize performance
   - support sleep and wakeup
   - document building (specialized versions of) the AT-firmware
