@@ -111,7 +111,6 @@ class Transport:
            reset_pin: Optional[circuitpython_typing.Pin] = None,
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
-           multi_connection: Optional[bool] = False,
            baudrate: Union[int, str] = None,
            debug: bool = False,
            ) -> bool:
@@ -149,7 +148,16 @@ class Transport:
     connected = False
     for _ in range(2):
       try:
-        self.multi_connections = multi_connection
+        # set multi-connection mode
+        reply = self.send_atcmd('AT+CIPMUX=1',filter="^OK")
+        if reply is None:
+          raise RuntimeError("could not set connection-mode")
+        # set passive receive-mode
+        reply = self.send_atcmd(
+          f'AT+CIPRECVTYPE={self.max_connections},1',filter="^OK")
+        if reply is None:
+          raise RuntimeError("could not set passive receive-mode")
+
         self._get_version()
         connected = True
         self._echo(False)
@@ -481,32 +489,6 @@ class Transport:
       self.send_atcmd("ATE0")
 
   # --- connection configuration   -------------------------------------------
-
-  @property
-  def multi_connections(self) -> bool:
-    """ query multi-connection setting """
-
-    reply = self.send_atcmd('AT+CIPMUX?',filter="^\+CIPMUX:")
-    if reply is None:
-      raise RuntimeError("could not query connection-mode")
-    return reply[8:] == "1"
-
-  @multi_connections.setter
-  def multi_connections(self, flag: bool) -> None:
-    """ enable/disable multi-connections """
-
-    reply = self.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK")
-    if reply is None:
-      raise RuntimeError("could not set connection-mode")
-
-    # set passive receive-mode
-    if flag:
-      parms = f"{self.max_connections},1"
-    else:
-      parms = "1"
-    reply = self.send_atcmd(f'AT+CIPRECVTYPE={parms}',filter="^OK")
-    if reply is None:
-      raise RuntimeError("could not set passive receive-mode")
 
   @property
   def max_connections(self) -> int:

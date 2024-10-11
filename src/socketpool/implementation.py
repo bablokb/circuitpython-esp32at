@@ -76,30 +76,19 @@ class _Implementation:
     return connections
 
   # pylint: disable=too-many-arguments
-  def start_connection(self,host:str,port:int,
+  def start_connection(self,
+                       link_id: int,
+                       host:str,port:int,
                        conn_type: str,
                        timeout: int,
                        address: Tuple[str,int] = None) -> None:
     """ Start connection of the given type. """
 
     # check for an existing connection
-    connections = self.get_connections()
-    if connections:
-      if self._t.multi_connections:
-        # check if host:port are already connected
-        # which is complicated, so we leave this for later
-        pass
-      else:
-        # for simplicity, just close the existing connection
-        self.close_connection(-1)
-
-    if self._t.multi_connections:
-      cmd = "CIPSTARTEX"
-    else:
-      cmd = "CIPSTART"
+    # connections = self.get_connections()
 
     # parameters: connection-type, remote host, remote port
-    params = f'"{conn_type}","{host}",{port}'
+    params = f'{link_id},"{conn_type}","{host}",{port}'
     if address:
       if not "UDP" in conn_type:
         raise ValueError("address supplied and conn_type not UDP")
@@ -109,7 +98,7 @@ class _Implementation:
       params += f',{address[1]},2,"{address[0]}"'
 
     reply = self._t.send_atcmd(
-      f'AT+{cmd}={params}',filter="^OK",timeout=timeout)
+      f'AT+CIPSTART={params}',filter="^OK",timeout=timeout)
     if reply is None:
       raise RuntimeError("could not start connection")
 
@@ -119,12 +108,8 @@ class _Implementation:
     # in case a previous send has not been acknowledged, wait
     self._wait_while_pending()
 
-    if link_id is None or link_id == -1:
-      cmd = "AT+CIPCLOSE"
-    else:
-      cmd = f"AT+CIPCLOSE={link_id}"
     try:
-      self._t.send_atcmd(cmd)
+      self._t.send_atcmd(f"AT+CIPCLOSE={link_id}")
     except:
       pass
 
@@ -146,10 +131,7 @@ class _Implementation:
       self.send_long(buffer,link_id)
       return
 
-    if link_id == -1:
-      cmd = f"AT+CIPSEND={len(buffer)}"
-    else:
-      cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
+    cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
     # in case a previous send has not been acknowledged, wait
     self._wait_while_pending()
@@ -189,12 +171,8 @@ class _Implementation:
   def set_timeout(self,value: int, link_id: int) -> None:
     """ set the send-timeout option """
 
-    if link_id is None or link_id == -1:
-      cmd = f"AT+CIPTCPOPT=,,{value}"
-    else:
-      cmd = f"AT+CIPTCPOPT={link_id},,,{value}"
     try:
-      self._t.send_atcmd(cmd)
+      self._t.send_atcmd(f"AT+CIPTCPOPT={link_id},,,{value}")
     except:
       pass
 
@@ -215,10 +193,7 @@ class _Implementation:
     self._wait_while_pending()
 
     # request data: AT sends CIPRECVDATA with length and data
-    if link_id is None or link_id == -1:
-      cmd = f"AT+CIPRECVDATA={bufsize}"
-    else:
-      cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
+    cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
     self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
     # read actual length from interface
     txt = b""

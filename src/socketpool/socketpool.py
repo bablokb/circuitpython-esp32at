@@ -79,41 +79,24 @@ class SocketPool:
 
     # check for CONNECT or CLOSED
     msg = msg.split(',')
-    if len(msg) == 1:
-      link_id, action = -1,msg[0]
-    else:
-      link_id, action = int(msg[0]),msg[1]
+    link_id, action = int(msg[0]),msg[1]
     if self._t.debug:
       print(f"socketpool._conn_callback(): {action} for {link_id}")
 
     if action == 'CONNECT':
-      # single-connection mode, always outbound
-      if link_id == -1:
-        if self.connections[0]:
-          sock = self.connections[0]
-          sock._link_id = -1
-        else:
-          sock = self.socket(_link_id=-1)
-
-      # multi-connection mode, could be outbound or inbound
+      sock = self.connections[link_id]
+      if sock:
+        # outbound: just set link_id
+        sock._link_id = link_id
       else:
-        sock = self.connections[link_id]
-        if sock and sock._link_id is None:
-          # outbound: just set link_id
-          sock._link_id = link_id
-        elif sock and sock._link_id == link_id:
-          # this (connect of an already connected link) should not happen!
-          if not link_id in self.conn_inbound:
-            self.conn_inbound.append(link_id)
-        else:
-          #inbound: sock does not exist
-          sock = self.socket(_link_id=link_id)
-          self.conn_inbound.append(link_id)
+        #inbound: sock does not exist
+        sock = self.socket()
+        sock._link_id = link_id
+        self.connections[link_id] = sock
+        self.conn_inbound.append(link_id)
 
     else:
       # TODO: read buffer until empty (add to close()??)
-      if link_id == -1:
-        link_id = 0
       self.connections[link_id] = None
       if link_id in self.conn_inbound:
         self.conn_inbound.remove(link_id)
@@ -123,22 +106,29 @@ class SocketPool:
     if self._t.debug:
       print(f"socketpool._ipd_callback(): {msg}")
 
-    # must be +IPD,<length> or +IPD,<link_id>,<length>
+    # must be +IPD,<link_id>,<length>
     msg = msg.split(',')
-    if len(msg) == 2:
-      link_id = 0
-      data_prompt = -1,int(msg[1])
-    else:
-      link_id = int(msg[1])
-      data_prompt = link_id,int(msg[2])
+    link_id = int(msg[1])
+    data_prompt = link_id,int(msg[2])
     self.connections[link_id].data_prompt = data_prompt
+
+  def get_link_id(self,sock: circuitpython_typing.Socket) -> int:
+    """ return next free link_id and save socket in connections-list """
+    link_id = None
+    for index, conn in enumerate(self.connections):
+      if not conn:
+        link_id = index
+        break
+    if link_id is None:
+      raise RuntimeError("number of available connections exceeded!")
+    self.connections[link_id] = sock
+    return link_id
 
   # pylint: disable=redefined-builtin, unused-variable
   def socket(self,
              family: int = AF_INET,
              type: int = SOCK_STREAM,
-             proto: int = IPPROTO_IP,
-             _link_id: int = None) -> circuitpython_typing.Socket:
+             proto: int = IPPROTO_IP) -> circuitpython_typing.Socket:
     """
     Create a new socket and return it
 
@@ -153,27 +143,8 @@ class SocketPool:
     The fileno argument available in socket.socket() in CPython is not supported.
     """
 
-    # Without _link_id, the socket is created from application side. So
-    # search for a slot
-    if _link_id is None:
-      if self._t.multi_connections:
-        # use next free element as slot, don't set link_id
-        for index, conn in enumeration(self.connections):
-          if not conn:
-            break
-        slot = index
-      else:
-        # always use slot 0
-        slot = 0
-    elif _link_id == -1:  # provided by _callback_connect
-      slot = 0
-    else:
-      slot = _link_id
-
     from .socket import Socket   # pylint: disable=import-outside-toplevel
-    sock = Socket(self,family,type,proto,_link_id=_link_id)
-    self.connections[slot] = sock
-    return sock
+    return Socket(self,family,type,proto)
 
   # pylint: disable=too-many-arguments, no-self-use
   def getaddrinfo(self,

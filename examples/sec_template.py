@@ -32,7 +32,6 @@ secrets = {
   #'hard_reset': RESET_NEVER,
   #'persist_settings': True,
   #'reconn_interval': 1,
-  #'multi_connection': False,
   #'baudrate': 460800,
 
   # settings for test_sta.py

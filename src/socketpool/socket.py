@@ -35,8 +35,7 @@ class Socket:
     family: int = SocketPool.AF_INET,
     type: int = SocketPool.SOCK_STREAM,
     proto: int = 0,
-    fileno: Optional[int] = None,
-    _link_id: Optional[int] = None
+    fileno: Optional[int] = None
     ):
     """ Constructor.
 
@@ -61,7 +60,7 @@ class Socket:
       self._conn_type = "TCP"
 
     self.data_prompt = None
-    self._link_id = _link_id
+    self._link_id = None
 
     # state variables for the server
     self._is_server_socket =  False
@@ -137,11 +136,11 @@ class Socket:
         timeout = 5
       else:
         timeout = self._timeout
-      self._impl.start_connection(
+      link_id = self._socketpool.get_link_id(self)
+      self._impl.start_connection(link_id,
         address[0],address[1],self._conn_type,timeout,address)
       return
 
-    self._t.multi_connections = True # required by server
     self._impl.start_server(address[1],self._conn_type)
 
   def connect(self,address: Tuple[str, int]) -> None:
@@ -151,6 +150,10 @@ class Socket:
 
       address (tuple) – tuple of (remote_address, remote_port)
     """
+
+    # query free link-id
+    link_id = self._socketpool.get_link_id(self)
+
     if self._timeout is None or self._timeout == 0:
       timeout = 5
     else:
@@ -158,10 +161,11 @@ class Socket:
 
     start = time.monotonic()
     self._impl.start_connection(
+      link_id,
       address[0],address[1],self._conn_type,timeout)
 
     # wait until link_id is set by callback
-    while not self._link_id and time.monotonic() - start < timeout:
+    while self._link_id is None and time.monotonic() - start < timeout:
       self._t.read_atmsg(passive=False,timeout=0)
 
   def close(self) -> None:
@@ -171,8 +175,8 @@ class Socket:
     if self._is_server_socket:
       self._impl.stop_server()
     else:
-      self._impl.close_connection(self._link_id)
-      self._link_id = None
+      self._impl.close_connection(self._link_id) # this should trigger cleanup
+      self._link_id = None                       # in socketpool
 
   # pylint: disable=no-self-use
   def listen(self,backlog: int) -> None:
@@ -215,11 +219,12 @@ class Socket:
     self.data_prompt = None
 
     # query host and port
-    conn = self._impl.get_connections(link_id if link_id > -1 else 0)
+    conn = self._impl.get_connections(link_id)
     if conn:
       remote_host = conn.ip
       remote_port = conn.rport
-    raise RuntimeError("illegal state: connection without remote host/port?")
+    else:
+      raise RuntimeError("illegal state: connection without remote host/port?")
 
     # read at most len(buffer) from socket
     n = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)

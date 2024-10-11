@@ -77,9 +77,6 @@ for optimal setup they can be tweaked:
     a list of relevant settings. See also the discussion below.
   - `reconn_interval`: Value of the (automatic) reconnection interval. A
     value of zero disables automatic reconnection.
-  - `multi_connection`: Support multiple parallel connections. Default is
-    `False`. Support is implemented, but absolutely untested. The default
-    AT firmware allows up to five parallel connections.
   - `baudrate`: change baudrate temporarily. Format:
      `baudrate` or `"baudrate[,databits,stopbits,parity,flow-control]"`.
      The first alternative does not change any the remaining options.
