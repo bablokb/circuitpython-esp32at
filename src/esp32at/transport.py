@@ -152,6 +152,14 @@ class Transport:
         reply = self.send_atcmd('AT+CIPMUX=1',filter="^OK")
         if reply is None:
           raise RuntimeError("could not set connection-mode")
+
+        # query number of supported connections
+        reply = self.send_atcmd('AT+CIPSERVERMAXCONN?',
+                                filter="^\+CIPSERVERMAXCONN:")
+        if reply is None:
+          raise RuntimeError("could not query max connections")
+        self.max_connections = int(reply[18:])
+
         # set passive receive-mode
         reply = self.send_atcmd(
           f'AT+CIPRECVTYPE={self.max_connections},1',filter="^OK")
@@ -487,24 +495,3 @@ class Transport:
       self.send_atcmd("ATE1")
     else:
       self.send_atcmd("ATE0")
-
-  # --- connection configuration   -------------------------------------------
-
-  @property
-  def max_connections(self) -> int:
-    """ query max-connection setting """
-
-    reply = self.send_atcmd('AT+CIPSERVERMAXCONN?',
-                               filter="^\+CIPSERVERMAXCONN:")
-    if reply is None:
-      raise RuntimeError("could not query max connections")
-    return int(reply[18:])
-
-  @max_connections.setter
-  def max_connections(self, value: int) -> None:
-    """ set maximum concurrent connections """
-
-    reply = self.send_atcmd(
-      f'AT+CIPSERVERMAXCONN={value}',filter="^OK")
-    if reply is None:
-      raise RuntimeError("could not set max connections")
