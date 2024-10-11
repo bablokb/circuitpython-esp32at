@@ -22,7 +22,7 @@ import helpers
 
 DURATION = 120
 TIMEOUT  = 10
-DEBUG  = False
+DEBUG  = True
 
 # Get wifi details and more from a secrets.py file
 try:
@@ -47,8 +47,8 @@ buffer = bytearray(512)
 pool   = socketpool.SocketPool(wifi.radio)
 socket = pool.socket(family=socketpool.SocketPool.AF_INET,
                      type=socketpool.SocketPool.SOCK_DGRAM)
-socket.settimeout(TIMEOUT)
 socket.bind((host,port))
+socket.settimeout(TIMEOUT)
 
 start = time.monotonic()
 while time.monotonic() - start < DURATION:
