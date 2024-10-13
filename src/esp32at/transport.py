@@ -71,7 +71,7 @@ class Transport:
   transport = None
   """ the singleton instance """
 
-  _MSG_PASSIVE_END = ["OK", "ERROR", "busy p..."]
+  _MSG_PASSIVE_END = ["OK", "ERROR"]
   """ end-messages in passive-mode """
 
   # pylint: disable=anomalous-backslash-in-string
@@ -335,6 +335,9 @@ class Transport:
       if not msg:                           # ignore empty lines
         continue
 
+      # some shortcuts for special messages
+      if b'busy p...' in msg:
+        return False, result
       if b'ESP-ROM' in msg or b'\x1b[0;32m' in msg:
         raise RebootError("firmware boot in progress")
 
@@ -358,7 +361,7 @@ class Transport:
         if self.debug:
           print("     appending to result...")
         if msg in Transport._MSG_PASSIVE_END:
-          return msg!='busy p...',result
+          return True,result
         continue
 
     # timed out or incomplete response
