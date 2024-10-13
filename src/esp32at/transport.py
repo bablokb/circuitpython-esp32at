@@ -381,6 +381,9 @@ class Transport:
     a variable timeout (how long we'll wait for response) and
     how many times to retry before giving up"""
 
+    if self.debug:
+      print(f"send_atcmd({at_cmd}) start -----------")
+
     # use global defaults
     if timeout < 0:
       timeout = self._at_timeout
@@ -416,6 +419,8 @@ class Transport:
         for line in raw_response:
           print(f"raw {line}")
     if not success:
+      if self.debug:
+        print(f"send_atcmd({at_cmd}) end (TransportError) -----")
       raise TransportError(f"AT-command {at_cmd} failed ({raw_response=})")
 
     # check for filter
@@ -433,6 +438,8 @@ class Transport:
       else:
         for line in response:
           print(f"<--- {line}")
+    if self.debug:
+      print(f"send_atcmd({at_cmd}) end -------------")
     return response
 
   # --- wait for specific texts (prompt, result)   ---------------------------
