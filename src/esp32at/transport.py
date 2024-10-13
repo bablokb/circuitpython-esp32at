@@ -102,6 +102,7 @@ class Transport:
     self.debug = None
     self._at_version = None
     self.reconn_interval = 1
+    self.busy = False
     Transport.transport = self
 
   def init(self,
@@ -369,13 +370,24 @@ class Transport:
 
   # --- send command to the co-processor   -----------------------------------
 
+  def _wait_while_busy(self):
+    """ wait while busy-flag is set """
+    # TODO: think about timing out with Exception
+    if self.debug and self.busy:
+      print("busy... waiting")
+    while self.busy:
+      self.read_atmsg(passive=False,timeout=0)
+    if self.debug:
+      print("busy flag cleared")
+
   # pylint: disable=redefined-builtin,too-many-statements
   def send_atcmd(self, # pylint: disable=too-many-branches
                  at_cmd: str,
                  timeout: float = -1,
                  retries: int = -1,
                  read_until: str = None,
-                 filter: str = None) -> bytes:
+                 filter: str = None
+                 set_busy: bool = False) -> bytes:
     """Send an AT command, check that we got an OK response,
     and then cut out the reply lines to return. We can set
     a variable timeout (how long we'll wait for response) and
@@ -394,6 +406,8 @@ class Transport:
     self.read_atmsg(passive=False,timeout=0)
 
     # input should be cleared, send command
+    self._wait_while_busy()
+    self.busy = set_busy
     for i in range(retries):
       if self.debug:
         print("--->", at_cmd)

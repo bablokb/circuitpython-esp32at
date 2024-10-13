@@ -39,12 +39,6 @@ class _Implementation:
     self._t.set_callback(CALLBACK_SEND,self._send_callback)
     _Implementation._impl = self
 
-  def _wait_while_pending(self):
-    """ wait while a previous send is pending """
-    # TODO: think about timing out with Exception
-    while self._send_pending:
-      self._t.read_atmsg(passive=False,timeout=0)
-
   def get_connections(
     self,
     link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
@@ -105,9 +99,6 @@ class _Implementation:
   def close_connection(self,link_id: int) -> None:
     """ Close connection (best effort) """
 
-    # in case a previous send has not been acknowledged, wait
-    self._wait_while_pending()
-
     try:
       self._t.send_atcmd(f"AT+CIPCLOSE={link_id}")
     except:
@@ -117,7 +108,7 @@ class _Implementation:
     """ callback for send status """
     if self._t.debug:
       print(f"implementation._send_callback(): {msg}")
-    self._send_pending = False
+    self._t.busy = False
 
   def send(self,
            buffer: circuitpython_typing.ReadableBuffer,
@@ -133,16 +124,11 @@ class _Implementation:
 
     cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
 
-    # in case a previous send has not been acknowledged, wait
-    self._wait_while_pending()
-    self._send_pending = True
-
-    # TODO: do we have to timeout?!
-    reply = self._t.send_atcmd(cmd)                   # init send
+    reply = self._t.send_atcmd(cmd,set_busy=True)     # init send
     if "ERROR" in reply:                              # link_id could be closed
       if self._t.debug:
         print(f"send failed with ERROR for {link_id}")
-      self._send_pending = False
+      self._t.busy = False
       raise OSError(f"send failed for {link_id}")
     success, _ = self._t.read_atmsg(passive=True,read_until='>')
     if success:
@@ -192,9 +178,6 @@ class _Implementation:
                 buffer: circuitpython_typing.WriteableBuffer, bufsize: int,
                 link_id: int) -> int:
     """ read pending data """
-
-    # in case a previous send has not been acknowledged, wait
-    self._wait_while_pending()
 
     # request data: AT sends CIPRECVDATA with length and data
     cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
