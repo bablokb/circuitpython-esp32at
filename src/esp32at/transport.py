@@ -456,28 +456,6 @@ class Transport:
       print(f"send_atcmd({at_cmd}) end -------------")
     return response
 
-  # --- wait for specific texts (prompt, result)   ---------------------------
-
-  def wait_for(self,rex: str, greedy: bool=True, timeout: float = -1) -> bytes:
-    """ wait for specific text, specified as regex """
-
-    # use global defaults
-    if timeout < 0:
-      timeout = self._at_timeout
-
-    txt = ""
-    stamp = time.monotonic()
-    while (time.monotonic() - stamp) < timeout:
-      if self._uart.in_waiting:
-        txt += self._uart.read(self._uart.in_waiting if greedy else 1)
-        if re.match(rex,txt):
-          if self.debug:
-            print(f"match: {txt=}")
-          return txt
-    if self.debug:
-      print(f"no match: {txt=}")
-    raise RuntimeError(f"timeout waiting for {rex}. {txt=}")
-
   # --- write bytes to the interface   ---------------------------------------
 
   def write(self,
