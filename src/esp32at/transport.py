@@ -306,8 +306,12 @@ class Transport:
 
     # read all messages
     processed = False
-    while passive or self._uart.in_waiting > 1:
-      if not self._uart.in_waiting > 1:
+    if read_until:
+      min_waiting = min(1,len(read_until)-1)  # if we wait for a single char
+    else:
+      min_waiting = 1
+    while passive or self._uart.in_waiting > min_waiting:
+      if not self._uart.in_waiting > min_waiting:
         continue
 
       # special processing when parsing until a specific string:

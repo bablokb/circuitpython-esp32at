@@ -144,7 +144,11 @@ class _Implementation:
         print(f"send failed with ERROR for {link_id}")
       self._send_pending = False
       raise OSError(f"send failed for {link_id}")
-    self._t.write(buffer)                             # write data to uart
+    success, _ = self._t.read_atmsg(passive=True,read_until='>')
+    if success:
+      self._t.write(buffer)                             # write data to uart
+    else:
+      raise OSError(f"send failed with ERROR for {link_id}")
 
   # pylint: disable=no-self-use, unused-argument
   def send_long(self,
