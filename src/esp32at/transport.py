@@ -376,7 +376,7 @@ class Transport:
   def _wait_while_busy(self):
     """ wait while busy-flag is set """
     # TODO: think about timing out with Exception
-    if self.debug and self.busy:
+    if self.debug:
       print("busy... waiting")
     while self.busy:
       self.read_atmsg(passive=False,timeout=0)
@@ -389,7 +389,7 @@ class Transport:
                  timeout: float = -1,
                  retries: int = -1,
                  read_until: str = None,
-                 filter: str = None
+                 filter: str = None,
                  set_busy: bool = False) -> bytes:
     """Send an AT command, check that we got an OK response,
     and then cut out the reply lines to return. We can set
@@ -409,7 +409,7 @@ class Transport:
     self.read_atmsg(passive=False,timeout=0)
 
     # input should be cleared, send command
-    self._wait_while_busy()
+    self.busy and self._wait_while_busy()
     self.busy = set_busy
     for i in range(retries):
       if self.debug:
