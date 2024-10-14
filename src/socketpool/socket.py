@@ -174,9 +174,9 @@ class Socket:
     """
     if self._is_server_socket:
       self._impl.stop_server()
-    else:
+    elif self._socketpool.connections[self._link_id]:
       self._impl.close_connection(self._link_id) # this should trigger cleanup
-      self._link_id = None                       # in socketpool
+    self._link_id = None                                       # in socketpool
 
   # pylint: disable=no-self-use
   def listen(self,backlog: int) -> None:
@@ -254,8 +254,8 @@ class Socket:
     bytes_to_read = bufsize if bufsize else len(buffer)
 
     if self._t.debug:
-      print(f"recv_into: {bytes_to_read=}")
-      print(f"           {self.data_prompt=}")
+      print(f"recv_into({self._link_id}): {bytes_to_read=}")
+      print(f"              {self.data_prompt=}")
     # we need a data-prompt (IPD) before we can read data
     if self._timeout is None or self._timeout == 0:
       timeout = 5
@@ -266,7 +266,7 @@ class Socket:
       # read pending messages (hope for IPD)
       self._t.read_atmsg(passive=False,timeout=0)
     if not self.data_prompt:
-      return 0
+      raise OSError(EAGAIN)
     link_id, recv_size = self.data_prompt
     self.data_prompt = None
 
