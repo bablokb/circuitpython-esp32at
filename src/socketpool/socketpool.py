@@ -110,7 +110,9 @@ class SocketPool:
     msg = msg.split(',')
     link_id = int(msg[1])
     data_prompt = link_id,int(msg[2])
-    self.connections[link_id].data_prompt = data_prompt
+    # link could be up from ESP32Cx-side, but not from application side
+    if self.connections[link_id]:
+      self.connections[link_id].data_prompt = data_prompt
 
   def get_link_id(self,sock: circuitpython_typing.Socket) -> int:
     """ return next free link_id and save socket in connections-list """
