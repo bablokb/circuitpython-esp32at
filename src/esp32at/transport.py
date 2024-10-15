@@ -322,7 +322,7 @@ class Transport:
             break
           if read_until in msg:
             if self.debug:
-              print(f"<--- msg(read_until)={read_until}")
+              print(f"<--- msg(read_until): '{read_until}'")
             return True, read_until
       else:
         msg = self._uart.readline()[:-2]
@@ -479,7 +479,7 @@ class Transport:
     mv_target = mv_buffer[0:bufsize]
     if self.debug:
       n = self._uart.readinto(mv_target)
-      print(f"<--- {n} bytes: {buffer[:min(n,40)]}...")
+      print(f"<--- {n} bytes: {bytes(buffer[:min(n,40)])}...")
       return n
     return self._uart.readinto(mv_target)
 
