@@ -99,7 +99,7 @@ class Socket:
     """
 
     # read pending messages
-    self._t.read_atmsg(passive=False,timeout=0)
+    self._t.read_atmsg(passive=False)
 
     if not self._socketpool.conn_inbound:
       raise OSError(EAGAIN)
@@ -166,7 +166,7 @@ class Socket:
 
     # wait until link_id is set by callback
     while self._link_id is None and time.monotonic() - start < timeout:
-      self._t.read_atmsg(passive=False,timeout=0)
+      self._t.read_atmsg(passive=False)
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
@@ -211,7 +211,7 @@ class Socket:
     start = time.monotonic()
     while not self.data_prompt and time.monotonic() - start < timeout:
       # read pending messages (hope for IPD)
-      self._t.read_atmsg(passive=False,timeout=0)
+      self._t.read_atmsg(passive=False)
     if not self.data_prompt:
       raise OSError(EAGAIN)
 
@@ -264,7 +264,7 @@ class Socket:
     start = time.monotonic()
     while not self.data_prompt and time.monotonic() - start < timeout:
       # read pending messages (hope for IPD)
-      self._t.read_atmsg(passive=False,timeout=0)
+      self._t.read_atmsg(passive=False)
     if not self.data_prompt:
       raise OSError(EAGAIN)
     link_id, recv_size = self.data_prompt

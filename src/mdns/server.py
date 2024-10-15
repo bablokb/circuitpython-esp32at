@@ -51,7 +51,7 @@ class Server:
 
   def deinit(self) -> None:
     """ Stops the server """
-    self._transport.send_atcmd("AT+MDNS=0",timeout=5)
+    self._transport.send_atcmd("AT+MDNS=0")
 
   @property
   def hostname(self) -> str:
@@ -141,11 +141,11 @@ class Server:
 
     # disable MDNS first
     try:
-      self._transport.send_atcmd('AT+MDNS=0',timeout=5)
+      self._transport.send_atcmd('AT+MDNS=0')
     except: # pylint: disable=bare-except
       pass
 
     try:
-      self._transport.send_atcmd(cmd,timeout=5)
+      self._transport.send_atcmd(cmd)
     except Exception as ex:
       raise RuntimeError("could not start mdns-advertising") from ex

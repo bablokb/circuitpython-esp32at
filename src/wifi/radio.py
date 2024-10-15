@@ -318,7 +318,7 @@ class Radio:
       return
 
     reply = self._transport.send_atcmd(
-      f'AT+CWMODE={mode+Radio.RUN_MODE_STATION}',filter="^OK",timeout=5)
+      f'AT+CWMODE={mode+Radio.RUN_MODE_STATION}',filter="^OK")
     if not reply:
       raise RuntimeError("Could not start station-mode")
     return
@@ -331,7 +331,7 @@ class Radio:
       return
 
     reply = self._transport.send_atcmd(
-      f'AT+CWMODE={mode-Radio.RUN_MODE_STATION}',filter="^OK",timeout=5)
+      f'AT+CWMODE={mode-Radio.RUN_MODE_STATION}',filter="^OK")
     if not reply:
       raise RuntimeError("Could not stop station-mode")
 
@@ -381,7 +381,7 @@ class Radio:
     mode = self.run_mode
     if not mode & Radio.RUN_MODE_AP:
       reply = self._transport.send_atcmd(
-        f'AT+CWMODE={mode+Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
+        f'AT+CWMODE={mode+Radio.RUN_MODE_AP}',filter="^OK")
       if not reply:
         raise RuntimeError("Could not start AP-mode")
 
@@ -414,7 +414,7 @@ class Radio:
 
     cmd = (f'AT+CWSAP="{ssid}","{password}",{channel},{ecn},' +
            f'{max_connections},{int(hide_ssid)}')
-    reply = self._transport.send_atcmd(cmd,filter="^OK",timeout=5)
+    reply = self._transport.send_atcmd(cmd,filter="^OK")
     if not reply:
       raise RuntimeError("Could not start AP-mode")
 
@@ -425,7 +425,7 @@ class Radio:
     if not mode & Radio.RUN_MODE_AP:
       return
     reply = self._transport.send_atcmd(
-      f'AT+CWMODE={mode-Radio.RUN_MODE_AP}',filter="^OK",timeout=5)
+      f'AT+CWMODE={mode-Radio.RUN_MODE_AP}',filter="^OK")
     if not reply:
       raise RuntimeError("Could not stop station-mode")
 
@@ -519,7 +519,7 @@ class Radio:
       while (
         self._conn_state != Radio._CONNECT_STATE_CONNECTED and
         time.monotonic() - start < timeout):
-        self._transport.read_atmsg(timeout=1)
+        self._transport.read_atmsg(passive=False)
       return
 
     # otherwise, there is an error
@@ -586,7 +586,7 @@ class Radio:
     if self._ipv4_address:
       return self._ipv4_address
     replies = self._transport.send_atcmd(
-      "AT+CIPSTA?",filter="^\+CIPSTA:",timeout=5)
+      "AT+CIPSTA?",filter="^\+CIPSTA:")
     if not replies:
       return None
     for line in replies:
@@ -649,7 +649,7 @@ class Radio:
     if self._ipv4_address_ap:
       return self._ipv4_address_ap
     replies = self._transport.send_atcmd(
-      "AT+CIPAP?",filter="^\+CIPAP:",timeout=5)
+      "AT+CIPAP?",filter="^\+CIPAP:")
     if not replies:
       return None
     for line in replies:
@@ -745,7 +745,7 @@ class Radio:
 
     ssid = info[0].strip('"')
     reply = self._transport.send_atcmd(
-      f'AT+CWLAP="{ssid}"',filter="^\+CWLAP:",timeout=15)
+      f'AT+CWLAP="{ssid}"',filter="^\+CWLAP:")
     if not reply:
       return None
     info = reply[8:].split(',')
