@@ -26,7 +26,6 @@ secrets = {
   # optional parameters for wifi.init()
   #'ipv4_dns_defaults': ['4.4.4.4', '208.67.222.222', '208.67.220.220'],
   #'country_settings': [False,'xx',1,13],
-  #'at_timeout': 1,
   #'at_retries': 1,
   #'reset': RESET_ON_FAILURE,
   #'hard_reset': RESET_NEVER,

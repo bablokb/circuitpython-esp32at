@@ -96,7 +96,6 @@ class Transport:
       return
     self._msg_callbacks = [lambda msg: None]*6
     self._uart = None
-    self._at_timeout = 1
     self._at_retries = 1
     self._reset_pin = None
     self.debug = None
@@ -108,7 +107,6 @@ class Transport:
   def init(self,
            uart: busio.UART,
            *,
-           at_timeout: Optional[float] = 1,
            at_retries: Optional[int] = 1,
            reset: Optional[int] = RESET_ON_FAILURE,
            hard_reset: Optional[int] = RESET_NEVER,
@@ -121,7 +119,6 @@ class Transport:
     """ initialize hardware, and query AT firmware version """
 
     self._uart = uart
-    self._at_timeout = at_timeout
     self._at_retries = at_retries
     self.debug = debug
     self.reconn_interval = reconn_interval
@@ -143,7 +140,8 @@ class Transport:
     for _ in range(2):
       try:
         # set multi-connection mode
-        reply = self.send_atcmd('AT+CIPMUX=1',filter="^OK")
+        # use timeout for first AT-command to catch baudrate problems
+        reply = self.send_atcmd('AT+CIPMUX=1',filter="^OK",timeout=1)
         if reply is None:
           raise RuntimeError("could not set connection-mode")
 
@@ -282,27 +280,25 @@ class Transport:
     self._msg_callbacks[index] = func
 
   # pylint: disable=too-many-branches,too-many-arguments
-  def read_atmsg(self,timeout: float = -1, read_until: str = None,
+  def read_atmsg(self,timeout: float = 0, read_until: str = None,
                  passive=False) -> Tuple[bool, Union[Sequence[str],None]]:
     """
     Read pending AT messages.
 
-    In passive mode the timeout is ignored to prevent subsequent 'busy p...'
-    messages.
+    In passive mode, timeout=0 will block. This should be the default,
+    since an incomplete send/read will likely trigger a 'busy p...'-message.
     """
 
-    # use global defaults
-    if timeout < 0:
-      timeout = self._at_timeout
-
+    start = time.monotonic()
+    if passive and not timeout:
+      timeout = 1000000
     result = []
 
     # wait at most timeout seconds for input
-    start = time.monotonic()
     while time.monotonic() - start < timeout and not self._uart.in_waiting:
       pass
 
-    if not passive and not self._uart.in_waiting:
+    if not self._uart.in_waiting:   # i.e. we have a timeout
       return False,result
 
     # read all messages
@@ -337,6 +333,7 @@ class Transport:
 
       # some shortcuts for special messages
       if b'busy p...' in msg:
+        result.append("busy p...")
         return False, result
       if b'ESP-ROM' in msg or b'\x1b[0;32m' in msg:
         raise RebootError("firmware boot in progress")
@@ -379,14 +376,14 @@ class Transport:
     if self.debug:
       print("busy... waiting")
     while self.busy:
-      self.read_atmsg(passive=False,timeout=0)
+      self.read_atmsg(passive=False)
     if self.debug:
       print("busy flag cleared")
 
   # pylint: disable=redefined-builtin,too-many-statements
   def send_atcmd(self, # pylint: disable=too-many-branches
                  at_cmd: str,
-                 timeout: float = -1,
+                 timeout: float = 0,
                  retries: int = -1,
                  read_until: str = None,
                  filter: str = None,
@@ -400,13 +397,11 @@ class Transport:
       print(f"send_atcmd({at_cmd}) start -----------")
 
     # use global defaults
-    if timeout < 0:
-      timeout = self._at_timeout
     if retries < 0:
       retries = self._at_retries
 
     # process pending active messages
-    self.read_atmsg(passive=False,timeout=0)
+    self.read_atmsg(passive=False)
 
     # input should be cleared, send command
     self.busy and self._wait_while_busy()
@@ -426,7 +421,7 @@ class Transport:
 
     # process cmd-triggered active messages (if any)
     if not read_until:
-      self.read_atmsg(passive=False,timeout=0)
+      self.read_atmsg(passive=False)
 
     # final processing
     if self.debug:

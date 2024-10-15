@@ -64,8 +64,6 @@ for optimal setup they can be tweaked:
 
   - `uart`: The `busio.UART`-object used for communication. Needs
     an initial baudrate of 115200.
-  - `at_timeout`: The global default timeout for a response to an AT
-    command. The default value of `1` should be ok.
   - `at_retries`: Retries for failing AT commands (failing in the sense
     that not even ERROR is returned). Default: `1`.
   - `reset`: see section below.
