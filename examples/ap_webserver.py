@@ -84,7 +84,7 @@ def print_stations():
     if stations:
       print("connected stations:")
       for station in stations:
-        print(f"{station[0]}: {station[2]}")
+        print(f"{station.mac_address}: {station.ipv4_address}")
     yield from asyncio_sleep(INTERVAL)
 
 # --- main   -----------------------------------------------------------------
