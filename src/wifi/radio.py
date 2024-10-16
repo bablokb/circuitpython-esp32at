@@ -19,6 +19,7 @@ try:
 except ImportError:
   pass
 
+from collections import namedtuple
 import time
 import ipaddress
 from esp32at.transport import Transport, CALLBACK_WIFI, CALLBACK_STA
@@ -774,12 +775,14 @@ class Radio:
 
     """
     result = []
+    WifiRadioStation = namedtuple('WifiRadioStation',
+                                  'mac_address rssi ipv4_address')
     for key, value in self._stations_ap.items():
       if value is None:
         ip = None
       else:
         ip = ipaddress.ip_address(value)
-      result.append((key,0,ip))
+      result.append(WifiRadioStation(key,None,ip))
     return result
 
   def start_dhcp(
