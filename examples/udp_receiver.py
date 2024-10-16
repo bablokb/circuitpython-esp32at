@@ -22,7 +22,7 @@ import helpers
 
 DURATION = 120
 TIMEOUT  = 10
-DEBUG  = True
+DEBUG  = False
 
 # Get wifi details and more from a secrets.py file
 try:
