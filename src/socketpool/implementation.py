@@ -153,7 +153,7 @@ class _Implementation:
 
     try:
       reply = self._t.send_atcmd(
-        f'AT+CIPDOMAIN="{hostname}"',filter="\+CIPDOMAIN:",timeout=5)
+        f'AT+CIPDOMAIN="{hostname}"',filter="\+CIPDOMAIN:")
       return reply[12:-1]
     except:
       return None
