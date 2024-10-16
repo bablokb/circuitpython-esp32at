@@ -183,13 +183,18 @@ class _Implementation:
     cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
     self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
     # read actual length from interface
+    # we expect length,"ip",port,data
     txt = b""
+    commas = 0
     while True:
       c = self._t.read(1) # pylint: disable=invalid-name
       if c == b',':
-        break
+        if commas == 2: # we already have two, this is our third comma
+          break
+        else:
+          commas += 1
       txt += c
-    act_len = int(str(txt,'utf-8'))
+    act_len = int(str(txt,'utf-8').split(",",1))
     if self._t.debug:
       print(f"{act_len=}")
     return self.read(buffer,act_len)

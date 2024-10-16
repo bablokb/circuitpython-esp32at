@@ -106,10 +106,10 @@ class SocketPool:
     if self._t.debug:
       print(f"socketpool._ipd_callback(): {msg}")
 
-    # must be +IPD,<link_id>,<length>
+    # msg is: +IPD,link_id,length,"remote IP",remote-port
     msg = msg.split(',')
     link_id = int(msg[1])
-    data_prompt = link_id,int(msg[2])
+    data_prompt = link_id,int(msg[2]),strip(msg[3],'"'),int(msg[4])
     # link could be up from ESP32Cx-side, but not from application side
     if self.connections[link_id]:
       self.connections[link_id].data_prompt = data_prompt

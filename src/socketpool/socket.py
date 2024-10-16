@@ -215,20 +215,12 @@ class Socket:
     if not self.data_prompt:
       raise OSError(EAGAIN)
 
-    link_id, recv_size = self.data_prompt
+    link_id, recv_size, rhost, rport = self.data_prompt
     self.data_prompt = None
-
-    # query host and port
-    conn = self._impl.get_connections(link_id)
-    if conn:
-      remote_host = conn.ip
-      remote_port = conn.rport
-    else:
-      raise RuntimeError("illegal state: connection without remote host/port?")
 
     # read at most len(buffer) from socket
     n = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)
-    return n,(remote_host,remote_port)
+    return n,(rhost,rport)
 
   def recv_into(
     self,
@@ -267,7 +259,7 @@ class Socket:
       self._t.read_atmsg(passive=False)
     if not self.data_prompt:
       raise OSError(EAGAIN)
-    link_id, recv_size = self.data_prompt
+    link_id, recv_size = self.data_prompt[0], self.data_prompt[1]
     self.data_prompt = None
 
     # read at most bytes_to_read from socket
