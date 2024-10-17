@@ -164,6 +164,10 @@ class Socket:
       link_id,
       address[0],address[1],self._conn_type,timeout)
 
+    # set timeout (in case app already called socket.settimeout())
+    if not self._timeout is None:
+      self._impl.set_timeout(self._timeout,self._link_id)
+
     # wait until link_id is set by callback
     while self._link_id is None and time.monotonic() - start < timeout:
       self._t.read_atmsg(passive=False)
@@ -362,7 +366,7 @@ class Socket:
       if value is None:
         value = 0
       self._impl.set_server_timeout(value)
-    else:
+    elif not self._link_id is None and not self._timeout is None:
       self._impl.set_timeout(value,self._link_id)
 
   @property
