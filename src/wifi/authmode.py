@@ -38,16 +38,13 @@ class AuthMode:
   ENTERPRISE = 1 << 6
   """Each user has a unique credential."""
 
-  MODE_MAP = {
-    0: OPEN,
-    1: WEP,
-    2: WPA|PSK,
-    3: WPA2|PSK,
-    4: WPA|WPA2|PSK,
-    5: ENTERPRISE,
-    6: WPA3|PSK,
-    7: WPA2|WPA3|PSK,
-    8: -1, #WAPI_PSK
-    9: -1, #OWE
-    }
-  """ map ESP32AT-modes to CircuitPython modes """
+  @classmethod
+  def get_modes(cls,mode: int) -> Sequence[AuthMode]:
+    """ return list of modes """
+
+    result = []
+    for m in [AuthMode.WEP,AuthMode.WPA,AuthMode.WPA2,
+              AuthMode.WPA3,AuthMode.PSK,AuthMode.ENTERPRISE]:
+      if m & mode:
+        result.append(m)
+    return result

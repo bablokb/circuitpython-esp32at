@@ -13,6 +13,8 @@
 
 """ class Network. """
 
+from .autmode import AuthMode
+
 # pylint: disable=too-few-public-methods
 class Network:
   """
@@ -37,5 +39,5 @@ class Network:
   country: str
   """String id of the country code"""
 
-  authmode: str
-  """String id of the authmode"""
+  authmode: Sequence[AuthMode]
+  """List of the authmodes used by this network"""

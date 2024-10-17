@@ -302,7 +302,7 @@ class Radio:
         network.rssi = int(info[2])
         network.channel = int(info[4])
         network.country = ""
-        network.authmode = AuthMode.MODE_MAP[int(info[0])]
+        network.authmode = AuthMode.get_modes(int(info[0]))
         yield network
 
   def stop_scanning_networks(self) -> None:
@@ -755,7 +755,7 @@ class Radio:
     network.bssid = info[3]
     network.rssi = int(info[2])
     network.channel = int(info[4])
-    network.authmode = AuthMode.MODE_MAP[int(info[0])]
+    network.authmode = AuthMode.get_modes(int(info[0]))
     try:
       network.country = self.country_settings[1]
     except: # pylint: disable=bare-except
