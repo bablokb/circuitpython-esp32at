@@ -47,7 +47,7 @@ From an application point of view the following features are available:
   - HTTP server (TCP only)<br>
   - operate as AP
 
-Not implemented:
+Not implemented (see also the [implementation notes](./doc/impl_notes.md):
 
   - web-workflow: this *requires* native wifi
   - MDNS-service discovery: no support from AT commandset
