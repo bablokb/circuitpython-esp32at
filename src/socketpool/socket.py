@@ -215,11 +215,11 @@ class Socket:
     if not self.data_prompt:
       raise OSError(EAGAIN)
 
-    link_id, recv_size, rhost, rport = self.data_prompt
+    link_id, recv_size = self.data_prompt
     self.data_prompt = None
 
     # read at most len(buffer) from socket
-    n = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)
+    n,rhost,rport = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)
     return n,(rhost,rport)
 
   def recv_into(
@@ -259,11 +259,11 @@ class Socket:
       self._t.read_atmsg(passive=False)
     if not self.data_prompt:
       raise OSError(EAGAIN)
-    link_id, recv_size = self.data_prompt[0], self.data_prompt[1]
+    link_id, recv_size = self.data_prompt
     self.data_prompt = None
 
     # read at most bytes_to_read from socket
-    n = self._impl.recv_data(buffer,
+    n,*_ = self._impl.recv_data(buffer,
                         min(bytes_to_read,recv_size),link_id)
     return n
 

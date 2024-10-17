@@ -194,10 +194,13 @@ class _Implementation:
         else:
           commas += 1
       txt += c
-    act_len = int(str(txt,'utf-8').split(",",1))
+    act_len,host,port = str(txt,'utf-8').split(",")
+    act_len = int(act_len)
+    host = host.strip('"')
+    port = int(port)
     if self._t.debug:
       print(f"{act_len=}")
-    return self.read(buffer,act_len)
+    return self.read(buffer,act_len),host,port
 
   def read(self,
            buffer: circuitpython_typing.WriteableBuffer, bufsize: int) -> int:
