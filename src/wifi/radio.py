@@ -225,7 +225,7 @@ class Radio:
       'AT+CIPSTAMAC?',filter="^\+CIPSTAMAC:")
     if reply is None:
       raise RuntimeError("could not query MAC-address")
-    return bytes(reply[12:-1],'utf-8')
+    return self._mac2bytes(reply[12:-1])
 
   @mac_address.setter
   def mac_address(self, value: circuitpython_typing.ReadableBuffer) -> None:
@@ -266,7 +266,7 @@ class Radio:
       'AT+CIPAPMAC?',filter="^\+CIPAPMAC:")
     if reply is None:
       raise RuntimeError("could not query MAC-address")
-    return bytes(reply[11:-1],'utf-8')
+    return self._mac2bytes(reply[11:-1])
 
   @mac_address_ap.setter
   def mac_address_ap(self, value: circuitpython_typing.ReadableBuffer) -> None:
@@ -782,7 +782,7 @@ class Radio:
         ip = None
       else:
         ip = ipaddress.ip_address(value)
-      result.append(WifiRadioStation(key,None,ip))
+      result.append(WifiRadioStation(self._mac2bytes(key),None,ip))
     return result
 
   def start_dhcp(
@@ -866,3 +866,7 @@ class Radio:
       return None
     except: # pylint: disable=bare-except
       return None
+
+  def _mac2bytes(self,mac:str) -> circuitpython_typing.ReadableBuffer:
+    """ convert mac (as string) to bytes """
+    return bytes([int(nr,16) for nr in mac.split(':')])

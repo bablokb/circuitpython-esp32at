@@ -38,7 +38,10 @@ def scan():
 
 def mac_to_str(mac):
   if mac:
-    return str(mac,'utf-8').upper()
+    result = ""
+    for b in mac:
+      result += f"{b:02x}:"
+    return result[:-1].upper()
   else:
     return ""
 

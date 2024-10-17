@@ -71,6 +71,15 @@ class MyServer(Server):
 
 # --- some helper functions   ------------------------------------------------
 
+def mac_to_str(mac):
+  if mac:
+    result = ""
+    for b in mac:
+      result += f"{b:02x}:"
+    return result[:-1].upper()
+  else:
+    return ""
+
 # minimal implementation of asyncio.sleep() as a generator
 def asyncio_sleep(seconds):
   start_time = time.monotonic()
@@ -84,7 +93,7 @@ def print_stations():
     if stations:
       print("connected stations:")
       for station in stations:
-        print(f"{station.mac_address}: {station.ipv4_address}")
+        print(f"{mac_to_str(station.mac_address)}: {station.ipv4_address}")
     yield from asyncio_sleep(INTERVAL)
 
 # --- main   -----------------------------------------------------------------
