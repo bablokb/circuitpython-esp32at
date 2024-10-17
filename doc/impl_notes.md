@@ -24,10 +24,6 @@ some notes.
 Missing Functions
 -----------------
 
-UDP in receiver mode does not expose remote host and port, i.e.
-`socket.recvfrom_into()` always returns the initial (local) host/port
-configured during `socket.bind()`.
-
 MDNS service discovery is not implemented due to missing support in
 the AT command set.
 
