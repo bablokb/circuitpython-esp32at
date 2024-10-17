@@ -222,17 +222,9 @@ class Socket:
     link_id, recv_size = self.data_prompt
     self.data_prompt = None
 
-    # query host and port
-    conn = self._impl.get_connections(link_id)
-    if conn:
-      remote_host = conn.ip
-      remote_port = conn.rport
-    else:
-      raise RuntimeError("illegal state: connection without remote host/port?")
-
     # read at most len(buffer) from socket
-    n = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)
-    return n,(remote_host,remote_port)
+    n,rhost,rport = self._impl.recv_data(buffer,min(len(buffer),recv_size),link_id)
+    return n,(rhost,rport)
 
   def recv_into(
     self,
@@ -275,7 +267,7 @@ class Socket:
     self.data_prompt = None
 
     # read at most bytes_to_read from socket
-    n = self._impl.recv_data(buffer,
+    n,*_ = self._impl.recv_data(buffer,
                         min(bytes_to_read,recv_size),link_id)
     return n
 

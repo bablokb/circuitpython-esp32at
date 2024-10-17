@@ -106,7 +106,7 @@ class SocketPool:
     if self._t.debug:
       print(f"socketpool._ipd_callback(): {msg}")
 
-    # must be +IPD,<link_id>,<length>
+    # msg is: +IPD,link_id,length
     msg = msg.split(',')
     link_id = int(msg[1])
     data_prompt = link_id,int(msg[2])

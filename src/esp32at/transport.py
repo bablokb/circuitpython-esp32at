@@ -180,6 +180,7 @@ class Transport:
       if not persist_settings: # always on after reset
         self.send_atcmd("AT+SYSSTORE=0")
       self.send_atcmd(f"AT+CWRECONNCFG={reconn_interval},0")
+      self.send_atcmd("AT+CIPDINFO=1")
       self.send_atcmd(f"AT+CIPCLOSE={self.max_connections}")
     except: # pylint: disable=bare-except
       pass
