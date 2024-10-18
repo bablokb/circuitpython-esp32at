@@ -13,7 +13,7 @@
 
 """ class Network. """
 
-from .autmode import AuthMode
+from .authmode import AuthMode
 
 # pylint: disable=too-few-public-methods
 class Network:
