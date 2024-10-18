@@ -74,7 +74,6 @@ class _Implementation:
                        link_id: int,
                        host:str,port:int,
                        conn_type: str,
-                       timeout: int,
                        address: Tuple[str,int] = None) -> None:
     """ Start connection of the given type. """
 
@@ -91,8 +90,9 @@ class _Implementation:
       #          local: port,2,host (order is different than above)
       params += f',{address[1]},2,"{address[0]}"'
 
+    # CIPSTART seems to timeout after 15s
     reply = self._t.send_atcmd(
-      f'AT+CIPSTART={params}',filter="^OK",timeout=timeout)
+      f'AT+CIPSTART={params}',filter="^OK")
     if reply is None:
       raise RuntimeError("could not start connection")
 

@@ -51,7 +51,7 @@ class Socket:
     self._t = Transport()
     self._sock_type = type
     self._use_ssl = False
-    self._timeout = None
+    self._timeout = 0
     if self._sock_type == SocketPool.SOCK_DGRAM:
       self._conn_type = "UDP"
     elif self._use_ssl:
@@ -98,11 +98,18 @@ class Socket:
     (new_socket, remote_address)
     """
 
-    # read pending messages
-    self._t.read_atmsg(passive=False)
+    if self._timeout is None:
+      timeout = 100000         # block "indefinitely"
+    else:
+      timeout = self._timeout
+
+    start = time.monotonic()
+    while not self._socketpool.conn_inbound and time.monotonic()-start < timeout:
+      # read pending messages
+      self._t.read_atmsg(passive=False)
 
     if not self._socketpool.conn_inbound:
-      raise OSError(EAGAIN)
+      raise OSError(ETIMEDOUT)
 
     # otherwise, check connection and return socket
     link_id = self._socketpool.conn_inbound.pop()
@@ -130,20 +137,14 @@ class Socket:
 
     # UDP: does not start a server, but a connection
     if "UDP" in self._conn_type:
-      # use remote address == local address
-      if self._timeout is None or self._timeout == 0:
-        timeout = 5
-      else:
-        timeout = self._timeout
-      link_id = self._socketpool.get_link_id(self)
-      self._impl.start_connection(link_id,
-        address[0],address[1],self._conn_type,timeout,address)
+      self.connect(address,address)
       return
 
     self._is_server_socket = True
     self._impl.start_server(address[1],self._conn_type)
 
-  def connect(self,address: Tuple[str, int]) -> None:
+  def connect(self,address: Tuple[str, int],
+              _remote: Tuple[str, int] = None) -> None:
     """ Connect a socket to a remote address
 
     Parameters:
@@ -154,23 +155,26 @@ class Socket:
     # query free link-id
     link_id = self._socketpool.get_link_id(self)
 
-    if self._timeout is None or self._timeout == 0:
-      timeout = 5
+    self._impl.start_connection(
+      link_id,
+      address[0],address[1],self._conn_type,_remote)
+
+    # wait until link_id is set by callback
+    if self._timeout is None:
+      timeout = 100000         # block "indefinitely"
     else:
       timeout = self._timeout
 
     start = time.monotonic()
-    self._impl.start_connection(
-      link_id,
-      address[0],address[1],self._conn_type,timeout)
+    while self._link_id is None and time.monotonic() - start < timeout:
+      self._t.read_atmsg(passive=False)
+
+    if self._link_id is None:
+      raise OSError(EINPROGRESS)
 
     # set timeout (in case app already called socket.settimeout())
     if not self._timeout is None:
       self._impl.set_timeout(self._timeout,self._link_id)
-
-    # wait until link_id is set by callback
-    while self._link_id is None and time.monotonic() - start < timeout:
-      self._t.read_atmsg(passive=False)
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
@@ -208,13 +212,13 @@ class Socket:
     """
 
     # we need a data-prompt (IPD) before we can read data
-    if self._timeout is None or self._timeout == 0:
-      timeout = 5
+    # read pending messages (hope for IPD)
+    if self._timeout is None:
+      timeout = 100000         # block "indefinitely"
     else:
       timeout = self._timeout
     start = time.monotonic()
-    while not self.data_prompt and time.monotonic() - start < timeout:
-      # read pending messages (hope for IPD)
+    while not self.data_prompt and time.monotonic()-start < timeout:
       self._t.read_atmsg(passive=False)
     if not self.data_prompt:
       raise OSError(EAGAIN)
@@ -253,16 +257,19 @@ class Socket:
       print(f"recv_into({self._link_id}): {bytes_to_read=}")
       print(f"              {self.data_prompt=}")
     # we need a data-prompt (IPD) before we can read data
-    if self._timeout is None or self._timeout == 0:
-      timeout = 5
+
+    # we need a data-prompt (IPD) before we can read data
+    # read pending messages (hope for IPD)
+    if self._timeout is None:
+      timeout = 100000         # block "indefinitely"
     else:
       timeout = self._timeout
     start = time.monotonic()
-    while not self.data_prompt and time.monotonic() - start < timeout:
-      # read pending messages (hope for IPD)
+    while not self.data_prompt and time.monotonic()-start < timeout:
       self._t.read_atmsg(passive=False)
     if not self.data_prompt:
       raise OSError(EAGAIN)
+
     link_id, recv_size = self.data_prompt
     self.data_prompt = None
 
