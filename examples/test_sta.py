@@ -31,7 +31,7 @@ def scan():
   print("Available WIFI networks:")
   for n in wifi.radio.start_scanning_networks():
     print(f"  {n.ssid:<25}RSSI: {n.rssi} " +
-          f"Channel: {n.channel:>2} Auth: {n.authmode:>08b}")
+          f"Channel: {n.channel:>2} Auth: {n.authmode}")
   wifi.radio.stop_scanning_networks()
 
 # --- query station-info   ---------------------------------------------------
