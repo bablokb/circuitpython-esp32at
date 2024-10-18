@@ -109,7 +109,7 @@ class Socket:
       self._t.read_atmsg(passive=False)
 
     if not self._socketpool.conn_inbound:
-      raise OSError(ETIMEDOUT)
+      raise OSError(EAGAIN)
 
     # otherwise, check connection and return socket
     link_id = self._socketpool.conn_inbound.pop()
