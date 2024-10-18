@@ -45,7 +45,11 @@ class Server:
       mac = radio.mac_address
     else:
       mac = radio.mac_address_ap
-    mac3 = ''.join(str(mac,'utf-8').split(':')[-3:])
+    mac3 = ''
+    for b in mac[-3:]:
+      mac3 += f"{b:02x}:"
+    mac3 = mac3[:-1].upper()
+
     self._hostname = f"cpy-{mac3}"
     self._instance_name = self._hostname
 
