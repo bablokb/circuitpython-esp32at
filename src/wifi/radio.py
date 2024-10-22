@@ -179,15 +179,20 @@ class Radio:
     True when the wifi radio is enabled.
     If you set the value to False, any open sockets will be closed.
     """
-    reply = self._transport.send_atcmd(
-      'AT+CWINIT?',filter="^\+CWINIT:")
-    if reply is None:
-      raise RuntimeError("Bad response to CWINIT?")
-    return reply[8:] == "1"
+    if self._transport._at_version_short[0] > 2:
+      reply = self._transport.send_atcmd(
+        'AT+CWINIT?',filter="^\+CWINIT:")
+      if reply is None:
+        raise RuntimeError("Bad response to CWINIT?")
+      return reply[8:] == "1"
+    else:
+      return True
 
   @enabled.setter
   def enabled(self, value: bool) -> None:
     """Change the enabled status"""
+    if self._transport._at_version_short[0] < 3:
+      return
     init = str(int(value))
     reply = self._transport.send_atcmd(
       f'AT+CWINIT={init}',filter="^OK")

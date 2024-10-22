@@ -156,7 +156,10 @@ class Transport:
         reply = self.send_atcmd(
           f'AT+CIPRECVTYPE={self.max_connections},1',filter="^OK")
         if reply is None:
-          raise RuntimeError("could not set passive receive-mode")
+          reply = self.send_atcmd(
+            f'AT+CIPRECVMODE=1',filter="^OK")
+          if reply is None:
+            raise RuntimeError("could not set passive receive-mode")
 
         self._get_version()
         connected = True
@@ -198,6 +201,8 @@ class Transport:
     reply = self.send_atcmd("AT+GMR",filter="^AT version:")
     if reply:
       self._at_version = reply
+      reply = reply.split(":",1)[1]
+      self._at_version_short = [int(r) for r in reply.split(".",3)[:3]]
     else:
       raise TransportError("could not query AT version")
 

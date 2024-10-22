@@ -44,7 +44,13 @@ class _Implementation:
     link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
     """ query connections """
 
-    replies = self._t.send_atcmd('AT+CIPSTATE?',filter="^\+CIPSTATE:")
+    if self._transport._at_version_short[0] > 2:
+      cmd = "CIPSTATE"
+      pf  = "?"
+    else:
+      cmd = "CIPSTATUS"
+      pf  = ""
+    replies = self._t.send_atcmd(f'AT+{cmd}{pf}',filter=f"^\+{cmd}:")
     if replies is None:
       if link_id is None:
         return []
