@@ -14,7 +14,7 @@
 """ class Socket. """
 
 import time
-from errno import EAGAIN
+from errno import EAGAIN, ETIMEDOUT
 from esp32at.transport import Transport
 from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
@@ -102,6 +102,9 @@ class Socket:
       timeout = 100000         # block "indefinitely"
     else:
       timeout = self._timeout
+
+    # read pending messages at least once
+    self._t.read_atmsg(passive=False)
 
     start = time.monotonic()
     while not self._socketpool.conn_inbound and time.monotonic()-start < timeout:
@@ -221,7 +224,7 @@ class Socket:
     while not self.data_prompt and time.monotonic()-start < timeout:
       self._t.read_atmsg(passive=False)
     if not self.data_prompt:
-      raise OSError(EAGAIN)
+      raise OSError(ETIMEDOUT)
 
     link_id, recv_size = self.data_prompt
     self.data_prompt = None
@@ -256,7 +259,6 @@ class Socket:
     if self._t.debug:
       print(f"recv_into({self._link_id}): {bytes_to_read=}")
       print(f"              {self.data_prompt=}")
-    # we need a data-prompt (IPD) before we can read data
 
     # we need a data-prompt (IPD) before we can read data
     # read pending messages (hope for IPD)
@@ -268,7 +270,7 @@ class Socket:
     while not self.data_prompt and time.monotonic()-start < timeout:
       self._t.read_atmsg(passive=False)
     if not self.data_prompt:
-      raise OSError(EAGAIN)
+      raise OSError(ETIMEDOUT)
 
     link_id, recv_size = self.data_prompt
     self.data_prompt = None
