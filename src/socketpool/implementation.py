@@ -44,7 +44,7 @@ class _Implementation:
     link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
     """ query connections """
 
-    if self._transport._at_version_short[0] > 2:
+    if self._t._at_version_short[0] > 2:
       cmd = "CIPSTATE"
       pf  = "?"
     else:
