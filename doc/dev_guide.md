@@ -187,6 +187,20 @@ If the device should run as AP, make sure to configure all values according
 to the relevant local laws.
 
 
+Compiling your own Firmware
+---------------------------
+
+A detailed [Firmware Compile Guide](./at_firmware_compile.md) is
+available (use the [ESP-01S Firmware Compile
+Guide](./at_firmware_compile_esp01s.md) in case you are running an old
+ESP8266).
+
+Building a firmware is a matter of about a quarter of an hour. This
+is mainly necessary if you want to increase the number of parallel
+connections supported by your device. Which in turn is relevant if
+you run the device as a server and serve complex websites.
+
+
 Troubleshooting
 ---------------
 
