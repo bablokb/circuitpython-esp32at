@@ -42,6 +42,7 @@ except ImportError:
 
 # --- query weather-information from open-meteo.com   ------------------------
 
+helpers.wait_for_console()
 helpers.init(DEBUG)
 helpers.set_tx_power()
 helpers.connect()
