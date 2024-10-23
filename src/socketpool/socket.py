@@ -115,7 +115,7 @@ class Socket:
       raise OSError(EAGAIN)
 
     # otherwise, check connection and return socket
-    link_id = self._socketpool.conn_inbound.pop()
+    link_id = self._socketpool.conn_inbound.pop(0)
     sock = self._socketpool.connections[link_id]
     conn = self._impl.get_connections(link_id)
     if conn:
