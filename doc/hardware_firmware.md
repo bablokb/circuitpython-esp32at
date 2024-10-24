@@ -40,6 +40,20 @@ Flashing the firmware is a one-time task and documented in
 <https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/Get_Started/Downloading_guide.html#flash-at-firmware-into-your-device>.
 
 
+The modules of this repository have been tested with the following
+firmware versions:
+
+  - v3.3.0.0 (ESP32C3)
+  - v3.4.0.0 (ESP32C6)
+  - v4.0.0.0 (ESP32C6)
+  - v2.2.2.0 (ESP8266)
+
+Starting with v3.3.0.0, there are no major relevant differences between the
+firmware versions. The master branch (post 4.0.0.0) did add some new functions
+regarding MDNS service-announcement. This will be implemented as soon there
+is an officially released version available.
+
+
 Board-specific Notes
 ====================
 
