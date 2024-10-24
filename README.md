@@ -26,13 +26,19 @@ Pico-W for example can either do networking, or update a display, but
 not both (with the exception of trivial examples). In contrast, the
 Pico together with an ESP32C3 will work fine.
 
+A prerequisite for using *circuitpython-esp32at* is an ESP device
+running the AT-firmware. The details are covered in the document
+[Hardware and Firmware](./doc/hardware_firmware.md). The co-processor
+must be connected to the MCU running CircuitPython with a dedicated
+UART-connection.
+
 
 Status
 ------
 
 **This is the main branch, which is actively under development. The
 code in this branch might or might not work.  For productive use,
-switch to branch 1.0.x or use one of the published releases!**
+switch to branch 1.1.x or use one of the published releases!**
 
 This library is feature complete with the exceptions noted below. As
 always with new projects, the code needs testing in the field to find
@@ -68,8 +74,9 @@ all folders below `src` to your device.
 CircuitPython build that has native wifi support.** (it actually does not
 hurt, but these modules will not be used).
 
-See the [Developer's Guide](./doc/dev_guide.md) for more information on
-how to use the modules.
+See the [Developer's Guide](./doc/dev_guide.md) for more information
+on how to use the modules. **This guide also contains a section about
+troubleshooting, please read it before creating an issue.**
 
 
 Roadmap
@@ -77,39 +84,7 @@ Roadmap
 
   - optimize performance
   - support sleep and wakeup
-  - document building (specialized versions of) the AT-firmware
   - (maybe: implement BLE)
-
-
-Hardware
---------
-
-Tested with the following boards:
-
-  - Pico and [Adafruit Qt-Py ESP32C3](https://www.adafruit.com/product/5405)<br>
-    Nice and small.
-  - [Adafruit Itsy-Bitsy M4 Express](https://www.adafruit.com/product/3800) and ESP32C3-Super-Mini<br>
-    The Super-Mini is probably the cheapest solution available.
-  - Pico and [Lilygo T-01 C3](https://www.lilygo.cc/products/t-01c3)<br>
-    A minimalistic C3-board. Same footprint as the famous ESP-01S board.
-    Because the standard AT-command port pins are not available, this
-    boards needs a special, self-compiled AT-firmware.
-  - [Challenger+RP2350 Wifi6/BLE5](https://ilabs.se/challenger-rp2350-wifi-ble/)<br>
-    Feather-sized, integrated solution.
-
-The Challenger has an integrated ESP32C6 and the AT firmware is
-already installed. For the other boards, you need to download and
-flash the official AT firmware provided by Espressif, see
-<https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/index.html>.
-
-The MCU running CircuitPython needs an UART-connection with the ESP32Cx
-co-processor. The Espressif documentation has detailed instructions
-for flashing the firmware and setting up the hardware connection.
-
-Note that both the Qt-Py ESP32C3 as well as the ESP32C3-Super-Mini have
-badly designed on-board antennas. If they don't connect to your AP, try
-reducing the TX power.
-
 
 
 Additional Information
