@@ -79,6 +79,19 @@ Pins:
 
 If this board does not connect to your AP, try reducing the TX power.
 
+To connect the board using the Stemma/Qt connector, you have to modify
+the firmware to use RX: GPI05 and TX:GPIO6. Instead of compiling a new
+firmware, this can be done with the [at.py
+utility](https://github.com/espressif/esp-at/blob/master/tools/at.py)
+provided by Espressif:
+
+    ./at.py modify_bin -tx 6 -rx 5 --cts_pin -1 --rts_pin -1 \
+            -in ESP32C3-AT-Factory-Firmware-v3.3.0.0.bin \
+            -o  ESP32C3-AT-Qtpy-Stemma-Firmware-v3.3.0.0.bin
+
+This command takes the factory-firmware as input and creates a modified
+firmware as output.
+
 
 ESP32C3-SuperMini
 -----------------
