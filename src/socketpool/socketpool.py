@@ -87,11 +87,11 @@ class SocketPool:
       sock = self.connections[link_id]
       if sock:
         # outbound: just set link_id
-        sock._link_id = link_id
+        sock.link_id = link_id
       else:
         #inbound: sock does not exist
         sock = self.socket()
-        sock._link_id = link_id
+        sock.link_id = link_id
         self.connections[link_id] = sock
         self.conn_inbound.append(link_id)
 

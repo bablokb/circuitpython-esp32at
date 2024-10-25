@@ -13,18 +13,24 @@
 
 """ class AuthMode with auth-mode constants. """
 
+try:
+  from typing import Sequence
+  import circuitpython_typing
+except ImportError:
+  pass
+
 # pylint: disable=too-few-public-methods
 class AuthMode:
   """ auth-mode constants """
 
   @classmethod
-  def get_modes(cls,mode: int) -> Sequence[AuthMode]:
+  def get_modes(cls,mode: int) -> Sequence[circuitpython_typing.AuthMode]:
     """ return list of modes """
 
     result = []
-    for m in _AUTH_MAP.keys():
-      if m & mode:
-        result.append(_AUTH_MAP[m])
+    for key,value in _AUTH_MAP.items():
+      if key & mode:
+        result.append(value)
     return result
 
   def __repr__(self) -> str:

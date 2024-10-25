@@ -13,6 +13,11 @@
 
 """ class Network. """
 
+try:
+  from typing import Sequence
+except ImportError:
+  pass
+
 from .authmode import AuthMode
 
 # pylint: disable=too-few-public-methods

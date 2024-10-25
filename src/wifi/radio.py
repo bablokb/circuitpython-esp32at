@@ -14,7 +14,7 @@
 """ class Radio. """
 
 try:
-  from typing import Union, Sequence, Iterable
+  from typing import Union, Sequence, Iterable, Tuple
   import circuitpython_typing
 except ImportError:
   pass
@@ -115,7 +115,7 @@ class Radio:
       self._stations_ap[mac] = None
     elif msg == "+DIST_STA_IP":
       # args[0] is station-MAC, args[1] is IP
-      ip  = args[1].strip('"')
+      ip  = args[1].strip('"') # pylint: disable=invalid-name
       self._stations_ap[mac] = ip
     elif msg == "+STA_DISCONNECTED" and mac in self._stations_ap:
       # args[0] is station-MAC
@@ -179,19 +179,18 @@ class Radio:
     True when the wifi radio is enabled.
     If you set the value to False, any open sockets will be closed.
     """
-    if self._transport._at_version_short[0] > 2:
+    if self._transport.at_version_short[0] > 2:
       reply = self._transport.send_atcmd(
         'AT+CWINIT?',filter="^\+CWINIT:")
       if reply is None:
         raise RuntimeError("Bad response to CWINIT?")
       return reply[8:] == "1"
-    else:
-      return True
+    return True
 
   @enabled.setter
   def enabled(self, value: bool) -> None:
     """Change the enabled status"""
-    if self._transport._at_version_short[0] < 3:
+    if self._transport.at_version_short[0] < 3:
       return
     init = str(int(value))
     reply = self._transport.send_atcmd(
@@ -784,9 +783,9 @@ class Radio:
                                   'mac_address rssi ipv4_address')
     for key, value in self._stations_ap.items():
       if value is None:
-        ip = None
+        ip = None # pylint: disable=invalid-name
       else:
-        ip = ipaddress.ip_address(value)
+        ip = ipaddress.ip_address(value) # pylint: disable=invalid-name
       result.append(WifiRadioStation(self._mac2bytes(key),None,ip))
     return result
 

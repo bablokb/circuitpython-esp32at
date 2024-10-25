@@ -60,7 +60,7 @@ class Socket:
       self._conn_type = "TCP"
 
     self.data_prompt = None
-    self._link_id = None
+    self.link_id = None
 
     # state variables for the server
     self._is_server_socket =  False
@@ -169,15 +169,15 @@ class Socket:
       timeout = self._timeout
 
     start = time.monotonic()
-    while self._link_id is None and time.monotonic() - start < timeout:
+    while self.link_id is None and time.monotonic() - start < timeout:
       self._t.read_atmsg(passive=False)
 
-    if self._link_id is None:
+    if self.link_id is None:
       raise OSError(EINPROGRESS)
 
     # set timeout (in case app already called socket.settimeout())
     if not self._timeout is None:
-      self._impl.set_timeout(self._timeout,self._link_id)
+      self._impl.set_timeout(self._timeout,self.link_id)
 
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
@@ -185,9 +185,9 @@ class Socket:
     """
     if self._is_server_socket:
       self._impl.stop_server()
-    elif self._socketpool.connections[self._link_id]:
-      self._impl.close_connection(self._link_id) # this should trigger cleanup
-    self._link_id = None                                       # in socketpool
+    elif self._socketpool.connections[self.link_id]:
+      self._impl.close_connection(self.link_id) # this should trigger cleanup
+    self.link_id = None                                       # in socketpool
 
   # pylint: disable=no-self-use
   def listen(self,backlog: int) -> None:
@@ -226,7 +226,7 @@ class Socket:
     if not self.data_prompt:
       raise OSError(ETIMEDOUT)
 
-    link_id, recv_size = self.data_prompt
+    link_id, recv_size = self.data_prompt # pylint: disable=unpacking-non-sequence
     self.data_prompt = None
 
     # read at most len(buffer) from socket
@@ -257,7 +257,7 @@ class Socket:
     bytes_to_read = bufsize if bufsize else len(buffer)
 
     if self._t.debug:
-      print(f"recv_into({self._link_id}): {bytes_to_read=}")
+      print(f"recv_into({self.link_id}): {bytes_to_read=}")
       print(f"              {self.data_prompt=}")
 
     # we need a data-prompt (IPD) before we can read data
@@ -272,7 +272,7 @@ class Socket:
     if not self.data_prompt:
       raise OSError(ETIMEDOUT)
 
-    link_id, recv_size = self.data_prompt
+    link_id, recv_size = self.data_prompt # pylint: disable=unpacking-non-sequence
     self.data_prompt = None
 
     # read at most bytes_to_read from socket
@@ -289,9 +289,9 @@ class Socket:
     Parameters:
       bytes (bytes) – some bytes to send
     """
-    if self._link_id is None:
+    if self.link_id is None:
       raise RuntimeError("socket is not connected")
-    self._impl.send(bytes,self._link_id)
+    self._impl.send(bytes,self.link_id)
     return len(bytes)
 
   def sendall(self, buffer: circuitpython_typing.ReadableBuffer) -> None:
@@ -326,10 +326,10 @@ class Socket:
     if self._conn_type != "UDP":
       raise RuntimeError("wrong socket-type (not UDP)")
 
-    if self._link_id is None:
+    if self.link_id is None:
       # contrary to the documentation, we do need a connection
       self.connect(address)
-    self._impl.send(bytes,self._link_id)
+    self._impl.send(bytes,self.link_id)
     return len(bytes)
 
   # pylint: disable=no-self-use
@@ -367,8 +367,8 @@ class Socket:
       if value is None:
         value = 0
       self._impl.set_server_timeout(value)
-    elif not self._link_id is None and not self._timeout is None:
-      self._impl.set_timeout(value,self._link_id)
+    elif not self.link_id is None and not self._timeout is None:
+      self._impl.set_timeout(value,self.link_id)
 
   @property
   def type(self) -> int:

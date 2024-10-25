@@ -44,13 +44,13 @@ class _Implementation:
     link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
     """ query connections """
 
-    if self._t._at_version_short[0] > 2:
+    if self._t.at_version_short[0] > 2:
       cmd = "CIPSTATE"
-      pf  = "?"
+      postfix  = "?"
     else:
       cmd = "CIPSTATUS"
-      pf  = ""
-    replies = self._t.send_atcmd(f'AT+{cmd}{pf}',filter=f"^\+{cmd}:")
+      postfix  = ""
+    replies = self._t.send_atcmd(f'AT+{cmd}{postfix}',filter=f"^\+{cmd}:")
     if replies is None:
       if link_id is None:
         return []
@@ -197,8 +197,7 @@ class _Implementation:
       if c == b',':
         if commas == 2: # we already have two, this is our third comma
           break
-        else:
-          commas += 1
+        commas += 1
       txt += c
     act_len,host,port = str(txt,'utf-8').split(",")
     act_len = int(act_len)

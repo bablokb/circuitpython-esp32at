@@ -94,16 +94,21 @@ class Transport:
     """ Do nothing constructor. Use init() for hardware-setup """
     if Transport.transport:
       return
+
+    # keep pylint happy by defining variables here
     self._msg_callbacks = [lambda msg: None]*6
     self._uart = None
     self._at_retries = 1
     self._reset_pin = None
     self.debug = None
     self._at_version = None
+    self.at_version_short = None
+    self.max_connections = 5
     self.reconn_interval = 1
     self.busy = False
     Transport.transport = self
 
+  # pylint: disable=too-many-branches
   def init(self,
            uart: busio.UART,
            *,
@@ -157,7 +162,7 @@ class Transport:
           f'AT+CIPRECVTYPE={self.max_connections},1',filter="^OK")
         if reply is None:
           reply = self.send_atcmd(
-            f'AT+CIPRECVMODE=1',filter="^OK")
+            'AT+CIPRECVMODE=1',filter="^OK")
           if reply is None:
             raise RuntimeError("could not set passive receive-mode")
 
@@ -165,7 +170,7 @@ class Transport:
         connected = True
         self._echo(False)
         break
-      except Exception as ex:
+      except Exception as ex: # pylint: disable=broad-except
         # try to reset the device
         if hard_reset == RESET_ON_FAILURE:
           self.hard_reset()
@@ -202,7 +207,7 @@ class Transport:
     if reply:
       self._at_version = reply
       reply = reply.split(":",1)[1]
-      self._at_version_short = [int(r) for r in reply.split(".",3)[:3]]
+      self.at_version_short = [int(r) for r in reply.split(".",3)[:3]]
     else:
       raise TransportError("could not query AT version")
 
@@ -412,7 +417,7 @@ class Transport:
     self.read_atmsg(passive=False)
 
     # input should be cleared, send command
-    self.busy and self._wait_while_busy()
+    self.busy and self._wait_while_busy() # pylint: disable=expression-not-assigned
     self.busy = set_busy
     for i in range(retries):
       if self.debug:
