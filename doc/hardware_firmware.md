@@ -21,7 +21,7 @@ Hardware Overview
     ESP32 based boards are usually larger and more expensive than ESP32C3 boards.
   - ESP-01S: **Partly supported, not recommended**<br>
     These are very cheap and small boards, but they only support the operation
-    as a TCP/UDP client. Also, you have to build your own firmware
+    as a TCP/SSL/UDP client. Also, you have to build your own firmware
     (see [ESP-01S Firmware Compile Guide](./at_firmware_compile_esp01s.md))
 
 
@@ -51,10 +51,20 @@ firmware versions:
 Old versions (1.x.x, often pre-installed on ESP8266-devices) will
 definitely not work.
 
-Starting with v3.3.0.0, there are no major relevant differences between the
-firmware versions. The master branch (post 4.0.0.0) did add some new functions
-regarding MDNS service-announcement. This will be implemented as soon there
-is an officially released version available.
+Starting with v3.3.0.0, there are no major relevant differences
+between the firmware versions. The master branch (currently post
+4.0.0.0) did add some new functions regarding MDNS
+service-announcement. This will be implemented as soon there is an
+officially released version available.
+
+The downladed factory firmware can be changed with the [at.py
+utility](https://github.com/espressif/esp-at/blob/master/tools/at.py)
+provided by Espressif. This is useful for changing settings like the
+default pins or the country code used by the firmware. You will find
+some examples in the board specific notes below.
+
+As an alternative, you can compile your own firmware using the
+[Firmware Compile Guide](./at_firmware_compile.md).
 
 
 Board-specific Notes
@@ -83,12 +93,9 @@ Pins:
 If this board does not connect to your AP, try reducing the TX power.
 
 To connect the board using the Stemma/Qt connector, you have to modify
-the firmware to use RX:GPI05 and TX:GPIO6. Instead of compiling a new
-firmware, this can be done with the [at.py
-utility](https://github.com/espressif/esp-at/blob/master/tools/at.py)
-provided by Espressif:
+the firmware to use RX:GPI05 and TX:GPIO6:
 
-    ./at.py modify_bin -tx 6 -rx 5 --cts_pin -1 --rts_pin -1 \
+    at.py modify_bin -tx 6 -rx 5 --cts_pin -1 --rts_pin -1 \
             -in ESP32C3-AT-Factory-Firmware-v3.3.0.0.bin \
             -o  ESP32C3-AT-Qtpy-Stemma-Firmware-v3.3.0.0.bin
 
@@ -149,16 +156,16 @@ Pins (2x4 header):
   - TX: GPIO21 (labeled 'TXD', pin 5)
   - RST: pin 7
 
-Because the standard AT-command port pins are not available, this
-boards needs a special, self-compiled AT-firmware: the AT-UART must be
-UART0 instead of the default UART1, and the RX/TX pins are
+Because the standard AT-command port pins are not available on the
+device, some changes are necessary using the at.py utility:
+
+    at.py modify_bin -un 0 -cc DE -tx 21 -rx 20 --cts_pin -1 --rts_pin -1 \
+             -in ESP32C3-AT-Factory-Firmware-v3.3.0.0.bin \
+             -o  lilygo-t01c3-at-firmware-3.3.1.0.bin
+
+This command changes the AT-UART from UART1 to UART0 (using `-un 0`,
+the country code (using `-cc DE`), and the RX/TX pins to
 GPIO20/GPIO21.
-
-The relevant line in `factory_param_data.csv` is:
-
-    PLATFORM_ESP32C3,MINI-1,"TX:21 RX:20",4,78,0,1,13,CN,115200,21,20,-1,-1
-
-See [Firmware Compile Guide](./at_firmware_compile.md) for instructions.
 
 
 Challenger+RP2350 Wifi6/BLE5
@@ -187,7 +194,7 @@ ESP32C6-Mini
 This is a minimal C6-board similar to the ESP32C3-SuperMini. It is
 less common, a bit larger, and suffers from the same
 quality-problems. Since it is also more expensive than the SuperMini
-there is no reason to use this board.
+there is no reason to use this board unless you need WIFI6.
 
 ![](./esp32c6-mini.jpg)
 
@@ -207,7 +214,7 @@ MuseLab Nano-ESP32-C6
 board](https://github.com/wuxx/nanoESP32-C6/blob/master/README_en.md)
 is very large (despite the fact that it is called "nano") and
 available with different flash-sizes. The board works fine but is not
-recommended due to size.
+recommended due to it's size.
 
 ![](./esp32c6-nano.jpg)
 
@@ -247,7 +254,7 @@ T-01-C3.
 
 (in the image you can see the [Maker Pi Pico
 Board](https://www.cytron.io/c-development-tools/c-maker-series/p-maker-pi-pico-simplifying-raspberry-pi-pico-for-beginners-and-kits)
-from Cytron, which has a socket made for the ESP-01S).
+from Cytron, which has a socket made for the ESP-01S - very nice!).
 
 The big advantage of this board is it's very low price and the small
 form-factor.
