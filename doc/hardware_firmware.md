@@ -17,7 +17,7 @@ Hardware Overview
   - ESP32C6: **Fully supported, recommended, second choice**.<br>
     Bigger and not as cost-efficient as ESP32C3 boards, but they
     support WIFI6.
-  - ESP32: **Fully supported, not recommended, untested**.<br>
+  - ESP32: **Fully supported, not recommended**.<br>
     ESP32 based boards are usually larger and more expensive than ESP32C3 boards.
   - ESP-01S: **Partly supported, not recommended**<br>
     These are very cheap and small boards, but they only support the operation
@@ -47,6 +47,9 @@ firmware versions:
   - v3.4.0.0 (ESP32C6)
   - v4.0.0.0 (ESP32C6)
   - v2.2.2.0 (ESP8266)
+
+Old versions (1.x.x, often pre-installed on ESP8266-devices) will
+definitely not work.
 
 Starting with v3.3.0.0, there are no major relevant differences between the
 firmware versions. The master branch (post 4.0.0.0) did add some new functions
@@ -80,7 +83,7 @@ Pins:
 If this board does not connect to your AP, try reducing the TX power.
 
 To connect the board using the Stemma/Qt connector, you have to modify
-the firmware to use RX: GPI05 and TX:GPIO6. Instead of compiling a new
+the firmware to use RX:GPI05 and TX:GPIO6. Instead of compiling a new
 firmware, this can be done with the [at.py
 utility](https://github.com/espressif/esp-at/blob/master/tools/at.py)
 provided by Espressif:
@@ -202,19 +205,34 @@ MuseLab Nano-ESP32-C6
 
 [This
 board](https://github.com/wuxx/nanoESP32-C6/blob/master/README_en.md)
-is very large and available with different flash-sizes. The board
-works fine but is not recommended due to size.
+is very large (despite the fact that it is called "nano") and
+available with different flash-sizes. The board works fine but is not
+recommended due to size.
 
 ![](./esp32c6-nano.jpg)
-
-The 8MB/16MB-flash versions of the boards need a firmware with modified
-size. Otherwise, the standard 4MB factory firmware will work fine.
 
 Pins:
 
   - RX: GPIO6 (labeled '6')
   - TX: GPIO7 (labeled '7')
   - RST: pin 3 on header left of ESP-chip
+
+
+DFRobot Fire-Beetle ESP32-D-V4.0
+--------------------------------
+
+[The Fire-Beetle](https://wiki.dfrobot.com/FireBeetle_ESP32_IOT_Microcontroller(V3.0)__Supports_Wi-Fi_&_Bluetooth__SKU__DFR0478) uses an ESP32-WROOM-ESP32D.
+
+As a co-processor this board is oversized and overequipped (16MB of flash).
+It works fine with the factory firmware for the ESP32-WROOM-32.
+
+![](./esp32-wroom-32d.jpg)
+
+Pins:
+
+  - RX: GPI16 (labeled 'DI/IO16')
+  - TX: GPI17 (labeled 'LRCK/IO17')
+  - RST: pin 1 on header left of the Micro-USB socket (ESP32-chip facing down)
 
 
 ESP-01S
