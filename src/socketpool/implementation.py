@@ -86,6 +86,13 @@ class _Implementation:
     # check for an existing connection
     # connections = self.get_connections()
 
+    # for SSL, set the SNI (server name indication)
+    if "SSL" in conn_type:
+      reply = self._t.send_atcmd(
+        f'AT+CIPSSLCSNI={link_id},"{host}"',filter="^OK")
+      if reply is None:
+        raise RuntimeError("could not set server name indication (SNI)")
+
     # parameters: connection-type, remote host, remote port
     params = f'{link_id},"{conn_type}","{host}",{port}'
     if address:
