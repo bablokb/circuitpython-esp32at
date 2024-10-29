@@ -14,7 +14,7 @@
 """ class Socket. """
 
 import time
-from errno import EAGAIN, ETIMEDOUT
+from errno import EAGAIN, ETIMEDOUT, ECONNRESET
 from esp32at.transport import Transport
 from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
@@ -158,9 +158,13 @@ class Socket:
     # query free link-id
     link_id = self._socketpool.get_link_id(self)
 
-    self._impl.start_connection(
+    success = self._impl.start_connection(
       link_id,
       address[0],address[1],self._conn_type,_remote)
+
+    if not success:
+      self._socketpool.free_link_id(link_id)
+      raise OSError(ECONNRESET)
 
     # wait until link_id is set by callback
     if self._timeout is None:
@@ -185,7 +189,7 @@ class Socket:
     """
     if self._is_server_socket:
       self._impl.stop_server()
-    elif self._socketpool.connections[self.link_id]:
+    elif self.link_id and self._socketpool.connections[self.link_id]:
       self._impl.close_connection(self.link_id) # this should trigger cleanup
     self.link_id = None                                       # in socketpool
 

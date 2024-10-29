@@ -126,6 +126,12 @@ class SocketPool:
     self.connections[link_id] = sock
     return link_id
 
+  def free_link_id(self,link_id):
+    """ free the given link_id """
+    self.connections[link_id] = None
+    if link_id in self.conn_inbound:
+      self.conn_inbound.remove(link_id)
+
   # pylint: disable=redefined-builtin, unused-variable
   def socket(self,
              family: int = AF_INET,
