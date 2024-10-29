@@ -80,7 +80,7 @@ class _Implementation:
                        link_id: int,
                        host:str,port:int,
                        conn_type: str,
-                       address: Tuple[str,int] = None) -> None:
+                       address: Tuple[str,int] = None) -> bool:
     """ Start connection of the given type. """
 
     # check for an existing connection
@@ -106,8 +106,7 @@ class _Implementation:
     # CIPSTART seems to timeout after 15s
     reply = self._t.send_atcmd(
       f'AT+CIPSTART={params}',filter="^OK")
-    if reply is None:
-      raise RuntimeError("could not start connection")
+    return not reply is None
 
   def close_connection(self,link_id: int) -> None:
     """ Close connection (best effort) """
