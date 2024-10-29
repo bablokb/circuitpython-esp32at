@@ -56,6 +56,10 @@ class SocketPool:
   _socketpool = None
   """ The singleton instance """
 
+  # pylint: disable=invalid-name
+  class gaierror(OSError):
+    """ Errors raised by getaddrinfo """
+
   # pylint: disable=unused-argument
   def __new__(cls, radio: wifi.radio):
     if SocketPool._socketpool:
@@ -176,4 +180,7 @@ class SocketPool:
       family = SocketPool.AF_INET
 
     ipaddr = _Implementation().get_host_by_name(host)
+    if not ipaddr:
+      raise self.gaierror(-2,"Name or service not known")
+
     return [(family, socktype, proto, "", (ipaddr, port))]
