@@ -102,6 +102,15 @@ the firmware to use RX:GPI05 and TX:GPIO6:
 This command takes the factory-firmware as input and creates a modified
 firmware as output.
 
+Notes:
+
+  - **never power the board from USB if connected to the main MCU
+    using the Stemma/Qt connector**.
+  - Powering by 3V3 might or might not work. This depends how stable
+    the 3V3 line of the main MCU is and how much current it can provide.
+  - The ESP32C3 peak current for 802.11g is 285mA at 100% duty-cycle at
+    full TX-power. It will brown-out at 3.0V.
+
 
 ESP32C3-SuperMini
 -----------------
@@ -136,6 +145,15 @@ pins of this interface (GP4 and GP5) can be repurposed as UART and
 the SuperMini can then be connected using a simple Stemma/Qt cable.
 
 ![](./picowbell+adapter.jpg)
+
+Notes:
+
+  - **never power the board from USB if connected to the main MCU
+    using the Stemma/Qt connector**.
+  - Powering by 3V3 might or might not work. This depends how stable
+    the 3V3 line of the main MCU is and how much current it can provide.
+  - The ESP32C3 peak current for 802.11g is 285mA at 100% duty-cycle at
+    full TX-power. It will brown-out at 3.0V.
 
 
 Lilygo T-01 C3
