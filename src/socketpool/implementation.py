@@ -17,6 +17,7 @@ try:
 except ImportError:
   pass
 
+import ipaddress
 from esp32at.transport import Transport, CALLBACK_SEND
 
 # pylint: disable=anomalous-backslash-in-string,bare-except
@@ -86,12 +87,21 @@ class _Implementation:
     # check for an existing connection
     # connections = self.get_connections()
 
-    # for SSL, set the SNI (server name indication)
+    # for SSL, set the SNI (server name indication). Otherwise clear it.
+    reply = None
     if "SSL" in conn_type:
+      try:
+        _ = ipaddress.ip_address(host)   # don't set SNI for IP-address
+        reply = self._t.send_atcmd(
+          f'AT+CIPSSLCSNI={link_id},""',filter="^OK")
+      except:
+        reply = self._t.send_atcmd(
+          f'AT+CIPSSLCSNI={link_id},"{host}"',filter="^OK")
+    else:
       reply = self._t.send_atcmd(
-        f'AT+CIPSSLCSNI={link_id},"{host}"',filter="^OK")
-      if reply is None:
-        raise RuntimeError("could not set server name indication (SNI)")
+        f'AT+CIPSSLCSNI={link_id},""',filter="^OK")
+    if reply is None:
+      raise RuntimeError("could not set/clear server name indication (SNI)")
 
     # parameters: connection-type, remote host, remote port
     params = f'{link_id},"{conn_type}","{host}",{port}'
