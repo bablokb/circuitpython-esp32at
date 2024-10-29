@@ -19,6 +19,7 @@ Alphabetical list of all AT-commands used by the modules of this project:
   - AT+CIPSEND=
   - AT+CIPSERVER=
   - AT+CIPSERVERMAXCONN?
+  - AT+CIPSSLCSNI=
   - AT+CIPSTA=
   - AT+CIPSTA?
   - AT+CIPSTAMAC=
