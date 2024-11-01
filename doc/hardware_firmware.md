@@ -2,7 +2,7 @@ Support Hardware and Firmware
 =============================
 
 Espressif maintains their ESP-AT project currently for a number of
-hardware platforms, mainly ESP32C2, ESP32C3, ESP32C6, and
+hardware platforms, mainly ESP32C2, ESP32C3, ESP32C6, ESP32-S2 and
 ESP32. Support for older hardware (ESP8266) is very limited and
 the available firmware source is only maintained up to version
 2.2.x.x. Pre-built firmware is also not available. As a consequence,
@@ -17,6 +17,7 @@ Hardware Overview
   - ESP32C6: **Fully supported, recommended, second choice**.<br>
     Bigger and not as cost-efficient as ESP32C3 boards, but they
     support WIFI6.
+  - ESP32-S2: **Fully supported, recommended, second choice**.<br>
   - ESP32: **Fully supported, not recommended**.<br>
     ESP32 based boards are usually larger and more expensive than ESP32C3 boards.
   - ESP-01S: **Partly supported, not recommended**<br>
@@ -39,16 +40,15 @@ folder is a combined binary firmware that has to be flashed to address 0x0.
 Flashing the firmware is a one-time task and documented in
 <https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/Get_Started/Downloading_guide.html#flash-at-firmware-into-your-device>.
 
-
 The modules of this repository have been tested with the following
 firmware versions:
 
   - v3.3.0.0 (ESP32C3)
-  - v3.4.0.0 (ESP32C6)
+  - v3.4.0.0 (ESP32C6, ESP32-S2)
   - v4.0.0.0 (ESP32C6)
   - v2.2.2.0 (ESP8266)
 
-Old versions (1.x.x, often pre-installed on ESP8266-devices) will
+Older versions (1.x.x, often pre-installed on ESP8266-devices) will
 definitely not work.
 
 Starting with v3.3.0.0, there are no major relevant differences
@@ -104,12 +104,13 @@ firmware as output.
 
 Notes:
 
-  - **never power the board from USB if connected to the main MCU
+  - **Never power the board from USB if connected to the main MCU
     using the Stemma/Qt connector**.
   - Powering by 3V3 might or might not work. This depends how stable
     the 3V3 line of the main MCU is and how much current it can provide.
   - The ESP32C3 peak current for 802.11g is 285mA at 100% duty-cycle at
-    full TX-power. It will brown-out at 3.0V.
+    full TX-power. It will brown-out at 3.0V. The datasheet recommends
+    a power-supply with at least 500mA.
 
 
 ESP32C3-SuperMini
@@ -148,12 +149,13 @@ the SuperMini can then be connected using a simple Stemma/Qt cable.
 
 Notes:
 
-  - **never power the board from USB if connected to the main MCU
+  - **Never power the board from USB if connected to the main MCU
     using the Stemma/Qt connector**.
   - Powering by 3V3 might or might not work. This depends how stable
     the 3V3 line of the main MCU is and how much current it can provide.
   - The ESP32C3 peak current for 802.11g is 285mA at 100% duty-cycle at
-    full TX-power. It will brown-out at 3.0V.
+    full TX-power. It will brown-out at 3.0V. The datasheet recommends
+    a power-supply with at least 500mA.
 
 
 Lilygo T-01 C3
@@ -241,6 +243,43 @@ Pins:
   - RX: GPIO6 (labeled '6')
   - TX: GPIO7 (labeled '7')
   - RST: pin 3 on header left of ESP-chip
+
+
+Wemos Lolin S2-Mini
+-------------------
+
+The [Lolin S2-Mini](https://www.wemos.cc/en/latest/s2/s2_mini.html) is
+based on the ESP32-S2FN4R2 (4MB flash, 2MB embedded PSRAM). Wemos has
+an official store at
+[AliExpress](https://www.aliexpress.com/item/1005003145192016.html). You
+will also find many cheaper clones on AliExpress, but users reported
+problems with some of these clones (YMWV).
+
+The board is fairly small and inexpensive, therefore suitable as a
+co-processor (note that there is also native support for CircuitPython).
+
+![](./lolin-s2-mini.jpg)
+
+Pins:
+
+  - RX: GPIO21 (labeled '21')
+  - TX: GPIO17 (labeled '17')
+  - RST: EN pin (labeled 'EN')
+
+Notes:
+
+  - **Never power the board from USB if connected to the main MCU**.
+  - Powering by 3V3 might or might not work. This depends how stable
+    the 3V3 line of the main MCU is and how much current it can provide.
+  - The ESP32-S2 peak current for 802.11g is 220mA at 100% duty-cycle at
+    15dBm TX-power. It will brown-out at 2.8V. The datasheet recommends
+    a power-supply with at least 500mA.
+  - Changing the RX/TX pins to GPIO16/GPIO18 will allow to attach a
+    single 1x4 pin header for RX/TX/GND/VBUS (see image):
+
+        at.py modify_bin -cc DE -tx 18 -rx 16 --cts_pin -1 --rts_pin -1 \
+                 -in factory_MINI.bin \
+                 -o  esp32s2-AT-Firmware-Lolin-s2-mini-v3.4.0.0.bin
 
 
 DFRobot Fire-Beetle ESP32-D-V4.0
