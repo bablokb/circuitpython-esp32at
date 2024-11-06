@@ -15,6 +15,7 @@ the library:
   - `udp_receiver.py`: receive data using UDP ("UDP server")
   - `query_timeapi.py`: HTTP-GET requests (no SSL)
   - `query_openmeteo.py`: HTTPS-GET requests (i.e. with SSL)
+  - `query_departures.py`: HTTPS-GET requests with large response
   - `http_server.py`: simple HTTP-server processing GET, PUT, POST and DELETE
   - `ap_webserver.py`: AP with webserver using MDNS
   - `factory_reset.py`: reset configuration to factory settings
