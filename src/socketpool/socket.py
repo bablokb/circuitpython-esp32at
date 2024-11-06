@@ -189,7 +189,7 @@ class Socket:
     """
     if self._is_server_socket:
       self._impl.stop_server()
-    elif self.link_id and self._socketpool.connections[self.link_id]:
+    elif not self.link_id is None and self._socketpool.connections[self.link_id]:
       self._impl.close_connection(self.link_id) # this should trigger cleanup
     self.link_id = None                                       # in socketpool
 
