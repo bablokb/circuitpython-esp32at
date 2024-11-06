@@ -48,9 +48,11 @@ class _Implementation:
     if self._t.at_version_short[0] > 2:
       cmd = "CIPSTATE"
       postfix  = "?"
+      offset = 10
     else:
       cmd = "CIPSTATUS"
       postfix  = ""
+      offset = 11
     replies = self._t.send_atcmd(f'AT+{cmd}{postfix}',filter=f"^\+{cmd}:")
     if replies is None:
       if link_id is None:
@@ -63,7 +65,7 @@ class _Implementation:
     ConnInfo = namedtuple('ConnInfo',
                           'link_id conn_type ip rport lport is_server')
     for line in replies:
-      info = line[10:].split(',')
+      info = line[offset:].split(',')
       info[0] = int(info[0])
       info[1] = info[1].strip('"')
       info[2] = info[2].strip('"')
@@ -204,6 +206,7 @@ class _Implementation:
     # request data: AT sends CIPRECVDATA with length and data
     cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
     self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
+
     # read actual length from interface
     # we expect length,"ip",port,data
     txt = b""
@@ -219,8 +222,6 @@ class _Implementation:
     act_len = int(act_len)
     host = host.strip('"')
     port = int(port)
-    if self._t.debug:
-      print(f"{act_len=}")
     return self.read(buffer,act_len),host,port
 
   def read(self,
