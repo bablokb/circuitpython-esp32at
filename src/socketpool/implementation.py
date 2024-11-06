@@ -205,7 +205,9 @@ class _Implementation:
 
     # request data: AT sends CIPRECVDATA with length and data
     cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
-    self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
+    result = self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
+    if result != "+CIPRECVDATA:":
+      raise RuntimeError("failed reading data")
 
     # read actual length from interface
     # we expect length,"ip",port,data
