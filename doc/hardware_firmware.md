@@ -44,7 +44,7 @@ The modules of this repository have been tested with the following
 firmware versions:
 
   - v3.3.0.0 (ESP32C3)
-  - v3.4.0.0 (ESP32C6, ESP32-S2)
+  - v3.4.0.0 (ESP32, ESP32C6, ESP32-S2)
   - v4.0.0.0 (ESP32C6)
   - v2.2.2.0 (ESP8266)
 
@@ -294,9 +294,34 @@ It works fine with the factory firmware for the ESP32-WROOM-32.
 
 Pins:
 
-  - RX: GPI16 (labeled 'DI/IO16')
-  - TX: GPI17 (labeled 'LRCK/IO17')
+  - RX: GPIO16 (labeled 'DI/IO16')
+  - TX: GPIO17 (labeled 'LRCK/IO17')
   - RST: pin 1 on header left of the Micro-USB socket (ESP32-chip facing down)
+
+
+Wemos D1 Mini ESP32
+-------------------
+
+The "Wemos D1 Mini ESP32" is officially discontinued, but you will find
+various clones of this small board.
+
+It uses an ESP32-WROOM-32 and is relatively small. It works fine with
+the factory firmware for the ESP32-WROOM-32.
+
+![](./d1-mini-esp32.jpg)
+
+Pins:
+
+  - RX: GPIO16 (labeled 'IO16')
+  - TX: GPIO17 (labeled 'IO17')
+  - RST: top left inner pin (ESP32-chip facing up, USB-C facing down)
+
+Notes:
+
+  - **Never power the board from USB if connected to the main MCU**.
+  - Powering by 3V3 might or might not work. This depends how stable
+    the 3V3 line of the main MCU is and how much current it can provide.
+  - The board supports a single 1x4 header for IO17/IO16/GND/VCC (see image).
 
 
 ESP-01S
