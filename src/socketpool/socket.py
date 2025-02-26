@@ -15,7 +15,7 @@
 
 import time
 from errno import EAGAIN, ETIMEDOUT, ECONNRESET
-from esp32at.transport import Transport
+from esp32at.transport import Transport, PT_AUTO
 from .socketpool import SocketPool            # pylint: disable=cyclic-import
 from .implementation import _Implementation
 
@@ -155,6 +155,11 @@ class Socket:
       address (tuple) – tuple of (remote_address, remote_port)
     """
 
+    # TODO: catch exception, test for existing connections and
+    #       throw qualified error
+    if self._t.pt_policy == PT_AUTO:
+      self._t.multi_connections = False
+
     # query free link-id
     link_id = self._socketpool.get_link_id(self)
 
@@ -183,10 +188,17 @@ class Socket:
     if not self._timeout is None:
       self._impl.set_timeout(self._timeout,self.link_id)
 
+    if self._t.pt_policy == PT_AUTO:
+      self._t.passthrough = True
+
   def close(self) -> None:
     """ Closes this Socket and makes its resources available to its
     SocketPool.
     """
+
+    # leave passthrough mode
+    self._t.passthrough = False
+
     if self._is_server_socket:
       self._impl.stop_server()
     elif not self.link_id is None and self._socketpool.connections[self.link_id]:
@@ -217,6 +229,10 @@ class Socket:
     Parameters:
         buffer (object) – buffer to read into
     """
+
+    # read directly if we are in passthrough-mode
+    if self._t.passthrough:
+      return self._t.readinto(buffer,len(buffer)),(None,None)
 
     # we need a data-prompt (IPD) before we can read data
     # read pending messages (hope for IPD)
@@ -263,6 +279,10 @@ class Socket:
     if self._t.debug:
       print(f"recv_into({self.link_id}): {bytes_to_read=}")
       print(f"              {self.data_prompt=}")
+
+    # read directly if we are in passthrough-mode
+    if self._t.passthrough:
+      return self._t.readinto(buffer,bytes_to_read)
 
     # we need a data-prompt (IPD) before we can read data
     # read pending messages (hope for IPD)

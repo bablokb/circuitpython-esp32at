@@ -82,8 +82,11 @@ class SocketPool:
     """ callback for connection messages """
 
     # check for CONNECT or CLOSED
-    msg = msg.split(',')
-    link_id, action = int(msg[0]),msg[1]
+    if self._t.multi_connections:
+      msg = msg.split(',')
+      link_id, action = int(msg[0]),msg[1]
+    else:
+      link_id, action = 0,msg
     if self._t.debug:
       print(f"socketpool._conn_callback(): {action} for {link_id}")
 
@@ -110,10 +113,16 @@ class SocketPool:
     if self._t.debug:
       print(f"socketpool._ipd_callback(): {msg}")
 
-    # msg is: +IPD,link_id,length
     msg = msg.split(',')
-    link_id = int(msg[1])
-    data_prompt = link_id,int(msg[2])
+    if self._t.multi_connections:
+      # msg is: +IPD,link_id,length
+      link_id = int(msg[1])
+      data_prompt = link_id,int(msg[2])
+    else:
+      # msg is: +IPD,length
+      link_id = 0
+      data_prompt = link_id,int(msg[1])
+
     # link could be up from ESP32Cx-side, but not from application side
     if self.connections[link_id]:
       self.connections[link_id].data_prompt = data_prompt

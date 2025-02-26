@@ -53,6 +53,15 @@ CALLBACK_STA = const(3)
 CALLBACK_SEND = const(4)
 """ index to callback method """
 
+PT_OFF = const(0)
+""" normal mode (no passthrough) """
+
+PT_AUTO = const(1)
+""" switch to passthrough-mode after connect """
+
+PT_ON = const(2)
+""" passthrough mode """
+
 class RebootError(Exception):
   """The exception thrown during firmware reboot"""
 
@@ -97,12 +106,15 @@ class Transport:
 
     # keep pylint happy by defining variables here
     self._msg_callbacks = [lambda msg: None]*6
+    self._passthrough = False
+    self._pt_policy = PT_OFF
     self._uart = None
     self._at_retries = 1
     self._reset_pin = None
     self.debug = None
     self._at_version = None
     self.at_version_short = None
+    self._multi_connections = None
     self.max_connections = 5
     self.reconn_interval = 1
     self.busy = False
@@ -118,6 +130,7 @@ class Transport:
            reset_pin: Optional[circuitpython_typing.Pin] = None,
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
+           multi_connection: Optional[bool] = True,
            baudrate: Union[int, str] = None,
            debug: bool = False,
            ) -> bool:
@@ -144,11 +157,7 @@ class Transport:
     connected = False
     for _ in range(2):
       try:
-        # set multi-connection mode
-        # use timeout for first AT-command to catch baudrate problems
-        reply = self.send_atcmd('AT+CIPMUX=1',filter="^OK",timeout=1)
-        if reply is None:
-          raise RuntimeError("could not set connection-mode")
+        self.multi_connections = multi_connection
 
         # query number of supported connections
         reply = self.send_atcmd('AT+CIPSERVERMAXCONN?',
@@ -492,7 +501,10 @@ class Transport:
     mv_target = mv_buffer[0:bufsize]
     if self.debug:
       n = self._uart.readinto(mv_target)
-      print(f"<--- {n} bytes: {bytes(buffer[:min(n,40)])}...")
+      if n is not None:
+        print(f"<--- {n} bytes: {bytes(buffer[:min(n,40)])}...")
+      else:
+        n = 0
       return n
     return self._uart.readinto(mv_target)
 
@@ -508,3 +520,98 @@ class Transport:
       self.send_atcmd("ATE1")
     else:
       self.send_atcmd("ATE0")
+
+  # --- connection configuration   -------------------------------------------
+
+  @property
+  def multi_connections(self) -> bool:
+    """ query multi-connection setting """
+    return self._multi_connections
+
+  @multi_connections.setter
+  def multi_connections(self, flag: bool) -> None:
+    """ enable/disable multi-connections """
+
+    if flag != self._multi_connections:
+      reply = self.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK")
+      if reply is None:
+        raise RuntimeError("could not set connection-mode")
+    self._multi_connections = flag
+
+  # --- passthrough mode   ---------------------------------------------------
+
+  @property
+  def pt_policy(self) -> int:
+    """ query passthrough policy """
+    return self._pt_policy
+
+  @pt_policy.setter
+  def pt_policy(self,value: int):
+    """ set passthrough policy """
+    if value == PT_OFF:
+      self.passthrough = False
+    elif value == PT_AUTO:
+      pass
+    elif value == PT_ON:
+      self.passthrough = True
+    else:
+      raise ValueError("illegal passthrough policy mode")
+    if self.debug:
+      print(f"passthrough policy: {value}")
+    self._pt_policy = value
+
+  @property
+  def passthrough(self) -> bool:
+    """ query passthrough mode """
+
+    # we can only query passthrough-mode if we are not in passthrough-mode,
+    # so we keep track of it ourselves
+    return self._passthrough
+
+  @passthrough.setter
+  def passthrough(self, mode: bool) -> None:
+    """ set/reset passthrough mode """
+
+    # set passthrough-mode (requires single-connection)
+    if mode and not self._passthrough:
+
+      # enter passthrough-mode
+      reply = self.send_atcmd(
+        f'AT+CIPMODE=1',filter="^OK")
+      if not reply:
+        raise RuntimeError("Could not enter passthrough-mode")
+
+      reply = self.send_atcmd(
+        f'AT+TRANSINTVL=0',filter="^OK")
+      if not reply:
+        raise RuntimeError("Could not set transfer-interval")
+
+      # activate passthrough-mode
+      reply = self.send_atcmd("AT+CIPSEND",set_busy=False) # init passthrough
+      if "ERROR" in reply:
+        if self.debug:
+          print(f"send failed with ERROR")
+        self.busy = False
+        raise RuntimeError("Could not enter passthrough-mode")
+      success, _ = self.read_atmsg(passive=True,read_until='>')
+      if not success:
+        raise RuntimeError("Could not enter passthrough-mode")
+      if self.debug:
+        print(f"activated passthrough-mode")
+
+      self._passthrough = True
+
+    # leave passthrough-mode
+    elif not mode and self._passthrough:
+      # send magic +++ to leave data mode
+      time.sleep(0.021)          # wait more than 20ms
+      reply = self.write("+++")
+      time.sleep(0.021)          # wait more than 20ms
+      time.sleep(1)              # wait at least one second
+
+      # leave passthrough-mode
+      reply = self.send_atcmd(
+        f'AT+CIPMODE=0',filter="^OK")
+      if not reply:
+        raise RuntimeError("Could not leave passthrough-mode")
+      self._passthrough = False

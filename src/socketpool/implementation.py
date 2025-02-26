@@ -89,24 +89,29 @@ class _Implementation:
     # check for an existing connection
     # connections = self.get_connections()
 
+    if self._t.multi_connections:
+      lid_parm = f"{link_id},"
+    else:
+      lid_parm = ""
+
     # for SSL, set the SNI (server name indication). Otherwise clear it.
     reply = None
     if "SSL" in conn_type:
       try:
         _ = ipaddress.ip_address(host)   # don't set SNI for IP-address
         reply = self._t.send_atcmd(
-          f'AT+CIPSSLCSNI={link_id},""',filter="^OK")
+          f'AT+CIPSSLCSNI={lid_parm}""',filter="^OK")
       except:
         reply = self._t.send_atcmd(
-          f'AT+CIPSSLCSNI={link_id},"{host}"',filter="^OK")
+          f'AT+CIPSSLCSNI={lid_parm}"{host}"',filter="^OK")
     else:
       reply = self._t.send_atcmd(
-        f'AT+CIPSSLCSNI={link_id},""',filter="^OK")
+        f'AT+CIPSSLCSNI={lid_parm}""',filter="^OK")
     if reply is None:
       raise RuntimeError("could not set/clear server name indication (SNI)")
 
     # parameters: connection-type, remote host, remote port
-    params = f'{link_id},"{conn_type}","{host}",{port}'
+    params = f'{lid_parm}"{conn_type}","{host}",{port}'
     if address:
       if not "UDP" in conn_type:
         raise ValueError("address supplied and conn_type not UDP")
@@ -123,8 +128,13 @@ class _Implementation:
   def close_connection(self,link_id: int) -> None:
     """ Close connection (best effort) """
 
+    if self._t.multi_connections:
+      lid_parm = f"={link_id}"
+    else:
+      lid_parm = ""
+
     try:
-      self._t.send_atcmd(f"AT+CIPCLOSE={link_id}")
+      self._t.send_atcmd(f"AT+CIPCLOSE{lid_parm}")
     except:
       pass
 
@@ -139,6 +149,10 @@ class _Implementation:
            link_id: int) -> None:
     """ Send up to 8192 bytes """
 
+    if self._t.passthrough:
+      self._t.write(buffer)
+      return
+
     if link_id is None:
       raise RuntimeError("illegal state: no connection established yet")
 
@@ -146,7 +160,12 @@ class _Implementation:
       self.send_long(buffer,link_id)
       return
 
-    cmd = f"AT+CIPSEND={link_id},{len(buffer)}"
+    if self._t.multi_connections:
+      lid_parm = f"{link_id},"
+    else:
+      lid_parm = ""
+
+    cmd = f"AT+CIPSEND={lid_parm}{len(buffer)}"
 
     reply = self._t.send_atcmd(cmd,set_busy=True)     # init send
     if "ERROR" in reply:                              # link_id could be closed
@@ -169,6 +188,11 @@ class _Implementation:
     if link_id is None:
       raise RuntimeError("illegal state: no connection established yet")
 
+    if self._t.multi_connections:
+      lid_parm = f"{link_id},"
+    else:
+      lid_parm = ""
+
     raise RuntimeError("not implemented yet: buffer is larger than 8192")
 
   def get_host_by_name(self,
@@ -185,8 +209,13 @@ class _Implementation:
   def set_timeout(self,value: int, link_id: int) -> None:
     """ set the send-timeout option """
 
+    if self._t.multi_connections:
+      lid_parm = f"{link_id},"
+    else:
+      lid_parm = ""
+
     try:
-      self._t.send_atcmd(f"AT+CIPTCPOPT={link_id},,,{value}")
+      self._t.send_atcmd(f"AT+CIPTCPOPT={lid_parm},,{value}")
     except:
       pass
 
@@ -203,8 +232,13 @@ class _Implementation:
                 link_id: int) -> int:
     """ read pending data """
 
+    if self._t.multi_connections:
+      lid_parm = f"{link_id},"
+    else:
+      lid_parm = ""
+
     # request data: AT sends CIPRECVDATA with length and data
-    cmd = f"AT+CIPRECVDATA={link_id},{bufsize}"
+    cmd = f"AT+CIPRECVDATA={lid_parm}{bufsize}"
     result = self._t.send_atcmd(cmd,read_until="+CIPRECVDATA:")
     if result != "+CIPRECVDATA:":
       raise RuntimeError("failed reading data")
