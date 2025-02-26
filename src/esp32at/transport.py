@@ -508,18 +508,28 @@ class Transport:
 
   def readinto(self,
                buffer: circuitpython_typing.WriteableBuffer,
-               bufsize: int) -> int:
+               bufsize: int,
+               timeout: int = 0) -> int:
     """ read data from the uart into a buffer """
     mv_buffer = memoryview(buffer)
     mv_target = mv_buffer[0:bufsize]
+
+    # set uart timeout from argument (typically socket-timeout)
+    if timeout:
+      timeout_old = self._uart.timeout
+      self._uart.timeout = timeout
+
+    n = self._uart.readinto(mv_target)
     if self.debug:
-      n = self._uart.readinto(mv_target)
       if n is not None:
-        print(f"<--- {n} bytes: {bytes(buffer[:min(n,40)])}...")
+        print(f"<--- {n} bytes: {bytes(buffer[:min(n,40)])} ...")
       else:
-        n = 0
-      return n
-    return self._uart.readinto(mv_target)
+        print(f"<--- 0 bytes ...")
+
+    # reset timeout
+    if timeout:
+      self._uart.timeout = timeout_old
+    return n
 
   def read(self, count: int) -> int:
     """ read raw data from the uart """

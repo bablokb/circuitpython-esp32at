@@ -232,7 +232,7 @@ class Socket:
 
     # read directly if we are in passthrough-mode
     if self._t.passthrough:
-      return self._t.readinto(buffer,len(buffer)),(None,None)
+      return self._t.readinto(buffer,len(buffer),self._timeout),(None,None)
 
     # we need a data-prompt (IPD) before we can read data
     # read pending messages (hope for IPD)
@@ -282,7 +282,7 @@ class Socket:
 
     # read directly if we are in passthrough-mode
     if self._t.passthrough:
-      return self._t.readinto(buffer,bytes_to_read)
+      return self._t.readinto(buffer,bytes_to_read,self._timeout)
 
     # we need a data-prompt (IPD) before we can read data
     # read pending messages (hope for IPD)
