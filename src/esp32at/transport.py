@@ -59,8 +59,8 @@ PT_OFF = const(0)
 PT_AUTO = const(1)
 """ switch to passthrough-mode after connect """
 
-PT_ON = const(2)
-""" passthrough mode """
+PT_MANUAL = const(2)
+""" manual passthrough mode """
 
 class RebootError(Exception):
   """The exception thrown during firmware reboot"""
@@ -571,13 +571,7 @@ class Transport:
   @pt_policy.setter
   def pt_policy(self,value: int):
     """ set passthrough policy """
-    if value == PT_OFF:
-      self.passthrough = False
-    elif value == PT_AUTO:
-      pass
-    elif value == PT_ON:
-      self.passthrough = True
-    else:
+    if value not in [PT_OFF, PT_AUTO, PT_MANUAL]:
       raise ValueError("illegal passthrough policy mode")
     if self.debug:
       print(f"passthrough policy: {value}")
