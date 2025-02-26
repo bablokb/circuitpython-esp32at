@@ -186,6 +186,13 @@ class Transport:
         elif reset == RESET_ON_FAILURE:
           if isinstance(ex,RebootError):  # give the system some time to boot
             time.sleep(3)
+          elif isinstance(ex,TransportError):  # give the system some time to boot
+            # we might still be in passthrough-mode, so try to leave
+            # send magic +++ to leave data mode
+            time.sleep(0.021)          # wait more than 20ms
+            self.write("+++")
+            time.sleep(0.021)          # wait more than 20ms
+            time.sleep(1)              # wait at least one second
           self.soft_reset()
 
     if not connected:
@@ -329,7 +336,11 @@ class Transport:
       min_waiting = min(1,len(read_until)-1)  # if we wait for a single char
     else:
       min_waiting = 1
+
+    start = time.monotonic()
     while passive or self._uart.in_waiting > min_waiting:
+      if time.monotonic() - start > timeout:
+        break
       if not self._uart.in_waiting > min_waiting:
         continue
 
@@ -351,6 +362,7 @@ class Transport:
       if self.debug:
         print(f"<--- {msg=}")
       if not msg:                           # ignore empty lines
+        start = time.monotonic()
         continue
 
       # some shortcuts for special messages
@@ -381,6 +393,7 @@ class Transport:
           print("     appending to result...")
         if msg in Transport._MSG_PASSIVE_END:
           return True,result
+        start = time.monotonic()
         continue
 
     # timed out or incomplete response
@@ -533,7 +546,7 @@ class Transport:
     """ enable/disable multi-connections """
 
     if flag != self._multi_connections:
-      reply = self.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK")
+      reply = self.send_atcmd(f'AT+CIPMUX={int(flag)}',filter="^OK",timeout=1)
       if reply is None:
         raise RuntimeError("could not set connection-mode")
     self._multi_connections = flag
