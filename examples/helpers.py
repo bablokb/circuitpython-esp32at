@@ -32,7 +32,8 @@ def _get_init_args():
   kwargs = {}
   for arg in ["country_settings", "ipv4_dns_defaults",   "at_timeout",
               "at_retries",       "reset", "hard_reset", "persist_settings",
-              "reconn_interval",  "multi_connection",    "baudrate"]:
+              "reconn_interval",  "multi_connection",    "baudrate",
+              "pt_policy"]:
     if arg in secrets:
       kwargs[arg] = secrets[arg]
   return kwargs
