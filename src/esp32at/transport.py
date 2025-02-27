@@ -601,7 +601,7 @@ class Transport:
     # set passthrough-mode (requires single-connection)
     if mode and not self._passthrough:
 
-      # enter passthrough-mode
+      # enter passthrough receiving mode
       reply = self.send_atcmd(
         'AT+CIPMODE=1',filter="^OK")
       if not reply:
@@ -612,7 +612,7 @@ class Transport:
       if not reply:
         raise RuntimeError("Could not set transfer-interval")
 
-      # activate passthrough-mode
+      # activate passthrough sending mode
       reply = self.send_atcmd("AT+CIPSEND",set_busy=False) # init passthrough
       if "ERROR" in reply:
         if self.debug:
@@ -627,7 +627,7 @@ class Transport:
 
       self._passthrough = True
 
-    # leave passthrough-mode
+    # leave passthrough sending mode
     elif not mode and self._passthrough:
       # send magic +++ to leave data mode
       time.sleep(0.021)          # wait more than 20ms
@@ -635,9 +635,10 @@ class Transport:
       time.sleep(0.021)          # wait more than 20ms
       time.sleep(1)              # wait at least one second
 
-      # leave passthrough-mode
+      self._passthrough = False  # left sending mode, enables send_atmsg again
+
+      # also leave receiving mode passthrough-mode
       reply = self.send_atcmd(
         'AT+CIPMODE=0',filter="^OK")
       if not reply:
         raise RuntimeError("Could not leave passthrough-mode")
-      self._passthrough = False
