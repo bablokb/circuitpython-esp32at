@@ -188,11 +188,6 @@ class _Implementation:
     if link_id is None:
       raise RuntimeError("illegal state: no connection established yet")
 
-    if self._t.multi_connections:
-      lid_parm = f"{link_id},"
-    else:
-      lid_parm = ""
-
     raise RuntimeError("not implemented yet: buffer is larger than 8192")
 
   def get_host_by_name(self,

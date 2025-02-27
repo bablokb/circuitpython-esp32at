@@ -120,7 +120,7 @@ class Transport:
     self.busy = False
     Transport.transport = self
 
-  # pylint: disable=too-many-branches
+  # pylint: disable=too-many-branches, too-many-statements
   def init(self,
            uart: busio.UART,
            *,
@@ -533,7 +533,7 @@ class Transport:
       if n is not None:
         print(f"<--- {n} bytes: {bytes(buffer[:min(n,40)])} ...")
       else:
-        print(f"<--- 0 bytes ...")
+        print("<--- 0 bytes ...")
 
     # reset timeout
     if timeout:
@@ -603,12 +603,12 @@ class Transport:
 
       # enter passthrough-mode
       reply = self.send_atcmd(
-        f'AT+CIPMODE=1',filter="^OK")
+        'AT+CIPMODE=1',filter="^OK")
       if not reply:
         raise RuntimeError("Could not enter passthrough-mode")
 
       reply = self.send_atcmd(
-        f'AT+TRANSINTVL=0',filter="^OK")
+        'AT+TRANSINTVL=0',filter="^OK")
       if not reply:
         raise RuntimeError("Could not set transfer-interval")
 
@@ -616,14 +616,14 @@ class Transport:
       reply = self.send_atcmd("AT+CIPSEND",set_busy=False) # init passthrough
       if "ERROR" in reply:
         if self.debug:
-          print(f"send failed with ERROR")
+          print("send failed with ERROR")
         self.busy = False
         raise RuntimeError("Could not enter passthrough-mode")
       success, _ = self.read_atmsg(passive=True,read_until='>')
       if not success:
         raise RuntimeError("Could not enter passthrough-mode")
       if self.debug:
-        print(f"activated passthrough-mode")
+        print("activated passthrough-mode")
 
       self._passthrough = True
 
@@ -631,13 +631,13 @@ class Transport:
     elif not mode and self._passthrough:
       # send magic +++ to leave data mode
       time.sleep(0.021)          # wait more than 20ms
-      reply = self.write("+++")
+      self.write("+++")
       time.sleep(0.021)          # wait more than 20ms
       time.sleep(1)              # wait at least one second
 
       # leave passthrough-mode
       reply = self.send_atcmd(
-        f'AT+CIPMODE=0',filter="^OK")
+        'AT+CIPMODE=0',filter="^OK")
       if not reply:
         raise RuntimeError("Could not leave passthrough-mode")
       self._passthrough = False
