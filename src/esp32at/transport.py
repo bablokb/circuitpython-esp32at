@@ -495,7 +495,12 @@ class Transport:
       print(f"send_atcmd({at_cmd}) end -------------")
     return response
 
-  # --- write bytes to the interface   ---------------------------------------
+  # --- uart-wrappers   ------------------------------------------------------
+
+  @property
+  def uart(self) -> busio.UART:
+    """ return internal UART """
+    return self._uart
 
   def write(self,
             buffer: circuitpython_typing.ReadableBuffer) -> None:
@@ -504,8 +509,6 @@ class Transport:
       print(f"---> {len(buffer)} bytes: {buffer[:min(len(buffer),40)]}...")
     self._uart.reset_input_buffer()
     self._uart.write(buffer)
-
-  # --- read bytes from the interface into a buffer   ------------------------
 
   @property
   def input_available(self) -> bool:
