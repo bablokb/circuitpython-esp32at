@@ -50,6 +50,7 @@ for i in range(ITERATIONS):
   response = requests.get(url,timeout=5)
   elapsed = time.monotonic()-start
   print(f"{response.json()['datetime']},{elapsed}")
+  response.socket.close()
+  elapsed = time.monotonic()-start
   if i < ITERATIONS-1:
     time.sleep(max(0,INTERVAL-elapsed))
-response.socket.close()
