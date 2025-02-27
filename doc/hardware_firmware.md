@@ -175,6 +175,9 @@ Pins (2x4 header):
   - RX: GPIO20 (labeled 'RXD', pin 4)
   - TX: GPIO21 (labeled 'TXD', pin 5)
   - RST: pin 7
+  - IO2: pin 2
+  - IO8: pin 6 (-> onboard LED, active high)
+  - IO9: pin 3
 
 Because the standard AT-command port pins are not available on the
 device, some changes are necessary using the at.py utility:
@@ -340,6 +343,15 @@ from Cytron, which has a socket made for the ESP-01S - very nice!).
 
 The big advantage of this board is it's very low price and the small
 form-factor.
+
+Pins (2x4 header):
+
+  - RX: GPIO3 (labeled 'RXD', pin 4)
+  - TX: GPIO1 (labeled 'TXD', pin 5)
+  - RST: pin 7
+  - GPIO2: pin 2
+  - CH_PD: pin 6
+  - GPIO0: pin 3 (-> onboard LED, active low)
 
 Espressif does not release a pre-built firmware for 8266-devices
 anymore, so you have to build your own firmware. See [ESP-01S
