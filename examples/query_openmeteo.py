@@ -67,7 +67,7 @@ print('\nts,T/met °C,H/met %rH,P/met hPa,WMO,Wspd km/s,Wdir °,R mm,send s,recv
 for i in range(ITERATIONS):
   try:
     start = time.monotonic()
-    response = requests.get(url)
+    response = requests.get(url,timeout=1)
     memfree = gc.mem_free()
     send_duration = time.monotonic() - start
   except RuntimeError as e:
@@ -90,6 +90,8 @@ for i in range(ITERATIONS):
 
   # print data
   print(f"{ts},{t:0.1f},{h:0.0f},{ps:0.0f},{c:d},{ws:0.1f},{wd:0.0f},{r:0.1f},{send_duration:0.3f},{recv_duration:0.3f},{memfree}")
-  time.sleep(INTERVAL)
 
-response.close()
+  response.socket.close()
+  elapsed = time.monotonic()-start
+  if i < ITERATIONS-1:
+    time.sleep(max(0,INTERVAL-elapsed))
