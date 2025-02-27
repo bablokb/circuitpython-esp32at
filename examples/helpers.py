@@ -53,6 +53,7 @@ def init(DEBUG=False,start_station=True):
 
   if hasattr(wifi,"at_version"):
     print("initializing co-processor with default uart-baudrate")
+    print(f"using TX: {PIN_TX}, RX: {PIN_RX}")
     uart = busio.UART(PIN_TX, PIN_RX, baudrate=115200, receiver_buffer_size=2048)
     kwargs = _get_init_args()
     rc = wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
