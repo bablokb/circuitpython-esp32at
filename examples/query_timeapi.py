@@ -47,9 +47,9 @@ requests = adafruit_requests.Session(pool)
 
 for i in range(ITERATIONS):
   start = time.monotonic()
-  response = requests.get(url)
+  response = requests.get(url,timeout=5)
   elapsed = time.monotonic()-start
   print(f"{response.json()['datetime']},{elapsed}")
   if i < ITERATIONS-1:
-    time.sleep(INTERVAL-elapsed)
+    time.sleep(max(0,INTERVAL-elapsed))
 response.socket.close()
