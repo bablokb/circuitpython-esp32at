@@ -140,6 +140,7 @@ class Transport:
     self._at_retries = at_retries
     self.debug = debug
     self.reconn_interval = reconn_interval
+    self.pt_policy = pt_policy
 
     if reset_pin:
       self._reset_pin = DigitalInOut(reset_pin)
