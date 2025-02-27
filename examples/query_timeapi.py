@@ -35,6 +35,7 @@ except ImportError:
 
 # --- query time-information from worldtimeapi.org   -------------------------
 
+helpers.wait_for_console()
 helpers.init(DEBUG)
 helpers.set_tx_power()
 helpers.connect()
@@ -49,5 +50,6 @@ for i in range(ITERATIONS):
   response = requests.get(url)
   elapsed = time.monotonic()-start
   print(f"{response.json()['datetime']},{elapsed}")
-  time.sleep(INTERVAL-elapsed)
-response.close()
+  if i < ITERATIONS-1:
+    time.sleep(INTERVAL-elapsed)
+response.socket.close()
