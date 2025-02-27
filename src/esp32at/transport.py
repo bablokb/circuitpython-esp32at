@@ -130,8 +130,8 @@ class Transport:
            reset_pin: Optional[circuitpython_typing.Pin] = None,
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
-           multi_connection: Optional[bool] = True,
            baudrate: Union[int, str] = None,
+           pt_policy: Optional[int] = PT_OFF,
            debug: bool = False,
            ) -> bool:
     """ initialize hardware, and query AT firmware version """
@@ -157,7 +157,7 @@ class Transport:
     connected = False
     for _ in range(2):
       try:
-        self.multi_connections = multi_connection
+        self.multi_connections = pt_policy == PT_OFF
 
         # query number of supported connections
         reply = self.send_atcmd('AT+CIPSERVERMAXCONN?',
