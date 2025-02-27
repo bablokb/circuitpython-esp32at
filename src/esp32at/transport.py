@@ -429,6 +429,11 @@ class Transport:
     a variable timeout (how long we'll wait for response) and
     how many times to retry before giving up"""
 
+    # AT-commands are not available in passthrough mode
+    if self._passthrough:
+      raise RuntimeError(
+        "cannot send AT-commands while passthrough-mode is active.")
+
     if self.debug:
       print(f"send_atcmd({at_cmd}) start -----------")
 
