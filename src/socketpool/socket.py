@@ -21,6 +21,7 @@ from .implementation import _Implementation
 
 try:
   from typing import Optional
+  from circuitpython_typing import UART
 except ImportError:
   pass
 
@@ -398,3 +399,11 @@ class Socket:
   def type(self) -> int:
     """ Read-only access to the socket type """
     return self._sock_type
+
+  @property
+  def stream(self) -> UART:
+    """ expose transport-stream """
+
+    if not self._t.passthrough:
+      raise RuntimeError("passthrough-mode not active")
+    return self._t.uart
