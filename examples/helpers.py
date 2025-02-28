@@ -15,6 +15,7 @@ import board
 import busio
 import wifi
 import supervisor
+import atexit
 
 from pins import *
 
@@ -68,6 +69,7 @@ def init(DEBUG=False,start_station=True):
         rc = wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
     if not rc:
       raise RuntimeError("could not setup co-processor")
+    atexit.register(at_exit)
     print(wifi.at_version)
     if start_station:
       wifi.radio.start_station()
@@ -114,3 +116,17 @@ def connect():
       except ConnectionError as ex:
         print(f"{ex}")
     print(f"  connected: {wifi.radio.connected}")
+
+# --- exit processing   ------------------------------------------------------
+
+def at_exit():
+  """ reset co-processor to sane state """
+
+  from esp32at.transport import Transport
+
+  print("running at_exit() to reset co-processor to default state")
+  t = Transport()
+  if t.passthrough:
+    t.passthrough = False
+  if t.baudrate != 115200:
+    t.baudrate = 115200
