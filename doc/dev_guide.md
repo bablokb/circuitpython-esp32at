@@ -78,6 +78,10 @@ for optimal setup they can be tweaked:
   - `baudrate`: change baudrate temporarily. Format:
      `baudrate` or `"baudrate[,databits,stopbits,parity,flow-control]"`.
      The first alternative does not change any the remaining options.
+  - `pt_policy`: Set passthrough-policy. One of
+    `[transport.PT_OFF, transport.PT_AUTO, transport.PT_MANUAL]`. Defaults
+     to `transport.PT_OFF`. See section below for details.
+    `True`. The default AT firmware allows up to five parallel connections.
   - `debug`: If `True`, traces AT requests and responses. Defaults to `False`.
   - `ipv4_dns_defaults`: see section below
   - `country_settings`: see section below
@@ -128,6 +132,59 @@ initial baudrate, and if the call fails, a second time with the target
 baudrate. For this to work, you should leave `reset` at its default
 value of `RESET_ON_FAILURE`. See the method `init()` in
 `examples/helpers.py` for some boilerplate code.
+
+
+Multi-Connections Mode
+----------------------
+
+In the default setup, the ESP-AT firmware supports five concurrent
+connections.  This library uses multi-connections mode as the
+default. Single connection mode has no advantage during normal
+operation.
+
+There is one exception: "passthrough-mode" is only available in single
+connection mode. The library automatically switches to single
+connection mode if the passthrough-policy is `PT_AUTO` or `PT_MANUAL`.
+
+
+Passthrough-Mode and Passthrough-Policy
+---------------------------------------
+
+The AT-firmware allows to transparently link the underlying UART to a
+socket once a connection is established. This is called "passthrough
+mode".  This mode is more efficient because sending and receiving data
+does not need AT-command transactions anymore. The drawback is that
+this mode only works with a single connection thus this mode is not
+suitable if running as a server. But many client-applications only
+connect to one server at a time, so passthrough mode is a valid option
+for clients.
+
+For short-lived connections passthrough mode has some overhead. Mainly
+switching back to normal mode takes more than one second. In addition
+detecting a socket closed by the server takes the full timeout set for
+the socket. But for persistent connections or for connections that
+transfer a lot of data the application will benefit from passthrough
+mode. A prominent example is streaming of data.
+
+To use passthrough mode, either call `wifi.init()` with the keyword
+parameter `pt_policy=transport.PT_AUTO` or with
+`pt_policy=transport.PT_MANUAL`. With the first option the library
+will automatically switch to passthrough mode after connecting to a
+remote host and will stop passthrough mode once the socket is closed
+again. With `PT_MANUAL` the application program must switch manually,
+e.g.
+
+    from esp32at.transport import Transport
+    ...
+    # connect to AP and remote host
+    ...
+    t = Transport()
+    t.passthrough = True
+    ...
+    t.passthrough = False
+
+While passthrough mode is active, no other API-call to the library that
+uses the AT-firmware is possible.
 
 
 Persistent Settings
