@@ -373,7 +373,13 @@ class Transport:
       if b'ESP-ROM' in msg or b'\x1b[0;32m' in msg:
         raise RebootError("firmware boot in progress")
 
-      msg = str(msg,'utf-8')
+      try:
+        msg = str(msg,'utf-8')
+      except UnicodeError as ex:
+        if self.debug:
+          print(f"ignoring message with binary data")
+          start = time.monotonic()
+          continue
 
       # even in passive mode the AT-firmware sends unrelated messages
       # so check for messages with callback first
