@@ -32,6 +32,7 @@ secrets = {
   #'persist_settings': True,
   #'reconn_interval': 1,
   #'baudrate': 460800,
+  #'uart_buffer_size': 2048,
 
   # settings for test_sta.py
   'hostname': 'test',
