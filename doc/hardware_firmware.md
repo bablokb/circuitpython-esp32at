@@ -191,6 +191,41 @@ the country code (using `-cc DE`), and the RX/TX pins to
 GPIO20/GPIO21.
 
 
+Spotpear RP2040_ESP32C3
+-----------------------
+
+[This device](https://spotpear.com/index/product/detail/id/1355.html)
+has a Pico formfactor and pinout and uses an ESP32C3 instead of the
+CYW43-chip on the Pico-W as the WIFI-coprocessor.
+
+![](./spotpear_rp2040_esp32c3.jpg)
+
+The board works perfect and is ideal as a development platform for this
+library. Otherwise, it is just too expensive and it makes more sense
+to use a Pico-W instead.
+
+Besides the Pico-pins the device also breaks out a number of ESP32C3
+pins. Pico and ESP32C3 are connected via UART:
+
+  - RX: GPIO20 (connected to GP17 on the Pico)
+  - TX: GPIO21 (connected to GP16 on the Pico)
+  - RST: n.a.
+
+A dip switch allows to connect the USB-C either to the RP2040, or
+to the ESP32C3. This also connects the UART-pins to the USB-connector.
+
+Since the standard AT-command port pins are not connected to the RP2040,
+some changes are necessary using the at.py utility:
+
+    at.py modify_bin -un 0 -cc DE -tx 21 -rx 20 --cts_pin -1 --rts_pin -1 \
+             -in ESP32C3-AT-Factory-Firmware-v3.3.0.0.bin \
+             -o  spotpear-at-firmware-3.3.1.0.bin
+
+This command changes the AT-UART from UART1 to UART0 (using `-un 0`,
+the country code (using `-cc DE`), and the RX/TX pins to
+GPIO20/GPIO21.
+
+
 Challenger+RP2350 Wifi6/BLE5
 ----------------------------
 
