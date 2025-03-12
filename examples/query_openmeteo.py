@@ -52,11 +52,19 @@ url = "".join([
   f"latitude={secrets['METEO_LATITUDE']}",
   f"&longitude={secrets['METEO_LONGITUDE']}",
   "&hourly=relativehumidity_2m,",
-  "precipitation,pressure_msl,",
-  "&current_weather=true",
+  "precipitation,",
+  "pressure_msl",
+  "&current=temperature_2m,",
+  "precipitation,",
+  "weather_code,",
+  "wind_speed_10m,",
+  "wind_direction_10m",
   "&timezone=auto",
   "&forecast_days=1"
   ])
+
+if DEBUG:
+  print(f"{url=}")
 
 print(f"free memory before session: {gc.mem_free()}")
 pool = socketpool.SocketPool(wifi.radio)
@@ -67,7 +75,7 @@ print('\nts,T/met °C,H/met %rH,P/met hPa,WMO,Wspd km/s,Wdir °,R mm,send s,recv
 for i in range(ITERATIONS):
   try:
     start = time.monotonic()
-    response = requests.get(url,timeout=1)
+    response = requests.get(url,timeout=5)
     memfree = gc.mem_free()
     send_duration = time.monotonic() - start
   except RuntimeError as e:
@@ -78,11 +86,11 @@ for i in range(ITERATIONS):
   data = response.json()
   recv_duration = time.monotonic() - start
   # parse data
-  t    = data["current_weather"]["temperature"]
-  c    = data["current_weather"]["weathercode"]
-  ws   = data["current_weather"]["windspeed"]
-  wd   = data["current_weather"]["winddirection"]
-  ts   = data["current_weather"]["time"]              # 2022-01-01T12:00
+  t    = data["current"]["temperature_2m"]
+  c    = data["current"]["weather_code"]
+  ws   = data["current"]["wind_speed_10m"]
+  wd   = data["current"]["wind_direction_10m"]
+  ts   = data["current"]["time"]              # 2022-01-01T12:00
   hour = int(ts[11:13])
   h    = data["hourly"]["relativehumidity_2m"][hour]
   ps   = data["hourly"]["pressure_msl"][hour]
