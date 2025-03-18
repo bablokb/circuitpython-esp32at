@@ -126,12 +126,31 @@ restart the program from the REPL (or with a reset button), the
 co-processor usually does not reset and still expects the changed
 baudrate.
 
+The best solution is to register an `at_exit()`-method that resests
+the co-processor to the default baudrate:
+
+    import atexit
+    ...
+    def reset_uart():
+      from esp32at.transport import Transport
+      print("running at_exit() to reset co-processor to default state")
+      t = Transport()
+      if t.baudrate != 115200:
+        t.baudrate = 115200
+    ...
+    atexit.register(reset_uart)
+
+Another workaround is a hard reset of the co-processor. A third
+option is to call `wifi.init()` two times. The first time with the
+default initial baudrate, and if the call fails, a second time with
+the target baudrate. For this to work, you should leave `reset` at its
+default value of `RESET_ON_FAILURE`. See the method `init()` in
 One workaround is a hard reset of the co-processor. A second option is
 to call `wifi.init()` two times. The first time with the default
 initial baudrate, and if the call fails, a second time with the target
 baudrate. For this to work, you should leave `reset` at its default
 value of `RESET_ON_FAILURE`. See the method `init()` in
-`examples/helpers.py` for some boilerplate code.
+ `examples/helpers.py` for some boilerplate code.
 
 
 Multi-Connections Mode
@@ -183,8 +202,12 @@ e.g.
     ...
     t.passthrough = False
 
-While passthrough mode is active, no other API-call to the library that
-uses the AT-firmware is possible.
+While passthrough mode is active, no other API-call to the library
+that uses the AT-firmware is possible. This implies that redirects
+(HTTP-302) won't work in passthrough mode. The workaround is to handle
+redirects manually until the final URL is available (no
+'Location'-field in the HTTP-headers) and then switch manually to
+passthrough mode.
 
 
 Persistent Settings
