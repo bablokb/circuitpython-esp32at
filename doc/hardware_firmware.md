@@ -22,8 +22,9 @@ Hardware Overview
     ESP32 based boards are usually larger and more expensive than ESP32C3 boards.
   - ESP-01S: **Partly supported, not recommended**<br>
     These are very cheap and small boards, but they only support the operation
-    as a TCP/SSL/UDP client. Also, you have to build your own firmware
-    (see [ESP-01S Firmware Compile Guide](./at_firmware_compile_esp01s.md))
+    as a TCP/SSL/UDP client and TCP server (no SSL). Also, you have to build
+    your own firmware (see
+    [ESP-01S Firmware Compile Guide](./at_firmware_compile_esp01s.md))
 
 
 Firmware
@@ -365,10 +366,10 @@ Notes:
 ESP-01S
 -------
 
-A very common, but old board based on the ESP8266. Since it only supports
-client operations, it is not really recommended. But it will work fine
-for these use cases. Otherwise, replace the ESP-01S with the compatible Lilygo
-T-01-C3.
+A very common, but old board based on the ESP8266. Since it does not
+support SSL for server operation, it is not fully recommended. But it
+will work fine for most client and simple server use cases. Otherwise,
+replace the ESP-01S with the compatible Lilygo T-01-C3.
 
 ![](./esp01s.jpg)
 
