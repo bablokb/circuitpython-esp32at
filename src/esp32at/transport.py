@@ -377,7 +377,7 @@ class Transport:
         msg = str(msg,'utf-8')
       except UnicodeError as ex:
         if self.debug:
-          print(f"ignoring message with binary data")
+          print(f"ignoring message with binary data ({ex})")
           start = time.monotonic()
           continue
 
