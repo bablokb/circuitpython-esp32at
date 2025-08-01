@@ -45,7 +45,10 @@ class _Implementation:
     link_id = None) -> Union[namedtuple,Sequence[namedtuple]]:
     """ query connections """
 
-    if self._t.at_version_short[0] > 2:
+    if (self._t.at_version_short[0] > 2 or
+        self._t.at_version_short[1] > 2 or
+        self._t.at_version_short[2] > 1):
+      # available for >= 3.x.x.x and > 2.2.2.x
       cmd = "CIPSTATE"
       postfix  = "?"
       offset = 10
