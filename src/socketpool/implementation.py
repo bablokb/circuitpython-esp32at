@@ -268,8 +268,12 @@ class _Implementation:
   def start_server(self, port: int, conn_type: str) -> None:
     """ start TCP/SSL server on the given port """
 
-    reply = self._t.send_atcmd(
-      f'AT+CIPSERVER=1,{port},"{conn_type}",0',filter="^OK")
+    if self._t.at_version_short[0] > 2:
+      reply = self._t.send_atcmd(
+        f'AT+CIPSERVER=1,{port},"{conn_type}",0',filter="^OK")
+    else:
+      reply = self._t.send_atcmd(
+        f'AT+CIPSERVER=1,{port}',filter="^OK")
     if reply is None:
       raise RuntimeError("could not start server")
 
