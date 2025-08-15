@@ -19,6 +19,7 @@ the library:
   - `http_server.py`: simple HTTP-server processing GET, PUT, POST and DELETE
   - `ap_webserver.py`: AP with webserver using MDNS
   - `factory_reset.py`: reset configuration to factory settings
+  - `iperf3_client.py`: network performance test
 
 
 secrets.py
