@@ -33,7 +33,8 @@ Firmware
 Official, released firmware is available from
 <https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/Get_Started/Downloading_guide.html> (replace the 'esp32c3' in the link with your platform).
 You can also go to the 'Releases' page of the Espressif ESP-AT project:
-<https://github.com/espressif/esp-at/releases>.
+<https://github.com/espressif/esp-at/releases>. As of this writing,
+Espressif released v4.1.1.0 for most platforms (v2.3.0.0 for ESP8266).
 
 The downloaded zip-file has a folder called "factory", and in this
 folder is a combined binary firmware that has to be flashed to address 0x0.
@@ -54,7 +55,7 @@ definitely not work.
 
 Starting with v3.3.0.0, there are no major relevant differences
 between the firmware versions. The master branch (currently post
-4.0.0.0) did add some new functions regarding MDNS
+4.1.1.0) did add some new functions regarding MDNS
 service-announcement. This will be implemented as soon there is an
 officially released version available.
 

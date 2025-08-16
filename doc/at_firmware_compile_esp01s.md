@@ -5,9 +5,10 @@ Introduction
 ------------
 
 Espressif does not support the ESP8266 anymore in the master-branch of
-the project repo, but it *does* update the v2.2.0.0_esp8266 branch
+the project repo, but it *does* update the v2.3.0.0_esp8266 branch
 once in while. Therefore it can be useful to compile an up to date
-firmware even for old devices.
+firmware even for old devices. Note that the branch-name might change
+in case Espressif decides to change the supported version number.
 
 This document contains simple to use instructions for compiling your
 own firmware. You need nothing except a Github-account and about a
@@ -27,7 +28,7 @@ Steps
 -----
 
   1. Fork the repo <https://github.com/espressif/esp-at>
-  2. Open your fork. Create a branch from release/v2.2.0.0_esp8266:
+  2. Open your fork. Create a branch from release/v2.3.0.0_esp8266:
      push "Branches" right to "master" and then the green button
      top right "New branch". Be sure to select the correct source (repo
      and branch).
