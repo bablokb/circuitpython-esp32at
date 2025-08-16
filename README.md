@@ -56,10 +56,6 @@ From an application point of view the following features are available:
   - streaming: see [implementation notes](./doc/impl_notes.md) for differences
     to native wifi
 
-Work in progress:
-
-  - streaming: basically works, but not with MP3Decoder
-
 Not implemented (see also the [implementation notes](./doc/impl_notes.md):
 
   - web-workflow: this *requires* native wifi
