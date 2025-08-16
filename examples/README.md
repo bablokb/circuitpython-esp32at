@@ -20,6 +20,7 @@ the library:
   - `ap_webserver.py`: AP with webserver using MDNS
   - `factory_reset.py`: reset configuration to factory settings
   - `iperf3_client.py`: network performance test
+  - `stream.py`: stream data using passthrough-mode
 
 
 secrets.py
