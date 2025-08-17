@@ -41,10 +41,11 @@ def _get_init_args():
 
 # --- wait for connected console   -------------------------------------------
 
-def wait_for_console():
+def wait_for_console(duration=5):
   """ wait for serial connection """
-  while not supervisor.runtime.serial_connected:
-    time.sleep(1)
+  elapsed = time.monotonic() + duration
+  while (not supervisor.runtime.serial_connected and
+             time.monotonic() < elapsed):
   print(f"running on board {board.board_id}")
 
 # --- initialize co-processor   ----------------------------------------------
