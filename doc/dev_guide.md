@@ -207,7 +207,8 @@ that uses the AT-firmware is possible. This implies that redirects
 (HTTP-302) won't work in passthrough mode. The workaround is to handle
 redirects manually until the final URL is available (no
 'Location'-field in the HTTP-headers) and then switch manually to
-passthrough mode.
+passthrough mode. See [stream.py](../examples/stream.py) for an example
+implementation.
 
 
 Persistent Settings
