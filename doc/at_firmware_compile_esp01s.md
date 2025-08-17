@@ -86,7 +86,7 @@ option "dout" to make the device work:
           write_flash -z --flash_mode dout --flash_freq 80m 0x0 \
              /path/to/factory_ESP8266_1MB.bin
 
-Maybe you also need to set the flash-frequency to to 40m.
+Maybe you also need to set the flash-frequency to 40m.
 
 
 Testing
