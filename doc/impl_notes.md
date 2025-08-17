@@ -28,3 +28,15 @@ MDNS service discovery is not implemented due to missing support in
 the AT command set.
 
 Web workflow is not supported, since it needs native wifi.
+
+
+Streaming
+---------
+
+The AT-command interface does not allow direct access to the socket
+in stream mode. But passthrough-mode allows direct access to the UART,
+so reading data does no longer need individual AT-transactions. See
+the [Developer's Guide](./dev_guide.md) for more details.
+
+Direct MP3 playback of streamed data does not work. This is a
+limitation of the MP3Decoder implementation.
