@@ -33,7 +33,7 @@ Steps
 -----
 
   1. Fork the repo <https://github.com/espressif/esp-at>
-  2. Create a branch from release/3.3.0.0 (or what ever you need)
+  2. Create a branch from release/4.1.0.0 (or what ever you need)
   3. Checkout the branch into a codespace. Use the navigation
      - "<> Code" (green button)
      - select the right tab 'Codespaces'
