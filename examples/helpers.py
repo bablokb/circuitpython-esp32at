@@ -46,6 +46,7 @@ def wait_for_console(duration=5):
   elapsed = time.monotonic() + duration
   while (not supervisor.runtime.serial_connected and
              time.monotonic() < elapsed):
+    time.sleep(1)
   print(f"running on board {board.board_id}")
 
 # --- initialize co-processor   ----------------------------------------------
