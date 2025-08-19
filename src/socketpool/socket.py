@@ -165,7 +165,7 @@ class Socket:
     link_id = self._socketpool.get_link_id(self)
 
     success = self._impl.start_connection(
-      link_id,
+      link_id, self._timeout,
       address[0],address[1],self._conn_type,_remote)
 
     if not success:

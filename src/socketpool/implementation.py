@@ -84,6 +84,7 @@ class _Implementation:
   # pylint: disable=too-many-arguments
   def start_connection(self,
                        link_id: int,
+                       timeout: int,
                        host:str,port:int,
                        conn_type: str,
                        address: Tuple[str,int] = None) -> bool:
@@ -113,7 +114,7 @@ class _Implementation:
     if reply is None:
       raise RuntimeError("could not set/clear server name indication (SNI)")
 
-    # parameters: connection-type, remote host, remote port
+    # parameters: connection-type, remote host, remote port [,,, timeout]
     params = f'{lid_parm}"{conn_type}","{host}",{port}'
     if address:
       if not "UDP" in conn_type:
@@ -123,7 +124,15 @@ class _Implementation:
       #          local: port,2,host (order is different than above)
       params += f',{address[1]},2,"{address[0]}"'
 
-    # CIPSTART seems to timeout after 15s
+    if timeout and (self._t.at_version_short[0] > 3 and
+                    self._t.at_version_short[1] > 0):
+      # available for >= 4.1.0.0
+      if "UDP" in conn_type:
+        params += f',{1000*timeout}'
+      else:
+        params += f',,,{1000*timeout}'
+
+    # without timeout, CIPSTART seems to fail after about 15s
     reply = self._t.send_atcmd(
       f'AT+CIPSTART={params}',filter="^OK")
     return not reply is None
