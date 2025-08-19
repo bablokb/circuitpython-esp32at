@@ -142,10 +142,8 @@ class Transport:
     self.reconn_interval = reconn_interval
     self.pt_policy = pt_policy
 
-    if reset_pin:
-      self._reset_pin = DigitalInOut(reset_pin)
-      self._reset_pin.switch_to_output(True)
-    else:
+    self._reset_pin = reset_pin
+    if not reset_pin:
       hard_reset = RESET_NEVER
 
     # check if a reset is requested
@@ -289,12 +287,13 @@ class Transport:
     self.send_atcmd("AT+RESTORE", timeout=5)
 
   def hard_reset(self) -> None:
-    """Perform a hardware reset by toggling the reset pin, if it was
-    defined in the initialization of this object"""
+    """Perform a hardware reset by toggling the reset pin"""
     if self._reset_pin:
-      self._reset_pin.value = False
-      time.sleep(0.1)
-      self._reset_pin.value = True
+      with DigitalInOut(self._reset_pin) as reset_pin:
+        reset_pin.switch_to_output(True)
+        reset_pin.value = False
+        time.sleep(0.1)
+        reset_pin.value = True
       if self.debug:
         print("waiting 3 seconds for hard reset")
       time.sleep(3)  # give it a few seconds to wake up
