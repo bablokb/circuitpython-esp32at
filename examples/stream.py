@@ -34,13 +34,14 @@ from pins import *
 
 # local configuration
 DEBUG  = False
-DURATION = 60
-BUF_SIZE = 2920
+DURATION = 30
+BUF_SIZE = 1024
 
 # Get wifi details and more from a secrets.py file
 try:
   from secrets import secrets
   secrets['baudrate']  = 921600            # for higher throughput
+  #secrets['baudrate']  = 1500000
   secrets['uart_buffer_size'] = max(2*BUF_SIZE,16384)
 except ImportError:
   print("WiFi secrets are kept in secrets.py, please add them there!")
@@ -117,13 +118,13 @@ with requests.get(url, timeout=10, allow_redirects=True,
   end = time.monotonic() + DURATION
   while time.monotonic() < end:
     try:
-      count = stream.readinto(buf)
-      if count:
-        outfile.write(buf)
-        total += count
-        print(f"saved {count}/{total} bytes to {fname}")
-      else:
-        print("oops: no bytes received")
+      if stream.in_waiting < BUF_SIZE:
+        continue
+      chunk = stream.read(stream.in_waiting)
+      count = len(chunk)
+      outfile.write(chunk)
+      total += count
+      print(f"saved {count}/{total} bytes to {fname}")
     except Exception as ex:
       print(f"exception during download: {ex}")
       break
