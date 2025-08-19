@@ -138,10 +138,13 @@ class Server:
 
     cmd = f'AT+MDNS=1,"{self._hostname}","{service_type}",{port}'
 
-    # this is currently only available in the master-branch:
-    #cmd += f',"{self._instance_name}","{protocol}",{len(txt_records)}'
-    #for i,value in enumerate(txt_records):
-    #  cmd += f',"rec{i}","{value}"'
+    if (self._transport.at_version_short[0] > 3 and
+        self._transport.at_version_short[1] > 0):
+      # available for >= 4.1.0.0
+
+      cmd += f',"{self._instance_name}","{protocol}",{len(txt_records)}'
+      for i,value in enumerate(txt_records):
+        cmd += f',"rec{i}","{value}"'
 
     # disable MDNS first
     try:
