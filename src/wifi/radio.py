@@ -511,7 +511,8 @@ class Radio:
         filter="^\+CWJAP:")
       timeout -= time.monotonic() - start
     except Exception as ex:
-      raise ConnectionError(f"{ex}") from ex
+      # CWJAP is special, it might not return anything if connection is slow
+      reply = ""
 
     # clear buffered values
     self._ipv4_address = None
@@ -525,6 +526,8 @@ class Radio:
         self._conn_state != Radio._CONNECT_STATE_CONNECTED and
         time.monotonic() - start < timeout):
         self._transport.read_atmsg(passive=False)
+      if self._conn_state != Radio._CONNECT_STATE_CONNECTED:
+        raise ConnectionError(f"connection failed (timed-out)")
       return
 
     # otherwise, there is an error
