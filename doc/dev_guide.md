@@ -169,6 +169,9 @@ connection mode if the passthrough-policy is `PT_AUTO` or `PT_MANUAL`.
 Passthrough-Mode and Passthrough-Policy
 ---------------------------------------
 
+**Passthrough-Mode is highly experimental. It seems that this mode
+results in corrupted data. This is in clarification with Espressif.**
+
 The AT-firmware allows to transparently link the underlying UART to a
 socket once a connection is established. This is called "passthrough
 mode".  This mode is more efficient because sending and receiving data
