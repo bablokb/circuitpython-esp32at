@@ -117,7 +117,7 @@ def connect():
                            )
         break
       except ConnectionError as ex:
-        print(f"{ex}")
+        print(f"ConnectionError: {ex}")
     print(f"  connected: {wifi.radio.connected}")
 
 # --- exit processing   ------------------------------------------------------
