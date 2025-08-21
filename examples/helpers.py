@@ -130,6 +130,8 @@ def at_exit():
   print("running at_exit() to reset co-processor to default state")
   t = Transport()
   if t.passthrough:
+    print("  deactivating passthrough mode")
     t.passthrough = False
   if t.baudrate != 115200:
+    print("  reset baudrate to default")
     t.baudrate = 115200
