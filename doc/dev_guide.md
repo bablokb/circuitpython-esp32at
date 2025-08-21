@@ -140,11 +140,6 @@ the co-processor to the default baudrate:
     ...
     atexit.register(reset_uart)
 
-Another workaround is a hard reset of the co-processor. A third
-option is to call `wifi.init()` two times. The first time with the
-default initial baudrate, and if the call fails, a second time with
-the target baudrate. For this to work, you should leave `reset` at its
-default value of `RESET_ON_FAILURE`. See the method `init()` in
 One workaround is a hard reset of the co-processor. A second option is
 to call `wifi.init()` two times. The first time with the default
 initial baudrate, and if the call fails, a second time with the target
