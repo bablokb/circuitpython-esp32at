@@ -12,13 +12,14 @@
 
 import board
 
-# defaults (for Pico-family)
-PINS_SD = [
-  board.GP10,  # CLK
-  board.GP11,  # MOSI
-  board.GP12,  # MISO
-  board.GP9,   # CS
-]
+if 'pico' in board.board_id:
+  # defaults (for Pico-family)
+  PINS_SD = [
+    board.GP10,  # CLK
+    board.GP11,  # MOSI
+    board.GP12,  # MISO
+    board.GP9,   # CS
+  ]
 
 # use defaults, depending on board
 if board.board_id == "raspberry_pi_pico":
