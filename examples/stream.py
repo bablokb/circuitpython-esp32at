@@ -17,6 +17,7 @@
 #
 # -------------------------------------------------------------------------
 
+import atexit
 import busio
 import sdcardio
 import socketpool
@@ -28,13 +29,14 @@ import gc
 
 import adafruit_requests
 
-from esp32at.transport import Transport, PT_AUTO
+if hasattr(wifi,"at_version"):
+  from esp32at.transport import Transport, PT_AUTO
 import helpers
 from pins import *
 
 # local configuration
 DEBUG  = False
-DURATION = 30
+DURATION = 60
 BUF_SIZE = 1024
 
 # Get wifi details and more from a secrets.py file
@@ -58,7 +60,16 @@ def mount_sd():
   sdcard = sdcardio.SDCard(spi,PINS_SD[3],1_000_000)   # CS
   vfs    = storage.VfsFat(sdcard)
   storage.mount(vfs, "/sd")
+  atexit.register(at_exit,sdcard)
   print("SD-card mounted successfully")
+
+# --- exit processing   -------------------------------------------------------
+
+def at_exit(sdcard):
+  """ cleanup """
+  print("at_exit: cleanup of sd-mount")
+  storage.umount("/sd")
+  sdcard.deinit()
 
 # --- setup streaming   -------------------------------------------------------
 
@@ -100,7 +111,8 @@ while True:
     break
 
 # now switch passthrough-policy
-Transport().pt_policy = PT_AUTO
+if hasattr(wifi,"at_version"):
+  Transport().pt_policy = PT_AUTO
 
 print(f"downloading {DURATION}s from (final) url: {url}")
 gc.collect()
@@ -110,21 +122,19 @@ with requests.get(url, timeout=10, allow_redirects=True,
   for header,value in response.headers.items():
     print(f"  {header}: {value}")
 
-  stream = response.socket.stream  # this is an object of type UART
-  print(f"starting download via {stream}...")
-  stream.reset_input_buffer()
+  print(f"starting download via...")
 
   total = 0
   end = time.monotonic() + DURATION
   while time.monotonic() < end:
     try:
-      if stream.in_waiting < BUF_SIZE:
-        continue
-      chunk = stream.read(stream.in_waiting)
-      count = len(chunk)
-      outfile.write(chunk)
-      total += count
-      print(f"saved {count}/{total} bytes to {fname}")
+     count = response.socket.recv_into(buf)
+     if count:
+       outfile.write(buf[:count])
+       total += count
+       print(f"saved {count}/{total} bytes to {fname}")
+     else:
+       print("oops: no bytes received")
     except Exception as ex:
       print(f"exception during download: {ex}")
       break
@@ -132,7 +142,7 @@ with requests.get(url, timeout=10, allow_redirects=True,
       print("download interrupted!")
       break
   print("stopped download")
-  print(f"{total} bytes written to {fname}")
+  print(f"{total} bytes written to {fname} ({8*total/1024/DURATION}kb/s)")
   response.close()
 
 print(f"closing {fname}")
