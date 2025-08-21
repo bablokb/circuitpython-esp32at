@@ -47,5 +47,6 @@ secrets = {
   'udp_port': 6500,                                 # udp_client.py
   'udp_lport': 6600,                                # udp_receiver.py
   'METEO_LATITUDE': 53.1234,                        # query_openmeteo.py
-  'METEO_LONGITUDE': 14.3210                        # query_openmeteo.py
+  'METEO_LONGITUDE': 14.3210,                       # query_openmeteo.py
+  'mp3_url': 'http://wdr-wdr3-live.icecast.wdr.de/wdr/wdr3/live/mp3/64/stream.mp3',
   }
