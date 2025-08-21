@@ -81,7 +81,6 @@ for optimal setup they can be tweaked:
   - `pt_policy`: Set passthrough-policy. One of
     `[transport.PT_OFF, transport.PT_AUTO, transport.PT_MANUAL]`. Defaults
      to `transport.PT_OFF`. See section below for details.
-    `True`. The default AT firmware allows up to five parallel connections.
   - `debug`: If `True`, traces AT requests and responses. Defaults to `False`.
   - `ipv4_dns_defaults`: see section below
   - `country_settings`: see section below
