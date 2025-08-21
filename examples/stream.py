@@ -130,7 +130,7 @@ with requests.get(url, timeout=10, allow_redirects=True,
     try:
      count = response.socket.recv_into(buf)
      if count:
-       outfile.write(buf[:count])
+       outfile.write(buf[:count])    # don't flush: too slow
        total += count
        print(f"saved {count}/{total} bytes to {fname}")
      else:
