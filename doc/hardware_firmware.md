@@ -3,10 +3,9 @@ Support Hardware and Firmware
 
 Espressif maintains their ESP-AT project currently for a number of
 hardware platforms, mainly ESP32C2, ESP32C3, ESP32C6, ESP32-S2 and
-ESP32. Support for older hardware (ESP8266) is very limited and
-the available firmware source is only maintained up to version
-2.2.x.x. Pre-built firmware is also not available. As a consequence,
-not every platform is recommended.
+ESP32. Support for older hardware (ESP8266) is limited and the
+available firmware source is only maintained up to version
+2.x.x.x. (currently 2.3.0.0).
 
 
 Hardware Overview
@@ -20,7 +19,7 @@ Hardware Overview
   - ESP32-S2: **Fully supported, recommended, second choice**.<br>
   - ESP32: **Fully supported, not recommended**.<br>
     ESP32 based boards are usually larger and more expensive than ESP32C3 boards.
-  - ESP-01S: **Partly supported, not recommended**<br>
+  - ESP-01S: **Partly supported, not fully recommended**<br>
     These are very cheap and small boards, but they only support the operation
     as a TCP/SSL/UDP client and TCP server (no SSL). Also, you have to build
     your own firmware (see
@@ -33,8 +32,11 @@ Firmware
 Official, released firmware is available from
 <https://docs.espressif.com/projects/esp-at/en/latest/esp32c3/Get_Started/Downloading_guide.html> (replace the 'esp32c3' in the link with your platform).
 You can also go to the 'Releases' page of the Espressif ESP-AT project:
-<https://github.com/espressif/esp-at/releases>. As of this writing,
-Espressif released v4.1.1.0 for most platforms (v2.3.0.0 for ESP8266).
+<https://github.com/espressif/esp-at/releases>.
+
+As of this writing, Espressif released v4.1.1.0 for most platforms
+(v2.3.0.0 for ESP8266). Some features added with v4.1.0.0 are supported
+starting with version 1.2.0 of the circuitpython-esp32at library.
 
 The downloaded zip-file has a folder called "factory", and in this
 folder is a combined binary firmware that has to be flashed to address 0x0.
@@ -45,19 +47,19 @@ Flashing the firmware is a one-time task and documented in
 The modules of this repository have been tested with the following
 firmware versions:
 
-  - v3.3.0.0 (ESP32C3)
+  - v4.1.1.0 (ESP32C3)
   - v3.4.0.0 (ESP32, ESP32C6, ESP32-S2)
   - v4.0.0.0 (ESP32C6)
-  - v2.2.2.0 (ESP8266)
+  - v2.3.0.0 (ESP8266)
 
 Older versions (1.x.x, often pre-installed on ESP8266-devices) will
 definitely not work.
 
 Starting with v3.3.0.0, there are no major relevant differences
-between the firmware versions. The master branch (currently post
-4.1.1.0) did add some new functions regarding MDNS
-service-announcement. This will be implemented as soon there is an
-officially released version available.
+between the firmware versions, but new features and options are
+added. **Since Espressif tries to be backward compatible, it is
+recommended to run the most current release of the AT-firmware
+available for the given platform.**
 
 The downladed factory firmware can be changed with the [at.py
 utility](https://github.com/espressif/esp-at/blob/master/tools/at.py)
@@ -209,8 +211,8 @@ to use a Pico-W instead.
 Besides the Pico-pins the device also breaks out a number of ESP32C3
 pins. Pico and ESP32C3 are connected via UART:
 
-  - RX: GPIO20 (connected to GP17 on the Pico)
-  - TX: GPIO21 (connected to GP16 on the Pico)
+  - RX: GPIO20 (connected to GP16 on the Pico)
+  - TX: GPIO21 (connected to GP17 on the Pico)
   - RST: n.a.
 
 A dip switch allows to connect the USB-C either to the RP2040, or
@@ -367,8 +369,14 @@ Notes:
 ESP-01S
 -------
 
-A very common, but old board based on the ESP8266. Since it does not
-support SSL for server operation, it is not fully recommended. But it
+A very common, but old board based on the ESP8266. There are two restrictions
+with the old v2.x.x.x ESP-AT-version:
+
+  - the AT-firmware does not support SSL-mode for servers
+  - wifi cannot be disabled (`wifi.radio.enabled` always returns true and
+    the setter is a noop)
+
+Because of these restrictions, the device is not fully recommended. But it
 will work fine for most client and simple server use cases. Otherwise,
 replace the ESP-01S with the compatible Lilygo T-01-C3.
 
@@ -390,6 +398,6 @@ Pins (2x4 header):
   - CH_PD: pin 6
   - GPIO0: pin 3 (-> onboard LED, active low)
 
-Espressif does not release a pre-built firmware for 8266-devices
+Espressif does not release a pre-built firmware for ESP8266-devices
 anymore, so you have to build your own firmware. See [ESP-01S
 Firmware Compile Guide](./at_firmware_compile_esp01s.md) for details.
