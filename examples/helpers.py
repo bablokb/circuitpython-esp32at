@@ -56,9 +56,12 @@ def init(DEBUG=False,start_station=True):
 
   if hasattr(wifi,"at_version"):
     print("initializing co-processor with default uart-baudrate")
-    print(f"using TX: {PIN_TX}, RX: {PIN_RX}")
+    print(f"using  TX: {PIN_TX},   RX: {PIN_RX}")
+    print(f"using RTS: {PIN_RTS}, CTS: {PIN_CTS}")
     rbs = getattr(secrets,"uart_buffer_size",2048)
-    uart = busio.UART(PIN_TX, PIN_RX, baudrate=115200, receiver_buffer_size=rbs)
+    uart = busio.UART(PIN_TX, PIN_RX,
+                      rts=PIN_RTS, cts=PIN_CTS,
+                      baudrate=115200, receiver_buffer_size=rbs)
     kwargs = _get_init_args()
     rc = wifi.init(uart,debug=DEBUG,reset_pin=PIN_RST,**kwargs)
     if not rc and 'baudrate' in kwargs:
