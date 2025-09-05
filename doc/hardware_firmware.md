@@ -47,7 +47,7 @@ Flashing the firmware is a one-time task and documented in
 The modules of this repository have been tested with the following
 firmware versions:
 
-  - v4.1.1.0 (ESP32C3)
+  - v4.1.1.0 (ESP32C3, ESP32C6, ESP32)
   - v3.4.0.0 (ESP32, ESP32C6, ESP32-S2)
   - v4.0.0.0 (ESP32C6)
   - v2.3.0.0 (ESP8266)
@@ -61,7 +61,7 @@ added. **Since Espressif tries to be backward compatible, it is
 recommended to run the most current release of the AT-firmware
 available for the given platform.**
 
-The downladed factory firmware can be changed with the [at.py
+The downloaded factory firmware can be changed with the [at.py
 utility](https://github.com/espressif/esp-at/blob/master/tools/at.py)
 provided by Espressif. This is useful for changing settings like the
 default pins or the country code used by the firmware. You will find
@@ -135,6 +135,8 @@ Pins:
   - RX: GPIO6 (labeled '6')
   - TX: GPIO7 (labeled '7')
   - RST: n.a.
+  - RTS: GPIO4 (optional, connect to CTS on MCU)
+  - CTS: GPIO5 (optional, connect to RTS on MCU)
 
 A small support PCB from <https://github.com/bablokb/pcb-esp32c3-adapter>
 allows to connect to the SuperMini using a Stemma/Qt-cable. The power pin
@@ -184,7 +186,7 @@ Pins (2x4 header):
   - IO9: pin 3
 
 Because the standard AT-command port pins are not available on the
-device, some changes are necessary using the at.py utility:
+device, some changes are necessary using the `at.py` utility:
 
     at.py modify_bin -un 0 -cc DE -tx 21 -rx 20 --cts_pin -1 --rts_pin -1 \
              -in ESP32C3-AT-Factory-Firmware-v3.3.0.0.bin \
@@ -204,7 +206,7 @@ CYW43-chip on the Pico-W as the WIFI-coprocessor.
 
 ![](./spotpear_rp2040_esp32c3.jpg)
 
-The board works perfect and is ideal as a development platform for this
+The board works perfectly and is ideal as a development platform for this
 library. Otherwise, it is just too expensive and it makes more sense
 to use a Pico-W instead.
 
@@ -245,8 +247,8 @@ ESP32C6 is already installed.
 
 For TX, RX and RST the `board`-module defines suitable pins:
 
-  - RX:  `board.ESP_RX`
-  - TX:  `board.ESP_TX`
+  - RX:  GPIO17 (connected to `board.ESP_TX`)
+  - TX:  GPIO16 (connected to `board.ESP_RX`)
   - RST: `board.ESP_RESET`
 
 
