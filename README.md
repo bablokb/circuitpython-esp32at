@@ -24,7 +24,8 @@ A prerequisite for using *circuitpython-esp32at* is an ESP device
 running the AT-firmware. The details are covered in the document
 [Hardware and Firmware](./doc/hardware_firmware.md). The co-processor
 must be connected to the MCU running CircuitPython with a dedicated
-UART-connection.
+UART-connection (at least TX/RX). Additional pins for hardware flow
+control, (i.e. RTS/CTS) are optional.
 
 
 Status
