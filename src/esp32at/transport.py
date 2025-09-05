@@ -613,7 +613,7 @@ class Transport:
         raise RuntimeError("Could not enter passthrough-mode")
 
       reply = self.send_atcmd(
-        'AT+TRANSINTVL=0',filter="^OK")
+        'AT+TRANSINTVL=20',filter="^OK")
       if not reply:
         raise RuntimeError("Could not set transfer-interval")
 
