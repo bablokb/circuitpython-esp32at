@@ -289,6 +289,44 @@ Pins:
   - RST: pin 3 on header left of ESP-chip
 
 
+Adafruit Fruit Jam
+------------------
+
+The [Fruit Jam](https://www.adafruit.com/product/6200) combines a RP2350B
+with an Espressif ESP32-C6-Mini.
+
+![](https://learn.adafruit.com/assets/138618) 
+
+Pins:
+
+  - RX: GPIO17 (connected to `board.TX` i.e. `GPIO8`)
+  - TX: GPIO16 (connected to `board.RX` i.e. `GPIO9`)
+  - RST: EN (connected to `board.ESP_RESET` i.e. `GPIO22`)
+
+Additional connections:
+
+  - GPIO22 (connected to `board.SCK` i.e. `GPIO30`)
+  - GPIO21 (connected to `board.MOSI` i.e. `GPIO31`)
+  - GPIO6¹ (connected to `board.MISO` i.e. `GPIO28`)
+  - GPIO7  (connected to `board.ESP_CS` i.e. `GPIO46`)
+  - GPIO9² (connected to `board.ESP_IRQ` i.e. `GPIO23`)
+  - GPIO18 (connected to `board.ESP_BUSY` i.e. `GPIO3`)
+
+¹active only when ESP_CS is pulled low
+²with 10K pullup, shared with I2S
+
+Since the standard AT-command port pins are not connected to the RP2350B,
+some changes are necessary using the at.py utility:
+
+    at.py modify_bin -un 0 -cc DE -tx 16 -rx 17 --cts_pin -1 --rts_pin -1 \
+             -in ESP32C6-AT-Factory-Firmware-v4.1.1.0.bin \
+             -o  fruit_jam-at-firmware-4.1.1.0.bin
+
+This command changes the AT-UART from UART1 to UART0 (using `-un 0`,
+the country code (using `-cc DE`), and the RX/TX pins to
+GPIO17/GPIO16.
+
+
 Wemos Lolin S2-Mini
 -------------------
 
