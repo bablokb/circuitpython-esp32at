@@ -406,6 +406,50 @@ Notes:
   - The board supports a single 1x4 header for IO17/IO16/GND/VCC (see image).
 
 
+Pimoroni Pico Wireless-Pack
+---------------------------
+
+The "Pico Wireless-Pack" is discontinued. It plugs directly into the back
+of the Pico, blocking all pins. Besides an ESP32-WROOM-32 it has a SD-card
+reader, a button and a RGB-LED on board.
+
+The Wireless-Pack is shipped with an old Nina-FW (same as Adafruit Airlifts).
+It works with the factory firmware for the ESP32-WROOM-32, but the AT-pins
+have to be changed.
+
+Pins:
+
+  - RX: GPIO3 (connected to `board.GP8`)
+  - TX: GPIO1 (connected to `board.GP9`)
+  - EN: (connected to `board.GP11`)
+
+Additional connections:
+
+  - GPIO0 (connected to `board.GP2`)
+  - GPIO5 (connected to `board.GP7`)¹
+  - GPIO14 (connected to `board.GP19`)
+  - GPIO18 (connected to `board.GP18`)
+  - GPIO23 (connected to `board.GP16`)²
+  - GPIO33 (connected to `board.GP10`)
+
+¹with 10K pullup ("ESP_CS")
+²active only when `board.GP7` is pulled low ("ESP_MISO")
+
+To flash the Wireless-Pack, you need a special RP2040/RP2350 firmware,
+e.g. <https://github.com/bablokb/pico-esp-programmer/releases/download/1.0.0/esp-programmer-pim-wireless-pack.uf2>.
+
+Since the standard AT-command port pins are not connected to the RP2xxx,
+some changes are necessary using the at.py utility:
+
+    at.py modify_bin -un 0 -cc DE -tx 1 -rx 3 --cts_pin -1 --rts_pin -1 \
+             -in WROOM-32-AT-Factory-v4.1.1.0.bin \
+             -o  wireless-pack-at-firmware-4.1.1.0.bin
+
+This command changes the AT-UART from UART1 to UART0 (using `-un 0`,
+the country code (using `-cc DE`), and the RX/TX pins to
+GPIO3/GPIO1.
+
+
 ESP-01S
 -------
 
