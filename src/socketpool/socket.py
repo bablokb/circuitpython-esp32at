@@ -335,7 +335,7 @@ class Socket:
     mv_buffer  = memoryview(buffer)
     while bytes_sent < bytes_to_send:
       t_len = min(bytes_to_send-bytes_sent,8192)
-      t_buffer = mv_buffer[bytes_sent:bytes_sent+t_len-1]
+      t_buffer = mv_buffer[bytes_sent:bytes_sent+t_len]
       bytes_sent += self.send(t_buffer)
 
   def sendto(self,
