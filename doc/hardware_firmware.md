@@ -406,6 +406,66 @@ Notes:
   - The board supports a single 1x4 header for IO17/IO16/GND/VCC (see image).
 
 
+Adafruit PyPortal
+-----------------
+
+The [PyPortal](https://cdn-shop.adafruit.com/970x728/4116-00.jpeg) is
+an intelligent display with a SAMD51 microprocessor and an ESP32-WROOM-32
+co-processor.
+
+The co-processor is loaded with Adafruit's Nina-FW and provides basic
+wifi connectivity. The two reasons to switch to the AT-firmware are:
+
+  - PyPortal's wifi-implementation does not use core CircuitPython APIs,
+    makeing it hard to write portable code that runs on various platforms.
+  - The Nina-FW does not support server-mode.
+
+Pins:
+  - RX: GPIO3 (connected to `board.ESP_TX` i.e. `PB12`)
+  - TX: GPIO1 (connected to `board.ESP_RX` i.e. `PB13`)
+  - EN: (pulled low (!!), connected to `board.ESP_RESET` i.e. `PB17`)
+
+**Since the EN-pin is pulled low, you need to drive it high to enable the
+co-processor:**
+
+    import board
+    import digitalio
+    enable = digitalio.DigitalInOut(board.ESP_RESET)
+    enable.switch_to_output(True)
+
+In fact the pin is mislabeled on SAMD51-side, it should be `board.ESP_EN`
+instead.
+
+Additional connections:
+
+  - GPIO0  (connected to `board.ESP_GPIO0` i.e. `PB15`)
+  - GPIO5  (connected to `board.ESP_CS` i.e. `PB14`)²
+  - GPIO14 (connected to `board.MOSI` i.e. `PA12`)
+  - GPIO18 (connected to `board.SCK` i.e. `PA13`)
+  - GPIO19 (connected to `board.ESP_RTS` i.e. `PA15`)
+  - GPIO23 (connected to `board.MISO` i.e. `PA14`)¹
+  - GPIO33 (connected to `board.ESP_BUSY` i.e. `PB16`)
+
+¹active only when ESP_CS is pulled low
+²with 10K pullup
+
+Since the standard AT-command port pins are not connected to the SAMD51,
+some changes are necessary using the at.py utility:
+
+    at.py modify_bin -un 0 -cc DE -tx 1 -rx 3 --cts_pin -1 --rts_pin -1 \
+             -in WROOM-32-AT-Factory-v4.1.1.0.bin \
+             -o  pyportal-at-firmware-4.1.1.0.bin
+
+This command changes the AT-UART from UART1 to UART0 (using `-un 0`,
+the country code (using `-cc DE`), and the RX/TX pins to
+GPIO3/GPIO1.
+
+To flash the PyPortal, you need a special firmware from Adafruit:
+<https://cdn-learn.adafruit.com/assets/assets/000/123/157/original/PyPortal_M4_ESP_32_Passthrough_TinyUSB_2023_07_30.uf2>. Follow
+the instruction given by
+<https://learn.adafruit.com/upgrading-esp32-firmware/upgrade-all-in-one-esp32-airlift-firmware>.
+
+
 Pimoroni Pico Wireless-Pack
 ---------------------------
 
@@ -435,9 +495,6 @@ Additional connections:
 ¹with 10K pullup ("ESP_CS")
 ²active only when `board.GP7` is pulled low ("ESP_MISO")
 
-To flash the Wireless-Pack, you need a special RP2040/RP2350 firmware,
-e.g. <https://github.com/bablokb/pico-esp-programmer/releases/download/1.0.0/esp-programmer-pim-wireless-pack.uf2>.
-
 Since the standard AT-command port pins are not connected to the RP2xxx,
 some changes are necessary using the at.py utility:
 
@@ -448,6 +505,9 @@ some changes are necessary using the at.py utility:
 This command changes the AT-UART from UART1 to UART0 (using `-un 0`,
 the country code (using `-cc DE`), and the RX/TX pins to
 GPIO3/GPIO1.
+
+To flash the Wireless-Pack, you need a special RP2040/RP2350 firmware,
+e.g. <https://github.com/bablokb/pico-esp-programmer/releases/download/1.0.0/esp-programmer-pim-wireless-pack.uf2>.
 
 
 ESP-01S
