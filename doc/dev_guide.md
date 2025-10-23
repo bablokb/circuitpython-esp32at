@@ -68,10 +68,10 @@ for optimal setup they can be tweaked:
     that not even ERROR is returned). Default: `1`.
   - `reset`: see section below.
   - `hard_reset`: see section below.
-  - `reset_pin`: GPIO (`microcontroller.Pin`) connected to
-    RESET of the ESP32Cx.
+  - `reset_pin`: GPIO (`microcontroller.Pin` or `DigitalInOut`) connected to
+    RESET/EN of the ESP32xx.
   - `persist_settings`: If `True` (default), settings are saved to
-    non-volatile storage of the ESP32Cx. See the AT User's Guide for
+    non-volatile storage of the ESP32xx. See the AT User's Guide for
     a list of relevant settings. See also the discussion below.
   - `reconn_interval`: Value of the (automatic) reconnection interval. A
     value of zero disables automatic reconnection.
