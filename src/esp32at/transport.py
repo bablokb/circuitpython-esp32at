@@ -127,7 +127,7 @@ class Transport:
            at_retries: Optional[int] = 1,
            reset: Optional[int] = RESET_ON_FAILURE,
            hard_reset: Optional[int] = RESET_NEVER,
-           reset_pin: Optional[circuitpython_typing.Pin] = None,
+           reset_pin: Optional[Union[circuitpython_typing.Pin, DigitalInOut]] = None,
            persist_settings: Optional[bool] = True,
            reconn_interval: Optional[int] = 1,
            baudrate: Union[int, str] = None,
@@ -289,11 +289,19 @@ class Transport:
   def hard_reset(self) -> None:
     """Perform a hardware reset by toggling the reset pin"""
     if self._reset_pin:
-      with DigitalInOut(self._reset_pin) as reset_pin:
-        reset_pin.switch_to_output(True)
-        reset_pin.value = False
+      if isinstance(self._reset_pin, DigitalInOut):
+        # user supplied DigitalInOut
+        self._reset_pin.switch_to_output(True)
+        self._reset_pin.value = False
         time.sleep(0.1)
-        reset_pin.value = True
+        self._reset_pin.value = True
+      else:
+        # user supplied pin
+        with DigitalInOut(self._reset_pin) as reset_pin:
+          reset_pin.switch_to_output(True)
+          reset_pin.value = False
+          time.sleep(0.1)
+          reset_pin.value = True
       if self.debug:
         print("waiting 3 seconds for hard reset")
       time.sleep(3)  # give it a few seconds to wake up
