@@ -104,6 +104,7 @@ class SocketPool:
 
     else:
       # TODO: read buffer until empty (add to close()??)
+      self._t.busy = False
       self.connections[link_id] = None
       if link_id in self.conn_inbound:
         self.conn_inbound.remove(link_id)
