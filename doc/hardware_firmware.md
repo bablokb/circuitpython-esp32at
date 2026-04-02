@@ -182,7 +182,7 @@ Pins (2x4 header):
   - TX: GPIO21 (labeled 'TXD', pin 5)
   - RST: pin 7
   - IO2: pin 2
-  - IO8: pin 6 (-> onboard LED, active high)
+  - IO8: pin 6
   - IO9: pin 3
 
 Because the standard AT-command port pins are not available on the
