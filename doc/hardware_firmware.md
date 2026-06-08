@@ -185,6 +185,8 @@ Pins (2x4 header):
   - IO8: pin 6
   - IO9: pin 3
 
+The on-board LED is controlled by IO3 (active high, not externally connected).
+
 Because the standard AT-command port pins are not available on the
 device, some changes are necessary using the `at.py` utility:
 
@@ -538,9 +540,9 @@ Pins (2x4 header):
   - RX: GPIO3 (labeled 'RXD', pin 4)
   - TX: GPIO1 (labeled 'TXD', pin 5)
   - RST: pin 7
-  - GPIO2: pin 2
+  - GPIO2: pin 2 (-> onboard LED, active low)
   - CH_PD: pin 6
-  - GPIO0: pin 3 (-> onboard LED, active low)
+  - GPIO0: pin 3
 
 Espressif does not release a pre-built firmware for ESP8266-devices
 anymore, so you have to build your own firmware. See [ESP-01S
